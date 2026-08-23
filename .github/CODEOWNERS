@@ -1,0 +1,6 @@
+# Security-sensitive configuration requires review from the repository owner.
+/.github/ @kevinmarqfarh
+/.mcp.json @kevinmarqfarh
+/supabase/ @kevinmarqfarh
+/SECURITY.md @kevinmarqfarh
+/docs/security/ @kevinmarqfarh

@@ -1,0 +1,81 @@
+# STADEN AppSec-baslinje
+
+**Status:** PROVISIONAL — inga applikationskällor eller produktionsmiljöer kan verifieras i repot
+
+**Datum:** 2026-08-23
+
+**Evidens:** [`evidence-register.md`](evidence-register.md)
+
+## Sammanfattning
+
+Den nuvarande revisionen är ett konfigurationsskelett, inte en skanningsbar applikation. Det vore därför missvisande att kalla SAST, SCA, container-, DAST- eller penetrationstestning "godkänd". Baslinjen nedan gör kontrollerna till leveransgrindar som aktiveras när respektive artefakt eller miljö tillkommer. De viktigaste omedelbara riskreduceringarna är deny-by-default i Supabase, skydd av leverantörskonton/hemligheter, reproducerbara migrationer och bevisad backup/restore.
+
+## Kritiska åtgärder
+
+### P0 — blockerar riktiga användare eller data
+
+- **SUP-01:** verifiera hostad Supabase-konfiguration, inventera alla exponerade scheman/tabeller/vyer/funktioner och aktivera RLS med explicita deny-by-default-policyer. Ägare: Backend/Platform. Bevis: policyexport + negativa integrationstester.
+- **IAM-01:** kräv MFA för GitHub-, Supabase- och eventuella Vercel-administratörer; separera admin-, deploy- och runtime-identiteter. Ägare: Projektägare. Bevis: daterad åtkomstgranskning utan återställningskoder i repot.
+- **SEC-01:** aktivera secret scanning och push protection där GitHub-planen medger; kör TruffleHog på varje commitintervall och full historik veckovis/manuellt, och rotera alla verifierade träffar. Ägare: AppSec/Repo admin. Bevis: grön CI-körning + stängda alerts.
+- **DR-01:** besluta RPO/RTO, aktivera en backupnivå som möter RPO och genomför första isolerade restoreövningen. Ägare: Incidentledare/DB-ägare. Bevis: signerad restorelogg.
+- **DATA-01:** besluta dataklassning och retention för konton, sparade listor, exakt/platsbaserad aktivitet och importerat innehåll. Ägare: Produkt/Privacy. Bevis: godkänt datainventarium.
+- **REL-01:** skydda `main`; `CODEOWNERS` finns för säkerhetskritiska sökvägar, men kräv dess granskning, lyckade säkerhetskontroller och miljögodkännande innan produktion. Ägare: Repo admin. Bevis: branch/ruleset-export.
+
+### P1 — blockerar publik preview
+
+- Lägg till låsta beroenden, SBOM och SCA; kritiska/höga exploaterbara fynd blockerar merge.
+- Kör språkmedveten SAST och säkerhetslint på varje PR.
+- Kör IaC/config scanning på Supabase-migrationer och all framtida Terraform, Docker-, Vercel- eller GitHub Actions-konfiguration.
+- Lägg till authZ-, inputvaliderings-, rate-limit- och negativa RLS-tester.
+- Kör OWASP ZAP-baseline mot isolerad preview; endast godkända testkonton och testdata.
+
+### P2 — före allmän lansering
+
+- Oberoende, skriftligt auktoriserat penetrationstest av internetytan, inloggat läge, adminflöden, datainhämtning och Supabase-policyer.
+- Missbruks- och kostnadslarm för auth, API, Edge Functions, lagring och tredjeparts-API:er.
+- Kvartalsvis restoreövning och årlig leverantörs-/åtkomstgranskning.
+
+## Kontrollmatris
+
+| Område | Kontroll och rekommenderad implementation | Trigger/frekvens | Merge/release-policy | Operativ ägare | Status/evidens 2026-08-23 |
+|---|---|---|---|---|---|
+| Static Application Security Testing (SAST) | CodeQL med `security-extended` för stödda språk; komplettera med ramverksspecifika regler för Supabase-klientanvändning, SSRF, injection och osäker rendering när stacken finns | Varje PR, `main`, veckovis full scan | Mål: blockera nya high/critical; kräver GitHub-ruleset för code-scanning-resultat | AppSec + kodägare | Workflow infört men ej tillämpligt ännu: ingen stödd källkod. CodeQL är report-only tills GitHub-enforcement verifierats |
+| Software Composition Analysis (SCA) | Dependency Review, OSV-Scanner, Trivy och Dependabot; lägg till CycloneDX/SPDX-SBOM per release när appmanifest finns | Varje PR som ändrar manifest/lockfil; veckovis full scan | Blockera känd exploaterbar critical/high; tidsatt undantag kräver riskägare | Tech lead | Grinden är införd men ej tillämplig: inga manifest/lockfiler |
+| IaC/config scanning | Trivy config för Terraform/Kubernetes/Helm/Compose/Serverless/Pulumi/CloudFormation, Zizmor för GitHub Actions; komplettera med policytester för Supabase grants/RLS | Varje PR; månatlig drift-driftjämförelse | Blockera publik datalagring, wildcard-admin, okrypterad extern transport och avsaknad av RLS på exponerade tabeller | Platform | Zizmor-grind införd och lokalt utan fynd; villkorad Trivy-grind finns men ingen deploybar IaC. Lokal TOML granskad, hosted drift ej verifierad |
+| Container scanning | Minimal, pinnad base image; Trivy image + SBOM + signering/provenance; kör som icke-root och read-only där möjligt | Build och före promotion; nattlig rescan | Ingen critical/high i körbar lagerkedja utan godkänt undantag | Platform | Villkorad build- och Trivy-grind införd; ej tillämplig: ingen Dockerfile/image |
+| Vulnerability scanning | Konsolidera SAST/SCA/IaC/containerfynd; auktoriserad Nuclei/leverantörsscanning endast mot ägd preview/prod-scope; inventera externa endpoints | Veckovis preview, månatlig produktion, efter större infraändring | Critical inom 24 h, high inom 7 dagar eller dokumenterad kompensation | AppSec | Ingen target eller asset inventory i repo |
+| Dynamic Application Security Testing (DAST) | OWASP ZAP passive baseline och försiktig Nuclei-baslinje mot repoägd localhost-harness; autentiserad aktiv scan först i separat, uttryckligen auktoriserad miljö | Manuellt per releasekandidat; aktiv scan enligt godkänd scope | Blockera verifierad high/critical; ett manuellt scan-anrop utan harness ska misslyckas som “not executed” | AppSec + QA | Manuell localhost-begränsad workflow införd; ingen körbar app/harness finns ännu |
+| Secret detection | GitHub Secret Scanning/push protection + TruffleHog för commitintervall och veckovis/manuell full historik; egna mönster för leverantörsnycklar | Varje push/PR och veckovis historik | Varje verifierad hemlighet blockerar; återkalla/rotera omedelbart | Repo admin | Gitleaks v8.30.1 körd lokalt över historik och arbetskatalog: 0 träffar; TruffleHog-grind införd. GitHub push protection ej verifierad |
+| Penetration scanning/testing | Oberoende manuell testning enligt signerad Rules of Engagement: authN/Z, RLS, BOLA/IDOR, SSRF i ingestion, rate limiting, affärslogik, admin och leverantörsintegrationer | Före GA, årligen, efter stor auth/data-/ingestionändring | Critical/high måste retestas stängt före GA; medel får tidsatt åtgärdsplan | Produktägare + AppSec | Ej möjlig ännu; scope och target saknas |
+| Threat model | Repo-grounded abuse-path-modell, uppdaterad tillsammans med dataflöden | Vid arkitekturändring och minst kvartalsvis före GA | Öppna critical/high måste ha ägare och plan | AppSec/Arkitekt | Provisorisk modell skapad; användarkontext saknas |
+| Disaster recovery | PITR/daglig dump enligt RPO, separat objektbackup, repo mirror, leverantörskonfigexport och isolerad restoreövning | Backup automatiskt; verifiering dagligen; restore kvartalsvis | Missad backup eller misslyckad restore är release-/incidentblockerare | Incidentledare/Platform | Provisorisk plan skapad; ingen restoreevidens |
+
+## Fynd från aktuell revision
+
+### SB-001 — Produktionssäkerheten i Supabase kan inte härledas
+
+**Allvarlighetsgrad:** hög som leveransrisk, inte en verifierad sårbarhet.
+
+`supabase/config.toml` beskriver lokal utveckling. Repot saknar migrationer och policytester, och det finns ingen export av hostade RLS-, grant-, backup- eller nätverksinställningar. Innan data läggs in måste hosted state inventeras och representeras reproducerbart i migrationer.
+
+### SB-002 — Lokal auth-baslinje har härdats; hosted state är fortfarande okänd
+
+**Allvarlighetsgrad:** låg lokalt, hög kvarvarande verifieringsrisk.
+
+`supabase/config.toml` kräver nu minst 12 tecken, stora/små bokstäver, siffror och symboler, e-postbekräftelse, säkert lösenordsbyte och 10 minuters OTP-livslängd. Det reducerar risken att den lokala mallen kopieras med svaga auth-defaults, men ändrar inte automatiskt det hostade projektet. Verifiera och dokumentera hosted Auth, MFA för administratörer och recovery-flöden före externa konton.
+
+### SB-003 — Secret detection finns i CI; GitHub-skydd måste aktiveras externt
+
+**Allvarlighetsgrad:** låg i repot, medel kvarvarande plattformsrisk.
+
+Gitleaks v8.30.1 skannade hela den lokala Git-historiken och den aktuella arbetskatalogen utan fynd. CI kör TruffleHog mot commitintervallet på push/PR och hela historiken vid veckoschema/manuell körning. `.mcp.json` innehåller endast en project-scoped URL och är nu begränsad till read-only/funktioner; en Supabase project ref är en identifierare, inte en service-role-hemlighet. GitHub Secret Scanning, push protection och privata sårbarhetsrapporter måste fortfarande aktiveras/verifieras i repoinställningarna.
+
+### SB-004 — Ingen verifierbar återställningskedja
+
+**Allvarlighetsgrad:** hög som leveransrisk.
+
+Repot saknade före denna ändring backup/restore-runbook, migrationshistorik och restoreprotokoll. Planen i `disaster-recovery-plan.md` reducerar processgapet men bevisar inte att backups finns eller går att återställa.
+
+## Undantag och triage
+
+Ett undantag ska innehålla fynd-ID, berörd tillgång, exploaterbarhetsanalys, kompensationskontroll, namngiven riskägare och utgångsdatum (högst 30 dagar för high, 7 dagar för critical). Automatiskt genererade fynd får inte stängas enbart som "false positive" utan reproducerbar evidens. Hemlighetsfynd valideras utan att värdet kopieras till tickets eller loggar.

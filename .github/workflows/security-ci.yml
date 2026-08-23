@@ -1,0 +1,491 @@
+name: Security CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  merge_group:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: security-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  preflight:
+    name: Security / applicability
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      codeql-languages: ${{ steps.detect.outputs.codeql-languages }}
+      has-manifest: ${{ steps.detect.outputs.has-manifest }}
+      has-lockfile: ${{ steps.detect.outputs.has-lockfile }}
+      has-iac: ${{ steps.detect.outputs.has-iac }}
+      has-container: ${{ steps.detect.outputs.has-container }}
+      container-file: ${{ steps.detect.outputs.container-file }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Detect applicable controls
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tracked_list=$(git ls-files)
+
+          codeql_languages='[]'
+          if grep -Eq '\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$' <<<"$tracked_list"; then
+            codeql_languages=$(jq -c '. + ["javascript-typescript"]' <<<"$codeql_languages")
+          fi
+          if grep -Eq '\.py$' <<<"$tracked_list"; then
+            codeql_languages=$(jq -c '. + ["python"]' <<<"$codeql_languages")
+          fi
+          if grep -Eq '\.go$' <<<"$tracked_list"; then
+            codeql_languages=$(jq -c '. + ["go"]' <<<"$codeql_languages")
+          fi
+
+          has_manifest=false
+          has_lockfile=false
+          missing_lock_count=0
+          missing_lock_lines=""
+
+          while IFS= read -r manifest; do
+            [[ -z "$manifest" ]] && continue
+            has_manifest=true
+            manifest_dir=$(dirname "$manifest")
+            manifest_name=$(basename "$manifest")
+            lock_found=false
+            lock_names=""
+
+            case "$manifest_name" in
+              package.json)
+                lock_names="package-lock.json npm-shrinkwrap.json pnpm-lock.yaml yarn.lock bun.lock bun.lockb"
+                ;;
+              pyproject.toml)
+                lock_names="poetry.lock uv.lock pdm.lock"
+                ;;
+              Pipfile)
+                lock_names="Pipfile.lock"
+                ;;
+              go.mod)
+                lock_names="go.sum"
+                ;;
+              Cargo.toml)
+                lock_names="Cargo.lock"
+                ;;
+              Gemfile)
+                lock_names="Gemfile.lock"
+                ;;
+              composer.json)
+                lock_names="composer.lock"
+                ;;
+              deno.json | deno.jsonc)
+                lock_names="deno.lock"
+                ;;
+              build.gradle | build.gradle.kts)
+                lock_names="gradle.lockfile"
+                ;;
+              requirements*.txt)
+                # Requirements files are the scanner input themselves. Whether every
+                # entry is pinned is enforced later by the application's dependency policy.
+                lock_found=true
+                ;;
+            esac
+
+            for lock_name in $lock_names; do
+              lock_path="$lock_name"
+              if [[ "$manifest_dir" != "." ]]; then
+                lock_path="$manifest_dir/$lock_name"
+              fi
+              if grep -Fxq "$lock_path" <<<"$tracked_list"; then
+                lock_found=true
+                break
+              fi
+            done
+
+            if [[ "$lock_found" != "true" ]]; then
+              missing_lock_count=$((missing_lock_count + 1))
+              missing_lock_lines="$missing_lock_lines\n- $manifest"
+            fi
+          done < <(grep -E '(^|/)(package\.json|pyproject\.toml|Pipfile|go\.mod|Cargo\.toml|Gemfile|composer\.json|deno\.jsonc?|build\.gradle(\.kts)?|requirements[^/]*\.txt)$' <<<"$tracked_list" || true)
+
+          if [[ "$has_manifest" == "true" && "$missing_lock_count" -eq 0 ]]; then
+            has_lockfile=true
+          fi
+
+          # Only deployable infrastructure definitions count here. Application/service
+          # config such as supabase/config.toml is not treated as a successful IaC scan.
+          has_iac=false
+          if grep -Eq '(^|/)([^/]+\.tf|[^/]+\.tf\.json|serverless\.ya?ml|docker-compose[^/]*\.ya?ml|compose\.ya?ml|Chart\.yaml|Pulumi\.ya?ml|cdk\.json|template\.ya?ml)$|^(k8s|kubernetes|helm|charts|infra|infrastructure)/' <<<"$tracked_list"; then
+            has_iac=true
+          fi
+
+          has_container=false
+          container_file=""
+          if [[ -f Dockerfile ]]; then
+            has_container=true
+            container_file="Dockerfile"
+          elif [[ -f Containerfile ]]; then
+            has_container=true
+            container_file="Containerfile"
+          fi
+
+          {
+            echo "codeql-languages=$codeql_languages"
+            echo "has-manifest=$has_manifest"
+            echo "has-lockfile=$has_lockfile"
+            echo "has-iac=$has_iac"
+            echo "has-container=$has_container"
+            echo "container-file=$container_file"
+          } >> "$GITHUB_OUTPUT"
+
+          code_status="not applicable — no supported JavaScript/TypeScript, Python, or Go source"
+          if [[ "$codeql_languages" != "[]" ]]; then
+            code_status="applicable — languages: $codeql_languages"
+          fi
+          dependency_status="not applicable — no supported dependency manifest"
+          if [[ "$has_manifest" == "true" && "$has_lockfile" == "true" ]]; then
+            dependency_status="applicable — every supported manifest has a corresponding lockfile"
+          elif [[ "$has_manifest" == "true" ]]; then
+            dependency_status="blocked — supported manifest without corresponding lockfile"
+          fi
+          iac_status="not applicable — no deployable Terraform, Kubernetes, Helm, Compose, Serverless, Pulumi, or CloudFormation definition"
+          if [[ "$has_iac" == "true" ]]; then
+            iac_status="applicable — deployable IaC detected"
+          fi
+          container_status="not applicable — no root Dockerfile or Containerfile"
+          if [[ "$has_container" == "true" ]]; then
+            container_status="applicable — $container_file"
+          fi
+
+          {
+            echo "## Security control applicability"
+            echo
+            echo "A skipped scanner is **not** a passing scan. This table records why a control did or did not run."
+            echo
+            echo "| Control | Applicability in this revision |"
+            echo "| --- | --- |"
+            if [[ "$GITHUB_EVENT_NAME" == "push" || "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+              echo "| Secret detection | applicable — TruffleHog scans the pushed or pull-request commit range |"
+            else
+              echo "| Secret detection | applicable — TruffleHog scans full history for $GITHUB_EVENT_NAME |"
+            fi
+            echo "| SAST / CodeQL | $code_status |"
+            echo "| SCA / Dependency Review | $dependency_status; PR change gate only |"
+            echo "| Dependency vulnerability scanning / OSV | $dependency_status |"
+            echo "| Filesystem vulnerability scanning / Trivy | $dependency_status |"
+            echo "| IaC scanning / Trivy | $iac_status |"
+            echo "| Container scanning / Trivy | $container_status |"
+            echo "| DAST and penetration baseline | manual localhost-only workflow; see Security DAST |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$missing_lock_count" -gt 0 ]]; then
+            echo "::error::Supported dependency manifests are missing corresponding lockfiles."
+            printf 'Missing lockfiles for:%b\n' "$missing_lock_lines" >&2
+            exit 1
+          fi
+
+  secrets:
+    name: Secret detection / TruffleHog
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout complete Git history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Scan event range or full history according to trigger
+        uses: trufflesecurity/trufflehog@bcfcf73aaf4759d4dadc2783177c245a02792318 # v3.97.0
+        with:
+          version: v3.97.0
+
+  sast:
+    name: SAST / CodeQL (${{ matrix.language }})
+    needs: preflight
+    if: needs.preflight.outputs.codeql-languages != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read # CodeQL resolves workflow/build metadata.
+      contents: read
+      security-events: write # CodeQL uploads SARIF to code scanning.
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(needs.preflight.outputs.codeql-languages) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Autobuild Go source
+        if: matrix.language == 'go'
+        uses: github/codeql-action/autobuild@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+
+      - name: Analyze source
+        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        with:
+          category: /language:${{ matrix.language }}
+
+  sca:
+    name: SCA / dependency change review
+    needs: preflight
+    if: needs.preflight.outputs.has-manifest == 'true' && needs.preflight.outputs.has-lockfile == 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Block newly introduced vulnerable dependencies
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          fail-on-scopes: runtime, development
+          show-openssf-scorecard: true
+          warn-only: false
+
+  dependency-vulnerabilities:
+    name: Vulnerability scanning / OSV
+    needs: preflight
+    if: needs.preflight.outputs.has-manifest == 'true' && needs.preflight.outputs.has-lockfile == 'true'
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@8deb546fdb875b9996d27d4950be7312dac076a1 # v2.5.0
+    with:
+      fail-on-vuln: true
+      upload-sarif: true
+      scan-args: |-
+        --recursive
+        ./
+    permissions:
+      actions: read # The reusable OSV workflow resolves workflow metadata.
+      contents: read
+      security-events: write # OSV uploads SARIF to code scanning.
+
+  filesystem-vulnerabilities:
+    name: Vulnerability scanning / Trivy filesystem
+    needs: preflight
+    if: needs.preflight.outputs.has-manifest == 'true' && needs.preflight.outputs.has-lockfile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan dependency artifacts for fixable high-impact CVEs
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "1"
+          hide-progress: true
+
+  iac:
+    name: IaC scanning / Trivy
+    needs: preflight
+    if: needs.preflight.outputs.has-iac == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan infrastructure misconfigurations
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          hide-progress: true
+
+  container:
+    name: Container scanning / Trivy
+    needs: preflight
+    if: needs.preflight.outputs.has-container == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build isolated scan image
+        shell: bash
+        env:
+          CONTAINER_FILE: ${{ needs.preflight.outputs.container-file }}
+          IMAGE_TAG: staden-security-scan:${{ github.sha }}
+        run: docker build --file "$CONTAINER_FILE" --tag "$IMAGE_TAG" .
+
+      - name: Scan built image for fixable high-impact CVEs
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: staden-security-scan:${{ github.sha }}
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "1"
+          hide-progress: true
+
+  workflow-security:
+    name: GitHub Actions configuration / Zizmor
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan GitHub Actions workflows
+        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+        with:
+          version: v1.29.0
+          inputs: .github/workflows/
+          collect: workflows
+          online-audits: false
+          advanced-security: false
+          annotations: true
+
+  required-gate:
+    name: Security / required gate
+    if: always()
+    needs:
+      - preflight
+      - secrets
+      - sast
+      - sca
+      - dependency-vulnerabilities
+      - filesystem-vulnerabilities
+      - iac
+      - container
+      - workflow-security
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PREFLIGHT_RESULT: ${{ needs.preflight.result }}
+      SECRETS_RESULT: ${{ needs.secrets.result }}
+      SAST_RESULT: ${{ needs.sast.result }}
+      SCA_RESULT: ${{ needs.sca.result }}
+      OSV_RESULT: ${{ needs.dependency-vulnerabilities.result }}
+      TRIVY_FS_RESULT: ${{ needs.filesystem-vulnerabilities.result }}
+      IAC_RESULT: ${{ needs.iac.result }}
+      CONTAINER_RESULT: ${{ needs.container.result }}
+      WORKFLOW_SECURITY_RESULT: ${{ needs.workflow-security.result }}
+      CODEQL_LANGUAGES: ${{ needs.preflight.outputs.codeql-languages }}
+      HAS_MANIFEST: ${{ needs.preflight.outputs.has-manifest }}
+      HAS_LOCKFILE: ${{ needs.preflight.outputs.has-lockfile }}
+      HAS_IAC: ${{ needs.preflight.outputs.has-iac }}
+      HAS_CONTAINER: ${{ needs.preflight.outputs.has-container }}
+      EVENT_NAME: ${{ github.event_name }}
+    steps:
+      - name: Record and enforce scanner results
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## Security CI results"
+            echo
+            echo "| Control | Actual result |"
+            echo "| --- | --- |"
+            echo "| Applicability | $PREFLIGHT_RESULT |"
+            echo "| Secret detection | $SECRETS_RESULT |"
+            echo "| SAST | $SAST_RESULT |"
+            echo "| SCA | $SCA_RESULT |"
+            echo "| OSV dependency vulnerabilities | $OSV_RESULT |"
+            echo "| Trivy filesystem vulnerabilities | $TRIVY_FS_RESULT |"
+            echo "| IaC | $IAC_RESULT |"
+            echo "| Container | $CONTAINER_RESULT |"
+            echo "| GitHub Actions configuration | $WORKFLOW_SECURITY_RESULT |"
+            echo
+            echo "The gate below validates every success/skipped result against detected applicability."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          assert_result() {
+            local control="$1"
+            local actual="$2"
+            local expected="$3"
+            if [[ "$actual" != "$expected" ]]; then
+              echo "$control returned '$actual'; expected '$expected'." >&2
+              exit 1
+            fi
+          }
+
+          assert_result "Applicability" "$PREFLIGHT_RESULT" "success"
+          assert_result "Secret detection" "$SECRETS_RESULT" "success"
+          assert_result "GitHub Actions configuration" "$WORKFLOW_SECURITY_RESULT" "success"
+
+          expected_sast="skipped"
+          if [[ "$CODEQL_LANGUAGES" != "[]" ]]; then
+            expected_sast="success"
+          fi
+
+          expected_sca="skipped"
+          if [[ "$HAS_MANIFEST" == "true" && "$HAS_LOCKFILE" == "true" && "$EVENT_NAME" == "pull_request" ]]; then
+            expected_sca="success"
+          fi
+
+          expected_dependencies="skipped"
+          if [[ "$HAS_MANIFEST" == "true" && "$HAS_LOCKFILE" == "true" ]]; then
+            expected_dependencies="success"
+          fi
+
+          expected_iac="skipped"
+          if [[ "$HAS_IAC" == "true" ]]; then
+            expected_iac="success"
+          fi
+
+          expected_container="skipped"
+          if [[ "$HAS_CONTAINER" == "true" ]]; then
+            expected_container="success"
+          fi
+
+          assert_result "SAST" "$SAST_RESULT" "$expected_sast"
+          assert_result "SCA" "$SCA_RESULT" "$expected_sca"
+          assert_result "OSV dependency vulnerabilities" "$OSV_RESULT" "$expected_dependencies"
+          assert_result "Trivy filesystem vulnerabilities" "$TRIVY_FS_RESULT" "$expected_dependencies"
+          assert_result "IaC" "$IAC_RESULT" "$expected_iac"
+          assert_result "Container" "$CONTAINER_RESULT" "$expected_container"

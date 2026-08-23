@@ -1,0 +1,16 @@
+# Local environment files. Keep example files explicitly reviewable.
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local tool and build output
+.vercel/
+.next/
+dist/
+coverage/
+node_modules/
+
+# Scanner output may contain sensitive paths or request metadata.
+security-reports/
+*.sarif

@@ -2,7 +2,7 @@
   "mcpServers": {
     "supabase-staden": {
       "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=rucwlpzrumxejvhwazat"
+      "url": "https://mcp.supabase.com/mcp?project_ref=rucwlpzrumxejvhwazat&read_only=true&features=database,development,debugging,docs"
     }
   }
 }
