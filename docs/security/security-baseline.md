@@ -8,7 +8,7 @@
 
 ## Sammanfattning
 
-Den nuvarande revisionen innehåller ett minimalt, statiskt Next.js-skal med låsta beroenden och en produktionsbyggd localhost-harness för dynamisk testning. Apprevision `1ba0650` har passerat Vercels produktiondeployment och GitHubs required security gate; den publika aliasen svarar med rätt innehåll och headers. Det vore fortfarande missvisande att kalla DAST, penetrationstestning, Supabase-säkerhet eller hela produktionsmiljön "godkänd" innan respektive test har körts och plattformsinställningarna har verifierats. De viktigaste omedelbara riskreduceringarna inför datafunktioner är deny-by-default i Supabase, skydd av leverantörskonton/hemligheter, reproducerbara migrationer och bevisad backup/restore.
+Den aktuella produktkandidaten är en interaktiv Next.js-klient med teman, 32 kulturposter, 32 restauranger, lokalt sparade objekt-ID:n och en publishable-key-baserad Supabase health-check. Ingen Auth, tabellåtkomst eller mutation finns; sessionpersistens är avstängd. Apprevision `1ba0650` har tidigare passerat Vercel och GitHubs required security gate, men den evidensen gäller inte det nya deltats kod eller dependencies. Det vore missvisande att kalla DAST, penetrationstestning, Supabase RLS/grants/backups eller produktionsmiljön godkänd innan nya hosted tester och plattformsattestering finns.
 
 ## Kritiska åtgärder
 

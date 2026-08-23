@@ -8,6 +8,10 @@
 
 **Syfte:** reproducerbar evidens för den första säkerhetsbaslinjen, inte ett produktionsgodkännande.
 
+## Aktuell produktkandidat (ej ännu hosted)
+
+Arbetskatalogen ovanpå `00cd68b` innehåller nu 32 kulturposter, 32 restauranger, lokal bild, tre teman, browser storage och en publishable-key-baserad Supabase health-check. Primära katalogkällor har kontrollerats online; en frivillig restaurangwebbplats svarar med anti-bot-status 455 för automatiserad GET men dess primära Göteborg.com-källa svarar 200. Lokalt har `npm audit` rapporterat 0 kända sårbarheter, `npm run lint` och `npm run build` passerat samt health-endpointen svarat HTTP 200 med den ignorerade `.env.local`. Sessionpersistens är avstängd. Dessa lokala resultat ersätter inte en ny hosted CodeQL/SCA/secret/DAST-körning eller attestering av RLS/grants/backups.
+
 ## Repoöversikt
 
 Basrevisionen innehöll fyra spårade filer och två commits. Tabellen skiljer uttryckligen basläget från säkerhetshärdningen i detta ändringspaket:

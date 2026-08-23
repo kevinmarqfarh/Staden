@@ -2,13 +2,13 @@
 
 **Status:** PROVISIONAL — mål och beroenden är antaganden tills de godkänts och testats
 
-**Version:** 0.1, 2026-08-23
+**Version:** 0.2, 2026-08-23
 
 **Ägare:** ej utsedd (blockerare före produktion)
 
 ## Mål och antaganden
 
-Repot innehåller ett minimalt, statiskt Next.js-skal där GitHub lagrar koden och Vercel levererar produktion på `https://staden.vercel.app`; apprevision `1ba0650` är verifierad som deployad. Planen antar därutöver en framtida mobilförst, databuren app där GitHub lagrar migrationshistorik och Supabase lagrar Postgres/Auth/Storage. Vercel-projektets fulla konfiguration, rollback/retention och teamåtkomst kan inte verifieras enbart från repot. Inga riktiga användare, datavolymer, leverantörsplaner eller SLO:er kan verifieras.
+Git är nu system of record för 32 kulturposter, 32 restauranger, käll-URL:er och redaktionell media. Webbläsaren lagrar tema och sparade event-/restaurang-ID:n i `localStorage`; de har ingen central backup, konto- eller enhetssynk och kan försvinna vid rensad lagring eller originbyte. Supabase används endast för en publik Auth-hälsokontroll och ett avbrott där ska därför degradera anslutningsstatusen, inte katalogen. Vercel-revision `1ba0650` är tidigare verifierad, men den aktuella produktkandidaten saknar ännu hosted deployment/scannerbevis.
 
 Föreslagna mål att godkänna:
 
@@ -18,8 +18,10 @@ Föreslagna mål att godkänna:
 | Supabase Storage-objekt | 24 timmar | 8 timmar | Kräver separat versionshanterad/off-site objektbackup; DB-backup innehåller bara Storage-metadata. |
 | Next.js-webb på Vercel | 0 för kodrevision; högst 1 timmes konfigurationsförlust | 1 timme | API är inte implementerat. Målet kräver verifierad Vercel-koppling, pinnad Node-major, bevarad known-good deployment och export/inventarium av miljövariabelnamn och inställningar. |
 | GitHub-kod och migrationer | 24 timmar för nya commits | 4 timmar | Kräver daglig mirror till separat konto/leverantör och regelbunden restorekontroll. Lokala clones räknas inte ensamma som backup. |
-| Importerade externa katalogdata | 24 timmar eller återinläsning | 8 timmar | Råa snapshots måste vara reproducerbara och licens/retention dokumenterad. |
-| Redaktionellt innehåll och listor | 15 minuter | 4 timmar | Antas ligga i Postgres; om media ingår gäller Storage-målet. |
+| Nuvarande katalog och media i Git | 0 efter push; fram till push kan lokalt delta förloras | 4 timmar | Återställ från signerad/known-good Git-revision och verifiera källor/bild. |
+| Lokalt tema och sparade event-/restaurang-ID:n | Inget centralt RPO | Ingen serverrestore möjlig | Bekvämlighetsdata per browser-origin; kommunicera tydligt tills kontosynk finns. |
+| Framtida importerade katalogdata | 24 timmar eller återinläsning | 8 timmar | Råa snapshots, provenance och licens/retention måste vara reproducerbara. |
+| Framtida centrala listor | 15 minuter | 4 timmar | Kräver Postgres, RLS, backup och verifierad restore innan aktivering. |
 
 Supabase dokumenterar att betalda projekt får dagliga databasbackuper och att PITR ger finare återställningspunkter, men aktuell plan/status för STADEN är inte verifierad. Databasbackup omfattar inte själva Storage-objekten. Se [Supabase Database Backups](https://supabase.com/docs/guides/platform/backups). Vercels rollback återpekar trafik till en tidigare deployment men återställer inte databas eller aktuella miljövariabler; se [Vercel Instant Rollback](https://vercel.com/docs/instant-rollback). GitHub rekommenderar mirror-clone eller separat backupverktyg för återställningsbar kodhistorik; se [GitHub: Backing up a repository](https://docs.github.com/en/repositories/archiving-a-github-repository/backing-up-a-repository).
 
@@ -50,7 +52,7 @@ Aktivera planen när övervakning, leverantörsstatus eller rapporter visar att 
 
 1. **Säkerställ människor och scope:** utse IC, öppna privat incidentkanal, frys icke-nödvändiga deployer och identifiera om incidenten är säkerhetsrelaterad.
 2. **Bevara bevis:** exportera relevanta audit-, auth-, deploy- och databasloggar med åtkomstkontroll; skriv inte hemligheter i incidentloggen.
-3. **Begränsa:** återkalla komprometterade tokens, stoppa skadlig ingestion/Edge Function eller sätt framtida skrivande flöden read-only. Det nuvarande webbskalet är redan statiskt/read-only; maintenance mode eller kill switch måste designas innan mutationer införs. Radera inte projekt/resurser under pågående triage.
+3. **Begränsa:** återkalla komprometterade tokens, stoppa skadlig ingestion/Edge Function eller sätt framtida skrivande flöden read-only. Nuvarande katalog ändras via Git: tombstona felaktig post/länk och rulla snabbt ut en korrigerad build. Radera inte projekt/resurser under pågående triage.
 4. **Välj återställningspunkt:** fastställ senaste kända goda commit, deployment och DB-tidpunkt före felhändelsen. Bekräfta retention och förväntad dataförlust mot RPO.
 5. **Återställ i isolerad miljö först:** återställ backup/duplicera projekt när leverantören medger; kör integritets- och säkerhetstester utan produktionstrafik.
 6. **Återställ beroenden:** databas/Auth före serverfunktioner, därefter Storage-objekt, webb/API och slutligen bakgrundsjobb/ingestion.
@@ -98,7 +100,7 @@ Databasbackuper återställer metadata men inte raderade objekt. Därför krävs
 
 ## Runbook: Vercel
 
-Vercel Git-integration, Production-deployment och stabil `vercel.app`-alias är verifierade för `1ba0650`; miljövariabelinventering, åtkomstregler, custom domain, retention och rollback behöver fortfarande attesteras i plattformen:
+Vercel Git-integration, Production-deployment och stabil `vercel.app`-alias är verifierade endast för `1ba0650`; den aktuella produktkandidaten och dess publika Supabase-variabler måste verifieras separat:
 
 1. Vid kodrelaterad incident, identifiera senaste kända goda produktiondeployment och använd Instant Rollback/CLI rollback.
 2. Om en kall rebuild krävs: checka ut en known-good commit, verifiera lockfilens integritet, använd Node 24 och `npm ci`, kör `npm run build` och promota först den verifierade artefakten. Bevara en immutable known-good deployment/artefakt eftersom npm och `next/font/google` är externa byggtidsberoenden.
@@ -119,6 +121,9 @@ En incident får inte stängas enbart för att startsidan svarar. Följande ska 
 | Auth/RLS | Positiva tester fungerar och cross-user/admin-negativa tester nekas |
 | Storage | Stickprovschecksummor matchar; privata objekt förblir privata; orphanlista hanterad |
 | Applikation nu | Ren `npm ci` + produktionsbuild passerar; `/` och `/icon.svg` ger 200; assets, metadata-origin och förväntade säkerhetsheaders är korrekta; inga 5xx |
+| Browser state | Spara/ta bort, reload, cross-tab, korrupt JSON, blockerad storage och alla tre teman testas; originbyte dokumenteras som dataförlust tills synk finns |
+| Supabase health | connected/error/timeout/missing-env fungerar; CORS tillåter avsett flöde; ingen service-role/secret finns i bundle, Git eller `NEXT_PUBLIC_*` |
+| Kultur-/restaurangkatalog | Samtliga 32 + 32 poster finns; primära källor är HTTPS/allowlistade och aktuella; restaurangernas HTTPS-webbplatser kontrolleras separat; nya flikar använder `noopener noreferrer`; 4xx-länkar tombstonas och bildfilen laddas |
 | Framtida dataflöden | De fem viktigaste användarflödena och write/read-after-write läggs till som exitkriterier när API/databas finns |
 | Jobs | Ingestion/cron återstartas kontrollerat utan dubbletter eller replay-gap |
 | Säkerhet | Berörda tokens återkallade/roterade; inga öppna critical/high utan IC-riskacceptans |
@@ -134,6 +139,7 @@ En incident får inte stängas enbart för att startsidan svarar. Följande ska 
 | Halvårsvis | Leverantörsbortfall och credential-compromise-övning; återuppbygg deploykopplingar | Scenario, beslut och observerade gap |
 | Årligen | Full DR-simulering med kommunikation, personuppgiftsbedömning och extern beroendeinventering | Signerad rapport och reviderad plan |
 | Efter större ändring | Restoretest efter schema/auth/storage/deployment- eller backupplansändring | Releasekopplat återställningsbevis |
+| Varje katalogkörning | Länkstatus, domänallowlist, dubbletter, datum och tombstone/correction-path | Daterad källrapport utan API-hemligheter |
 | Nu, före datafunktioner | Clean checkout → `npm ci` → build → testdeployment → rollback av den statiska webbtiern | Commit/deployment-ID, tider, responses, headers och godkännare |
 
 En webbtier-restore/rollback kan och ska testas redan med det statiska skalet. Första fulla DB/Auth/Storage-restoreövningen ska genomföras före att riktiga användare eller data tillkommer. En backup som aldrig återställts är inte verifierad återställningsförmåga.

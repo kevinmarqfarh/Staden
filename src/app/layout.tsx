@@ -1,5 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  DM_Serif_Display,
+  Geist,
+  Geist_Mono,
+  Roboto_Condensed,
+} from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -10,6 +15,19 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const condensed = Roboto_Condensed({
+  variable: "--font-condensed",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const editorialSerif = DM_Serif_Display({
+  variable: "--font-editorial-serif",
+  weight: "400",
   subsets: ["latin"],
   display: "swap",
 });
@@ -52,8 +70,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="sv">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="sv" data-theme="atelier" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${condensed.variable} ${editorialSerif.variable}`}
+      >
         {children}
       </body>
     </html>
