@@ -121,6 +121,14 @@ function normalize(value: string) {
     .replace(/\p{Diacritic}/gu, "");
 }
 
+function googleMapsUrl(restaurant: Restaurant) {
+  const query = [restaurant.address, restaurant.area, "Göteborg"]
+    .filter(Boolean)
+    .join(", ");
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 function RestaurantCard({
   restaurant,
   number,
@@ -176,10 +184,18 @@ function RestaurantCard({
       <div className="restaurant-card__details">
         <p>
           <MapPin aria-hidden="true" size={17} weight="bold" />
-          <span>
-            {restaurant.address}
-            <small>{restaurant.area}</small>
-          </span>
+          <a
+            className="restaurant-card__address-link"
+            href={googleMapsUrl(restaurant)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Öppna ${restaurant.name} i Google Maps`}
+          >
+            <span>
+              {restaurant.address}
+              <small>{restaurant.area} · Öppna karta</small>
+            </span>
+          </a>
         </p>
         <p>
           <span className="price-symbol" aria-hidden="true">
@@ -475,7 +491,8 @@ export function FoodExplorer({
         </p>
         <p className="food-confidence-note">
           {restaurantCoverage.editorial} redaktionella val är källkontrollerade.
-          Katalogen breddar med {restaurantCoverage.directory} OpenStreetMap-poster;
+          Katalogen breddar med {restaurantCoverage.directory + restaurantCoverage.fastFood} OpenStreetMap-poster
+          ({restaurantCoverage.directory} restauranger och {restaurantCoverage.fastFood} snabbmat);
           {" "}{restaurantCoverage.excludedClosed} uttryckligen stängda verksamheter
           är bortfiltrerade. Pris och öppettider ska dubbelkollas före besök.
         </p>

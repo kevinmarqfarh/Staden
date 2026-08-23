@@ -1,4 +1,5 @@
 import { osmDirectoryRestaurants } from "./osm-restaurants";
+import { osmFastFoodRestaurants } from "./osm-fast-food";
 
 export type RestaurantPriceTier = 1 | 2 | 3 | 4;
 
@@ -1857,14 +1858,25 @@ const activeOsmDirectoryRestaurants = osmDirectoryRestaurants.filter(
   (restaurant) => !isExplicitlyClosedRestaurant(restaurant),
 );
 
+const activeOsmFastFoodRestaurants = osmFastFoodRestaurants.filter(
+  (restaurant) => !isExplicitlyClosedRestaurant(restaurant),
+);
+
 export const restaurantCoverage = {
   editorial: scannedRestaurants.length,
   directory: activeOsmDirectoryRestaurants.length,
+  fastFood: activeOsmFastFoodRestaurants.length,
   excludedClosed:
-    osmDirectoryRestaurants.length - activeOsmDirectoryRestaurants.length,
+    osmDirectoryRestaurants.length + osmFastFoodRestaurants.length -
+    activeOsmDirectoryRestaurants.length -
+    activeOsmFastFoodRestaurants.length,
 } as const;
 
-export const restaurants: Restaurant[] = [...scannedRestaurants, ...activeOsmDirectoryRestaurants].map((restaurant) => {
+export const restaurants: Restaurant[] = [
+  ...scannedRestaurants,
+  ...activeOsmDirectoryRestaurants,
+  ...activeOsmFastFoodRestaurants,
+].map((restaurant) => {
   validateRestaurantUrl(restaurant.sourceUrl, true);
   if (restaurant.websiteUrl) validateRestaurantUrl(restaurant.websiteUrl);
   return {

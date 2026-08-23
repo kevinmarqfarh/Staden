@@ -264,6 +264,7 @@ export function SavedPocket({
   const [editingListId, setEditingListId] = useState<string | null>(null);
   const [editingListName, setEditingListName] = useState("");
   const [renameError, setRenameError] = useState("");
+  const [pendingDeleteListId, setPendingDeleteListId] = useState<string | null>(null);
   const savedEventsSnapshot = useSyncExternalStore(
     subscribeToSavedPocket,
     getSavedEventsSnapshot,
@@ -449,6 +450,7 @@ export function SavedPocket({
     setEditingListId(null);
     setEditingListName("");
     setRenameError("");
+    setPendingDeleteListId(null);
   }
 
   function beginRenameSelectedList() {
@@ -551,7 +553,7 @@ export function SavedPocket({
               )}
             </h2>
             <p id="saved-pocket-summary">
-              {savedItems.length} sparade platser och händelser · {pocketState.lists.length} egna listor
+              {savedItems.length} {savedItems.length === 1 ? "sparad plats eller händelse" : "sparade platser och händelser"} · {pocketState.lists.length} {pocketState.lists.length === 1 ? "egen lista" : "egna listor"}
             </p>
           </div>
           {embedded ? (
@@ -617,7 +619,10 @@ export function SavedPocket({
             <button
               type="button"
               aria-pressed={selectedListId === null}
-              onClick={() => setActiveListId(null)}
+              onClick={() => {
+                setActiveListId(null);
+                setPendingDeleteListId(null);
+              }}
             >
               Alla <span>{savedItems.length}</span>
             </button>
@@ -631,7 +636,10 @@ export function SavedPocket({
                 <button
                   type="button"
                   aria-pressed={selectedListId === list.id}
-                  onClick={() => setActiveListId(list.id)}
+                  onClick={() => {
+                    setActiveListId(list.id);
+                    setPendingDeleteListId(null);
+                  }}
                   key={list.id}
                 >
                   {list.name} <span>{count}</span>
@@ -671,13 +679,28 @@ export function SavedPocket({
               </div>
               {renameError ? <p id="saved-pocket-rename-error" className="saved-pocket-error" role="alert">{renameError}</p> : null}
             </form>
+          ) : selectedListId && pendingDeleteListId === selectedListId ? (
+            <div className="saved-pocket-delete-confirmation" role="status">
+              <p>
+                Ta bort listan? De sparade objekten finns kvar under Alla.
+              </p>
+              <div>
+                <button type="button" onClick={deleteSelectedList}>
+                  <Trash aria-hidden="true" size={16} />
+                  Ja, ta bort
+                </button>
+                <button type="button" onClick={() => setPendingDeleteListId(null)}>
+                  Avbryt
+                </button>
+              </div>
+            </div>
           ) : selectedListId ? (
             <div className="saved-pocket-list-actions">
               <button type="button" onClick={beginRenameSelectedList}>
                 <PencilSimple aria-hidden="true" size={16} />
                 Byt namn
               </button>
-              <button type="button" onClick={deleteSelectedList}>
+              <button type="button" onClick={() => setPendingDeleteListId(selectedListId)}>
                 <Trash aria-hidden="true" size={16} />
                 Ta bort listan
               </button>
@@ -768,7 +791,7 @@ export function SavedPocket({
           width: 100%;
           max-width: 1480px;
           margin: 0 auto;
-          padding: 54px 18px 72px;
+          padding: 54px var(--mobile-gutter, 22px) 72px;
         }
 
         .saved-pocket-backdrop {
@@ -985,6 +1008,47 @@ export function SavedPocket({
           border: 0;
         }
 
+        .saved-pocket-delete-confirmation {
+          display: grid;
+          gap: 10px;
+          max-width: 520px;
+          margin-top: 14px;
+          padding: 13px;
+          border: 1px solid var(--line, rgba(17, 17, 15, 0.25));
+        }
+
+        .saved-pocket-delete-confirmation p {
+          margin: 0;
+          color: var(--muted, #626057);
+          font-size: 0.72rem;
+          line-height: 1.45;
+        }
+
+        .saved-pocket-delete-confirmation > div {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .saved-pocket-delete-confirmation button {
+          display: inline-flex;
+          min-height: 44px;
+          align-items: center;
+          gap: 7px;
+          padding: 0 13px;
+          color: inherit;
+          font-size: 0.7rem;
+          font-weight: 750;
+          background: transparent;
+          border: 1px solid var(--line, rgba(17, 17, 15, 0.25));
+        }
+
+        .saved-pocket-delete-confirmation button:first-child {
+          color: var(--paper, #f4f1e9);
+          background: var(--ink, #11110f);
+          border-color: var(--ink, #11110f);
+        }
+
         .saved-pocket-rename {
           max-width: 520px;
           margin-top: 14px;
@@ -1026,13 +1090,18 @@ export function SavedPocket({
           scrollbar-width: none;
         }
 
+        .saved-pocket-list-tabs::after {
+          content: "";
+          flex: 0 0 18px;
+        }
+
         .saved-pocket-list-tabs::-webkit-scrollbar {
           display: none;
         }
 
         .saved-pocket-list-tabs button {
           flex: 0 0 auto;
-          min-height: 42px;
+          min-height: 44px;
           padding: 0 12px;
           color: inherit;
           white-space: nowrap;
@@ -1214,7 +1283,7 @@ export function SavedPocket({
 
           .saved-pocket-header--page {
             align-items: flex-start;
-            min-height: 470px;
+            min-height: clamp(390px, 46svh, 470px);
           }
 
           .saved-pocket-header--page h2 {
@@ -1225,6 +1294,10 @@ export function SavedPocket({
           .saved-pocket-sheet--page .saved-pocket-content {
             padding-top: 38px;
             padding-bottom: 56px;
+          }
+
+          .saved-pocket-sheet--page .saved-pocket-create {
+            max-width: 680px;
           }
 
           .saved-pocket-list-tabs {
@@ -1252,7 +1325,7 @@ export function SavedPocket({
           }
 
           .saved-pocket-header--page {
-            min-height: 540px;
+            min-height: clamp(410px, 44svh, 500px);
           }
 
           .saved-pocket-sheet--page .saved-pocket-items {

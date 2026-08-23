@@ -292,6 +292,10 @@ export function AdminWorkspace() {
   const [imagePreview, setImagePreview] = useState("");
   const [saving, setSaving] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const adminCanvasRef = useRef<HTMLDivElement>(null);
+  const authDialogRef = useRef<HTMLElement>(null);
+  const authTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const hasChangedAdminViewRef = useRef(false);
   const deferredSearch = useDeferredValue(search);
 
   const library = useMemo<LibraryItem[]>(() => {
@@ -394,6 +398,75 @@ export function AdminWorkspace() {
       if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
     };
   }, [imagePreview]);
+
+  useEffect(() => {
+    if (!authPanelOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const focusReturnTarget = authTriggerRef.current;
+    const focusFrame = window.requestAnimationFrame(() => {
+      authDialogRef.current?.querySelector<HTMLInputElement>('input[type="email"]')?.focus();
+    });
+
+    function handleAuthDialogKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setAuthPanelOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const focusable = authDialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleAuthDialogKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleAuthDialogKeyDown);
+      focusReturnTarget?.focus();
+    };
+  }, [authPanelOpen]);
+
+  useEffect(() => {
+    const activeLabel = navigation.find((item) => item.id === activeView)?.label ?? "Redaktionen";
+    document.title = `${activeLabel} — STADEN Redaktionen`;
+
+    if (!hasChangedAdminViewRef.current) {
+      hasChangedAdminViewRef.current = true;
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: "auto" });
+    const focusFrame = window.requestAnimationFrame(() => {
+      adminCanvasRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [activeView]);
+
+  const selectAdminView = (view: AdminView) => {
+    setActiveView(view);
+  };
+
+  const openAuthPanel = (trigger: HTMLButtonElement) => {
+    authTriggerRef.current = trigger;
+    setAuthPanelOpen(true);
+  };
 
   const updateDraft = <Key extends keyof EditorialDraft>(
     key: Key,
@@ -612,7 +685,7 @@ export function AdminWorkspace() {
     setImageFile(null);
     setImagePreview("");
     setNotice(null);
-    setActiveView("editor");
+    selectAdminView("editor");
   };
 
   const openDraft = (item: EditorialDraft) => {
@@ -620,7 +693,7 @@ export function AdminWorkspace() {
     setImageFile(null);
     setImagePreview("");
     setNotice(null);
-    setActiveView("editor");
+    selectAdminView("editor");
   };
 
   const handleSignIn = async (event: FormEvent<HTMLFormElement>) => {
@@ -688,13 +761,13 @@ export function AdminWorkspace() {
           <span>02 · Kultur</span>
           <strong>{culturalEvents.length}</strong>
           <p>Objekt redo för kurering</p>
-          <button type="button" onClick={() => { setObjectFilter("Kultur"); setActiveView("objects"); }}>Öppna objektbank <ArrowRight size={18} /></button>
+          <button type="button" onClick={() => { setObjectFilter("Kultur"); selectAdminView("objects"); }}>Öppna objektbank <ArrowRight size={18} /></button>
         </article>
         <article className="admin-stat admin-stat--ink">
           <span>03 · Mat</span>
           <strong>{restaurants.length}</strong>
           <p>Restauranger i katalogen</p>
-          <button type="button" onClick={() => { setObjectFilter("Mat"); setActiveView("objects"); }}>Utforska restauranger <ArrowRight size={18} /></button>
+          <button type="button" onClick={() => { setObjectFilter("Mat"); selectAdminView("objects"); }}>Utforska restauranger <ArrowRight size={18} /></button>
         </article>
       </section>
 
@@ -704,7 +777,7 @@ export function AdminWorkspace() {
             <p className="admin-kicker">På redaktionsbordet</p>
             <h2>Senast arbetat med</h2>
           </div>
-          <button type="button" className="admin-text-button" onClick={() => setActiveView("editor")}>Öppna redaktionen <ArrowRight size={16} /></button>
+          <button type="button" className="admin-text-button" onClick={() => selectAdminView("editor")}>Öppna redaktionen <ArrowRight size={16} /></button>
         </div>
         <div className="admin-draft-list">
           {drafts.slice(0, 4).map((item, index) => (
@@ -800,10 +873,15 @@ export function AdminWorkspace() {
               <option value="draft">Utkast</option>
               <option value="review">För granskning</option>
               <option value="scheduled">Schemalagd</option>
-              <option value="published">Publicerad</option>
+              <option value="published" disabled>Publicerad · endast via Publicera</option>
             </select>
           </label>
-          <button type="button" className="admin-secondary-button" onClick={() => void saveDraft()} disabled={saving}>
+          <button
+            type="button"
+            className="admin-secondary-button"
+            onClick={() => void saveDraft(draft.status === "published" ? "draft" : draft.status)}
+            disabled={saving}
+          >
             <FileText size={18} /> {saving ? "Sparar…" : "Spara utkast"}
           </button>
           <button
@@ -857,7 +935,7 @@ export function AdminWorkspace() {
               <button type="button" onClick={() => insertFormatting("*", "*")} aria-label="Kursiv"><TextItalic size={18} /></button>
               <button type="button" onClick={() => insertFormatting("> ")} aria-label="Citat"><Quotes size={18} /></button>
               <button type="button" onClick={() => insertFormatting("- ")} aria-label="Punktlista"><ListBullets size={18} /></button>
-              <span>Markdown · autosparning lokalt</span>
+              <span>Markdown · sparas när du väljer Spara utkast</span>
             </div>
             <label className="admin-field">
               <span className="sr-only">Brödtext</span>
@@ -882,7 +960,11 @@ export function AdminWorkspace() {
             <div className="admin-field-section__head"><span>04</span><h2>Publicering</h2></div>
             <div className="admin-media-fields">
               <label className="admin-field"><span>Datum och tid</span><input type="datetime-local" value={draft.publishAt} onChange={(event) => updateDraft("publishAt", event.target.value)} /></label>
-              <label className="admin-field"><span>Kanal</span><select defaultValue="home"><option value="home">Startsidan + Redaktion</option><option value="food">Mat</option><option value="culture">Kultur</option><option value="entertainment">Nöje</option></select></label>
+              <div className="admin-field admin-field--static">
+                <span>Kanal</span>
+                <strong>Startsidan + Redaktion</strong>
+                <small>Fler kanaler kopplas efter nästa databasversion.</small>
+              </div>
             </div>
           </section>
         </div>
@@ -953,7 +1035,7 @@ export function AdminWorkspace() {
               <div><Image src={asset.src} alt={asset.label} fill sizes="(max-width: 700px) 100vw, 33vw" /></div>
               <span>{(index + 1).toString().padStart(2, "0")} · {asset.type}</span>
               <h2>{asset.label}</h2>
-              <button type="button" onClick={() => { updateDraft("imageUrl", asset.src); updateDraft("imageAlt", asset.label); setActiveView("editor"); }}>Använd i inlägg <ArrowRight size={16} /></button>
+              <button type="button" onClick={() => { updateDraft("imageUrl", asset.src); updateDraft("imageAlt", asset.label); selectAdminView("editor"); }}>Använd i inlägg <ArrowRight size={16} /></button>
             </article>
           ))}
         </div>
@@ -976,7 +1058,7 @@ export function AdminWorkspace() {
           {accessMode === "authorized" ? (
             <button type="button" className="admin-secondary-button" onClick={() => void signOut()}><SignOut size={18} /> Logga ut</button>
           ) : (
-            <button type="button" className="admin-secondary-button" onClick={() => setAuthPanelOpen(true)}><SignIn size={18} /> Anslut admin</button>
+            <button type="button" className="admin-secondary-button" onClick={(event) => openAuthPanel(event.currentTarget)}><SignIn size={18} /> Anslut admin</button>
           )}
         </section>
         <section>
@@ -1006,6 +1088,8 @@ export function AdminWorkspace() {
         : activeView === "media"
           ? renderMedia()
           : renderSettings();
+  const activeViewLabel = navigation.find((item) => item.id === activeView)?.label ?? "Redaktionen";
+  const accessLabel = accessMode === "authorized" ? "Supabase adminläge" : "Lokalt förhandsläge";
 
   const mustSignIn = accessMode === "signed-out" || accessMode === "forbidden";
 
@@ -1041,11 +1125,11 @@ export function AdminWorkspace() {
 
   return (
     <main className="admin-app">
-      <aside className="admin-sidebar">
+      <aside className="admin-sidebar" aria-hidden={authPanelOpen || undefined} inert={authPanelOpen ? true : undefined}>
         <div className="admin-brand"><Link href="/">STADEN</Link><span>/ REDAKTION</span></div>
         <nav aria-label="Adminnavigation">
           {navigation.map(({ id, label, icon: Icon }, index) => (
-            <button key={id} type="button" className={activeView === id ? "is-active" : ""} onClick={() => setActiveView(id)} aria-current={activeView === id ? "page" : undefined}>
+            <button key={id} type="button" className={activeView === id ? "is-active" : ""} onClick={() => selectAdminView(id)} aria-current={activeView === id ? "page" : undefined}>
               <span>{(index + 1).toString().padStart(2, "0")}</span><Icon size={19} /><strong>{label}</strong>
             </button>
           ))}
@@ -1053,7 +1137,7 @@ export function AdminWorkspace() {
         <div className="admin-sidebar__foot">
           <div className={`admin-access-badge admin-access-badge--${accessMode}`}><span />{accessMode === "authorized" ? "Supabase · Admin" : "Lokalt förhandsläge"}</div>
           {accessMode === "local" ? (
-            <button type="button" onClick={() => setAuthPanelOpen(true)}><SignIn size={17} /> Anslut admin</button>
+            <button type="button" onClick={(event) => openAuthPanel(event.currentTarget)}><SignIn size={17} /> Anslut admin</button>
           ) : (
             <button type="button" onClick={() => void signOut()}><SignOut size={17} /> Logga ut</button>
           )}
@@ -1061,22 +1145,34 @@ export function AdminWorkspace() {
         </div>
       </aside>
 
-      <header className="admin-mobile-head">
+      <header className="admin-mobile-head" aria-hidden={authPanelOpen || undefined} inert={authPanelOpen ? true : undefined}>
         <div className="admin-brand"><Link href="/">STADEN</Link><span>/ REDAKTION</span></div>
-        <span className={`admin-mobile-status admin-mobile-status--${accessMode}`} />
+        <span className={`admin-mobile-status admin-mobile-status--${accessMode}`} aria-hidden="true" />
+        <span className="sr-only" role="status">{accessLabel}</span>
       </header>
 
-      <div className="admin-canvas">{view}</div>
+      <div
+        ref={adminCanvasRef}
+        className="admin-canvas"
+        role="region"
+        aria-label={activeViewLabel}
+        aria-hidden={authPanelOpen || undefined}
+        inert={authPanelOpen ? true : undefined}
+        tabIndex={-1}
+      >
+        <span className="sr-only" role="status" aria-live="polite">Visar {activeViewLabel}</span>
+        {view}
+      </div>
 
-      <nav className="admin-mobile-nav" aria-label="Adminnavigation mobil">
-        {navigation.slice(0, 4).map(({ id, shortLabel, icon: Icon }) => (
-          <button type="button" key={id} className={activeView === id ? "is-active" : ""} onClick={() => setActiveView(id)} aria-current={activeView === id ? "page" : undefined}><Icon size={20} /><span>{shortLabel}</span></button>
+      <nav className="admin-mobile-nav" aria-label="Adminnavigation mobil" aria-hidden={authPanelOpen || undefined} inert={authPanelOpen ? true : undefined}>
+        {navigation.map(({ id, shortLabel, icon: Icon }) => (
+          <button type="button" key={id} className={activeView === id ? "is-active" : ""} onClick={() => selectAdminView(id)} aria-current={activeView === id ? "page" : undefined}><Icon size={20} /><span>{shortLabel}</span></button>
         ))}
       </nav>
 
       {authPanelOpen && (
         <div className="admin-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setAuthPanelOpen(false); }}>
-          <section className="admin-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-auth-title">
+          <section ref={authDialogRef} className="admin-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-auth-title" tabIndex={-1}>
             <button type="button" className="admin-dialog-close" onClick={() => setAuthPanelOpen(false)} aria-label="Stäng"><X size={20} /></button>
             <p className="admin-kicker">Supabase · Säker publicering</p>
             <h2 id="admin-auth-title">Anslut din adminsession.</h2>

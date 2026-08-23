@@ -206,7 +206,8 @@ export const SALAR: { slug: Sal; namn: string; beskrivning: string }[] = [
   {
     slug: "nojen",
     namn: "NÖJEN",
-    beskrivning: "Nattliv, konserter, komik, sport, klubb och livemusik.",
+    beskrivning:
+      "Utflykter, skärgård, lek, attraktioner, sport, konserter och kvällsliv.",
   },
   {
     slug: "mat",

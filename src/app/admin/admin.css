@@ -168,12 +168,18 @@
   background: rgba(8, 9, 13, 0.93);
   border-bottom: 1px solid var(--admin-line);
   display: flex;
-  height: 64px;
+  height: calc(64px + env(safe-area-inset-top));
   justify-content: space-between;
-  padding: 0 18px;
+  padding: env(safe-area-inset-top) 18px 0;
   position: sticky;
   top: 0;
   z-index: 25;
+}
+
+.admin-mobile-head .admin-brand a {
+  align-items: center;
+  display: inline-flex;
+  min-height: 44px;
 }
 
 .admin-mobile-status {
@@ -182,9 +188,10 @@
 
 .admin-canvas {
   min-height: 100svh;
-  overflow-x: clip;
   padding-bottom: calc(78px + env(safe-area-inset-bottom));
 }
+
+.admin-canvas:focus { outline: none; }
 
 .admin-overview,
 .admin-editor-view,
@@ -562,6 +569,17 @@
 
 .admin-field textarea { line-height: 1.5; resize: vertical; }
 
+.admin-field--static {
+  align-content: center;
+  border: 1px solid var(--admin-dark-line);
+  gap: 5px;
+  min-height: 80px;
+  padding: 12px 13px;
+}
+
+.admin-field--static strong { font-size: 0.78rem; }
+.admin-field--static small { color: #77766f; font-size: 0.62rem; line-height: 1.4; }
+
 .admin-field--title textarea {
   border-width: 0 0 1px;
   font-family: var(--font-editorial-serif), serif;
@@ -790,7 +808,7 @@
   border-top: 1px solid var(--admin-dark-line);
   display: grid;
   gap: 7px;
-  grid-template-columns: 24px minmax(0, 1fr) repeat(3, 30px);
+  grid-template-columns: 24px minmax(0, 1fr) repeat(3, 44px);
   min-height: 64px;
   padding: 8px 10px;
 }
@@ -799,7 +817,7 @@
 .admin-selected-item p { display: grid; gap: 3px; margin: 0; }
 .admin-selected-item p strong { font-size: 0.7rem; }
 .admin-selected-item p small { color: #76756e; font-family: var(--font-geist-mono), monospace; font-size: 0.44rem; text-transform: uppercase; }
-.admin-selected-item button { align-items: center; background: transparent; border: 0; color: inherit; display: flex; height: 30px; justify-content: center; padding: 0; }
+.admin-selected-item button { align-items: center; background: transparent; border: 0; color: inherit; display: flex; height: 44px; justify-content: center; padding: 0; }
 .admin-selected-item button:disabled { opacity: 0.25; }
 .admin-selected-empty { color: #77766f; font-size: 0.72rem; line-height: 1.5; margin: 0; padding: 16px; }
 
@@ -905,7 +923,8 @@
   grid-column: 2;
   grid-row: 1 / 3;
   justify-content: center;
-  min-height: 42px;
+  min-height: 44px;
+  min-width: 44px;
   padding: 9px 11px;
 }
 
@@ -959,7 +978,7 @@
   border-top: 1px solid var(--admin-line);
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   left: 0;
   padding: 5px 7px max(7px, env(safe-area-inset-bottom));
   position: fixed;
@@ -1049,8 +1068,11 @@
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
   color: var(--admin-paper);
+  max-height: calc(100dvh - env(safe-area-inset-top));
   max-width: 560px;
-  padding: 28px 20px max(30px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(28px, env(safe-area-inset-top)) 20px max(30px, env(safe-area-inset-bottom));
   position: relative;
   width: 100%;
 }
@@ -1065,7 +1087,41 @@
 }
 
 .admin-auth-dialog > p:not(.admin-kicker) { color: #a5a6ad; font-size: 0.75rem; line-height: 1.6; margin-bottom: 26px; }
-.admin-dialog-close { align-items: center; background: transparent; border: 1px solid var(--admin-line); border-radius: 50%; color: inherit; display: flex; height: 42px; justify-content: center; position: absolute; right: 18px; top: 18px; width: 42px; }
+.admin-dialog-close { align-items: center; background: transparent; border: 1px solid var(--admin-line); border-radius: 50%; color: inherit; display: flex; height: 46px; justify-content: center; position: absolute; right: 18px; top: max(18px, env(safe-area-inset-top)); width: 46px; }
+
+@media (max-width: 899px) {
+  .admin-app input,
+  .admin-app textarea,
+  .admin-app select,
+  .admin-access-screen input {
+    font-size: 1rem;
+  }
+
+  .admin-field--title textarea {
+    font-size: clamp(2rem, 9vw, 4rem);
+  }
+
+  .admin-field .admin-body-editor {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .admin-object-type,
+  .admin-object-row > div > p,
+  .admin-object-row > div > span,
+  .admin-object-row > div > small,
+  .admin-selected-item > span,
+  .admin-selected-item p small,
+  .admin-media-grid article > span,
+  .admin-health-row {
+    font-size: 0.6875rem;
+    line-height: 1.45;
+  }
+
+  .admin-selected-item p strong {
+    font-size: 0.78rem;
+  }
+}
 
 @media (min-width: 560px) {
   .admin-overview,
@@ -1103,7 +1159,7 @@
   .admin-library-view,
   .admin-media-view,
   .admin-settings-view { padding: 72px 44px 110px; }
-  .admin-title-row { align-items: end; grid-template-columns: 1fr minmax(260px, 0.38fr); min-height: 300px; }
+  .admin-title-row { min-height: 300px; }
   .admin-title-row h1,
   .admin-editor-head h1 { font-size: clamp(5rem, 8vw, 8.5rem); }
   .admin-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 90px; }
@@ -1111,8 +1167,7 @@
   .admin-stat { min-height: 390px; }
   .admin-stat > strong { font-size: clamp(7rem, 12vw, 10rem); }
   .admin-text-button { display: inline-flex; }
-  .admin-editor-head { align-items: end; grid-template-columns: minmax(0, 1fr) auto; }
-  .admin-editor-actions { grid-template-columns: 150px auto auto; min-width: 520px; }
+  .admin-editor-actions { grid-template-columns: 150px auto auto; max-width: 660px; width: 100%; }
   .admin-composer-grid { align-items: start; grid-template-columns: minmax(0, 1fr) minmax(330px, 420px); }
   .admin-preview-panel { position: sticky; top: 30px; }
   .admin-editor-toolbar > span { display: flex; }
@@ -1120,6 +1175,12 @@
   .admin-object-row > div > small { display: block; }
   .admin-media-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .admin-settings-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1440px) {
+  .admin-title-row { align-items: end; grid-template-columns: minmax(0, 1fr) minmax(260px, 0.38fr); }
+  .admin-editor-head { align-items: end; grid-template-columns: minmax(0, 1fr) auto; }
+  .admin-editor-actions { min-width: 520px; }
 }
 
 @media (min-width: 1280px) {

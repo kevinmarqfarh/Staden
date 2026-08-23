@@ -31,6 +31,8 @@ import {
   type CulturalEvent,
 } from "@/data/cultural-events";
 import { restaurants } from "@/data/restaurants";
+import { entertainmentExperiences } from "@/data/entertainment";
+import { EntertainmentExplorer } from "@/components/entertainment-explorer";
 import { FoodExplorer } from "@/components/food-explorer";
 import { SavedPocket } from "@/components/saved-pocket";
 import {
@@ -142,12 +144,14 @@ const cultureDashboardEvents = [
 ].slice(0, 5);
 
 const homeFeaturedRestaurant = restaurants[0];
-const entertainmentEventCount = discoveryEvents.filter(
-  (event) =>
-    event.category === "Musik" ||
-    event.category === "Scenkonst" ||
-    event.category === "Festival",
-).length;
+const entertainmentEventCount =
+  entertainmentExperiences.length +
+  discoveryEvents.filter(
+    (event) =>
+      event.category === "Musik" ||
+      event.category === "Scenkonst" ||
+      event.category === "Festival",
+  ).length;
 
 function viewFromHash(hash: string): AppView {
   if (
@@ -448,6 +452,8 @@ export function StadenApp() {
     useState<CategoryFilter>("Alla");
   const [cultureCatalogOpen, setCultureCatalogOpen] = useState(false);
   const [showAllCultureResults, setShowAllCultureResults] = useState(false);
+  const [cultureQuery, setCultureQuery] = useState("");
+  const [cultureScope, setCultureScope] = useState<"alla" | "kommande" | "permanenta">("alla");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("idle");
@@ -562,12 +568,33 @@ export function StadenApp() {
   }, [activeView]);
 
   const filteredCultureEvents = useMemo(
-    () =>
-      discoveryEvents.filter(
-        (event) =>
-          activeCategory === "Alla" || event.category === activeCategory,
-      ),
-    [activeCategory],
+    () => {
+      const query = cultureQuery.trim().toLocaleLowerCase("sv-SE");
+
+      return discoveryEvents.filter((event) => {
+        const isPermanent = event.dateLabel === "Permanent";
+        const matchesScope =
+          cultureScope === "alla" ||
+          (cultureScope === "permanenta" && isPermanent) ||
+          (cultureScope === "kommande" && !isPermanent);
+        const haystack = [
+          event.title,
+          event.venue,
+          event.area,
+          event.description,
+          event.category,
+        ]
+          .join(" ")
+          .toLocaleLowerCase("sv-SE");
+
+        return (
+          matchesScope &&
+          (activeCategory === "Alla" || event.category === activeCategory) &&
+          (!query || haystack.includes(query))
+        );
+      });
+    },
+    [activeCategory, cultureQuery, cultureScope],
   );
 
   const visibleCultureEvents = showAllCultureResults
@@ -1102,8 +1129,43 @@ export function StadenApp() {
               })}
             </div>
 
+            <div className="culture-catalog__tools">
+              <label>
+                <span>Sök i kulturkatalogen</span>
+                <input
+                  type="search"
+                  value={cultureQuery}
+                  onChange={(event) => {
+                    setCultureQuery(event.target.value);
+                    setShowAllCultureResults(false);
+                  }}
+                  placeholder="Sök plats, uttryck eller område"
+                />
+              </label>
+              <div className="culture-scope" aria-label="Visa efter tid">
+                {([
+                  ["alla", "Allt"],
+                  ["kommande", "Datum"],
+                  ["permanenta", "Alltid"],
+                ] as const).map(([scope, label]) => (
+                  <button
+                    type="button"
+                    className={cultureScope === scope ? "is-active" : ""}
+                    aria-pressed={cultureScope === scope}
+                    onClick={() => {
+                      setCultureScope(scope);
+                      setShowAllCultureResults(false);
+                    }}
+                    key={scope}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <p className="results-count" aria-live="polite">
-              Visar {visibleCultureEvents.length} av {visibleCount} evenemang
+              Visar {visibleCultureEvents.length} av {visibleCount} träffar
             </p>
 
             <div className="event-grid">
@@ -1143,57 +1205,73 @@ export function StadenApp() {
       {activeView === "noje" ? (
       <section className="entertainment-section content-view" id="noje" data-view="noje">
         <div className="section-heading">
-          <p className="kicker">NÖJE · IKVÄLL & SNART</p>
-          <h2>Staden efter fem.</h2>
+          <p className="kicker">NÖJE · HELA GÖTEBORG</p>
+          <h2>Hela staden är en utflykt.</h2>
           <p>
-            Konserter, scen och festivaler för kvällen som inte ska sluta vid
-            middagen. Kort urval, tydlig tid och direkt till källan.
+            Skärgård, lekplatser, sevärdheter, natur, spel och sena scener.
+            Hitta något för en egen dag, en dejt, hela familjen eller ett
+            lugnare tempo – oavsett om Göteborg är hemma eller helt nytt.
           </p>
         </div>
 
-        <div className="entertainment-pulse">
-          <div>
-            <span>NÄSTA</span>
-            <strong>{entertainmentEvents[0]?.time ?? "IKVÄLL"}</strong>
+        <EntertainmentExplorer />
+
+        <section className="entertainment-tonight" aria-labelledby="entertainment-tonight-title">
+          <div className="entertainment-subheading entertainment-subheading--tonight">
+            <div>
+              <p className="kicker">IKVÄLL & SNART</p>
+              <h3 id="entertainment-tonight-title">När dagen inte ska sluta än.</h3>
+            </div>
+            <p>
+              Ett kort, aktuellt urval av konserter, scen och festivaler med
+              tydlig tid och direkt till arrangörens källa.
+            </p>
           </div>
-          <p>
-            {entertainmentEvents[0]?.title}
-            <span>{entertainmentEvents[0]?.venue}</span>
-          </p>
-          <button type="button" onClick={showMusicInCulture}>
-            Alla musikval
-            <ArrowUpRight aria-hidden="true" size={17} weight="bold" />
-          </button>
-        </div>
 
-        <div className="entertainment-rail">
-          {entertainmentEvents.map((event, index) => (
-            <article className="entertainment-pick" key={event.id}>
-              <div className="entertainment-pick__number">
-                {String(index + 1).padStart(2, "0")}
-              </div>
+          <div className="entertainment-pulse">
               <div>
-                <p>{event.category}</p>
-                <h3>{event.title}</h3>
-                <span>
-                  {event.dateLabel}
-                  {event.time ? ` · ${event.time}` : ""}
-                </span>
-                <small>
-                  {event.venue} · {event.area}
-                </small>
+                <span>NÄSTA</span>
+                <strong>{entertainmentEvents[0]?.time ?? "IKVÄLL"}</strong>
               </div>
-              <div className="entertainment-pick__actions">
-                <SaveButton
-                  event={event}
-                  isSaved={savedEventIds.includes(event.id)}
-                  onToggle={toggleSavedEvent}
-                />
-                <SourceLink event={event} />
-              </div>
-            </article>
-          ))}
-        </div>
+              <p>
+                {entertainmentEvents[0]?.title}
+                <span>{entertainmentEvents[0]?.venue}</span>
+              </p>
+              <button type="button" onClick={showMusicInCulture}>
+                Alla musikval
+                <ArrowUpRight aria-hidden="true" size={17} weight="bold" />
+              </button>
+          </div>
+
+          <div className="entertainment-rail">
+            {entertainmentEvents.map((event, index) => (
+              <article className="entertainment-pick" key={event.id}>
+                <div className="entertainment-pick__number">
+                  {String(index + 1).padStart(2, "0")}
+                </div>
+                <div>
+                  <p>{event.category}</p>
+                  <h3>{event.title}</h3>
+                  <span>
+                    {event.dateLabel}
+                    {event.time ? ` · ${event.time}` : ""}
+                  </span>
+                  <small>
+                    {event.venue} · {event.area}
+                  </small>
+                </div>
+                <div className="entertainment-pick__actions">
+                  <SaveButton
+                    event={event}
+                    isSaved={savedEventIds.includes(event.id)}
+                    onToggle={toggleSavedEvent}
+                  />
+                  <SourceLink event={event} />
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       </section>
       ) : null}
 
