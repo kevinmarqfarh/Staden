@@ -212,7 +212,9 @@ jobs:
       - name: Scan event range or full history according to trigger
         uses: trufflesecurity/trufflehog@bcfcf73aaf4759d4dadc2783177c245a02792318 # v3.97.0
         with:
-          version: v3.97.0
+          # The action concatenates image + ':' + version. Docker accepts tag@digest,
+          # which pins both the scanner release and its multi-platform OCI manifest.
+          version: 3.97.0@sha256:ff4c95e9df7d645daf2140e3ca1039031c63106268d5fbb25feb43ceca1bcc33
 
   sast:
     name: SAST / CodeQL (${{ matrix.language }})

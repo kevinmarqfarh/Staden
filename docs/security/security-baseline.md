@@ -68,7 +68,7 @@ Den nuvarande revisionen är ett konfigurationsskelett, inte en skanningsbar app
 
 **Allvarlighetsgrad:** låg i repot, medel kvarvarande plattformsrisk.
 
-Gitleaks v8.30.1 skannade hela den lokala Git-historiken och den aktuella arbetskatalogen utan fynd. CI kör TruffleHog mot commitintervallet på push/PR och hela historiken vid veckoschema/manuell körning. `.mcp.json` innehåller endast en project-scoped URL och är nu begränsad till read-only/funktioner; en Supabase project ref är en identifierare, inte en service-role-hemlighet. GitHub Secret Scanning, push protection och privata sårbarhetsrapporter måste fortfarande aktiveras/verifieras i repoinställningarna.
+Gitleaks v8.30.1 skannade hela den lokala Git-historiken och den aktuella arbetskatalogen utan fynd. CI kör en OCI-digestpinnad TruffleHog 3.97.0 mot commitintervallet på push/PR och hela historiken vid veckoschema/manuell körning. `.mcp.json` innehåller endast en project-scoped URL och är nu begränsad till read-only/funktioner; en Supabase project ref är en identifierare, inte en service-role-hemlighet. GitHub Secret Scanning, push protection och privata sårbarhetsrapporter måste fortfarande aktiveras/verifieras i repoinställningarna.
 
 ### SB-004 — Ingen verifierbar återställningskedja
 

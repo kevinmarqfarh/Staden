@@ -18,7 +18,7 @@ Basrevisionen innehöll fyra spårade filer och två commits. Tabellen skiljer u
 | Basrevision `bef8cd8` | `README.md`, `.mcp.json`, `supabase/config.toml`, `supabase/.gitignore`; ingen app, migration, CI, dependencyfil, container eller IaC | SAST, SCA, container-, DAST- och faktisk IaC-skanning kunde inte ge meningsfull täckning. |
 | Härdningsdelta: `.mcp.json` | Project-scoped Supabase MCP ändrad till `read_only=true` med begränsad funktionslista | Reducerar mutationsrisk; autentisering, läsrättighet och faktisk serverbehörighet ligger utanför repot. Project ref är inte en hemlighet. |
 | Härdningsdelta: `supabase/config.toml` | Auth-mallen ändrad till minst 12 tecken, komplexitetskrav, bekräftad e-post, säkert lösenordsbyte och OTP 600 sekunder | Lokal kontroll, inte bevis för hosted-konfiguration. |
-| Härdningsdelta: `README.md`, `.gitignore`, `.github/`, `SECURITY.md`, `docs/security/` | Navigerbar säkerhetsöversikt, rotpolicy för env/rapportfiler, SHA-pinnade villkorade scannergrindar, CODEOWNERS, säkerhetspolicy, hotmodell och DR-plan | Kritiska process- och repo-kontroller införda. Saknade scanner-targets förblir ej tillämpliga och plattformsinställningar förblir overifierade. |
+| Härdningsdelta: `README.md`, `.gitignore`, `.github/`, `SECURITY.md`, `docs/security/` | Navigerbar säkerhetsöversikt, rotpolicy för env/rapportfiler, SHA-pinnade villkorade scannergrindar, OCI-digestpinnade ZAP/TruffleHog-images, CODEOWNERS, säkerhetspolicy, hotmodell och DR-plan | Kritiska process- och repo-kontroller införda. Saknade scanner-targets förblir ej tillämpliga och plattformsinställningar förblir overifierade. |
 
 ## Utförda läsbaserade kontroller
 
