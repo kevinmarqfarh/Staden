@@ -4,7 +4,7 @@
 
 **Insamlingsdatum:** 2026-08-23
 
-**Basrevision:** `bef8cd8` på `main`; säkerhetshärdningen i detta ändringspaket bedöms som ett separat arbetskatalogdelta
+**Basrevision:** `bef8cd8` på `main`; säkerhetshärdningen infördes i `7d2baba` och scannerfixen verifierades i `8858b4f`
 
 **Syfte:** reproducerbar evidens för den första säkerhetsbaslinjen, inte ett produktionsgodkännande.
 
@@ -27,7 +27,8 @@ Basrevisionen innehöll fyra spårade filer och två commits. Tabellen skiljer u
 | Inventering | Git-basrevision samt aktuellt säkerhetsdelta | Bas: 4 filer, 2 commits; delta enligt ovan | Leverantörskonfiguration utanför Git ingår inte. |
 | Hemlighetsdetektion | Gitleaks v8.30.1 `git` mot hela historiken och `dir` mot aktuellt worktree, verifierad release-checksumma, redigerad JSON-output | 0 läckor i historik och 0 i arbetskatalog | Täcker inte issues, Actions-loggar eller leverantörers secrets stores. GitHub Secret Scanning/push protection är ej verifierad. |
 | Vulnerability/config/secret triage | Trivy v0.74.0 `fs` med officiell vulnerability DB och `HIGH,CRITICAL` | 0 resultat eftersom 0 språkmanifest och 0 tillämpliga configmål hittades | Detta är **NOT APPLICABLE**, inte en godkänd vulnerability/IaC-scan. Ingen image eller körbar target fanns. |
-| GitHub Actions SAST | Zizmor v1.29.0 offline med strikt `auditor`-persona mot `.github/workflows/` | Inga rapporterade fynd | Online-audits och hosted CI-körning är inte verifierade; actions och ZAP-image har dessutom granskats för SHA/digest-pinning. |
+| GitHub Actions SAST | Zizmor v1.29.0 offline med strikt `auditor`-persona mot `.github/workflows/` | Inga rapporterade fynd lokalt; hosted Zizmor-jobb passerade | Online-audits är avstängda; actions och ZAP/TruffleHog-images har dessutom granskats för SHA/digest-pinning. |
+| Hosted Security CI | GitHub Actions [run 32608825098](https://github.com/kevinmarqfarh/Staden/actions/runs/32608825098) på commit `8858b4f` | **Success:** applicability, TruffleHog, Zizmor och strict required gate passerade | CodeQL, SCA/OSV/Trivy, IaC och container var korrekt `skipped` eftersom tillämpliga targets saknas; det är inte scan-pass. |
 | Supabase-konfigurationsgranskning | `supabase/config.toml` | `api.max_rows = 1000`, Auth-rate limits, refresh-tokenrotation och härdade lokala email/password-värden finns. Nätverksrestriktioner är lokalt avstängda. | Standardfilen kan avvika helt från det hostade projektet. Dessa värden ska inte rapporteras som produktionskontroller utan dashboard/API-verifiering. |
 
 ## Ej verifierat
