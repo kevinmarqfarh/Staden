@@ -216,6 +216,35 @@ jobs:
           # which pins both the scanner release and its multi-platform OCI manifest.
           version: 3.97.0@sha256:ff4c95e9df7d645daf2140e3ca1039031c63106268d5fbb25feb43ceca1bcc33
 
+  app-quality:
+    name: Application / lint and production build
+    needs: preflight
+    if: needs.preflight.outputs.has-manifest == 'true' && needs.preflight.outputs.has-lockfile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Lint application source
+        run: npm run lint
+
+      - name: Build production application
+        run: npm run build
+
   sast:
     name: SAST / CodeQL (${{ matrix.language }})
     needs: preflight
@@ -398,6 +427,7 @@ jobs:
     needs:
       - preflight
       - secrets
+      - app-quality
       - sast
       - sca
       - dependency-vulnerabilities
@@ -410,6 +440,7 @@ jobs:
     env:
       PREFLIGHT_RESULT: ${{ needs.preflight.result }}
       SECRETS_RESULT: ${{ needs.secrets.result }}
+      APP_QUALITY_RESULT: ${{ needs.app-quality.result }}
       SAST_RESULT: ${{ needs.sast.result }}
       SCA_RESULT: ${{ needs.sca.result }}
       OSV_RESULT: ${{ needs.dependency-vulnerabilities.result }}
@@ -435,6 +466,7 @@ jobs:
             echo "| --- | --- |"
             echo "| Applicability | $PREFLIGHT_RESULT |"
             echo "| Secret detection | $SECRETS_RESULT |"
+            echo "| Application lint/build | $APP_QUALITY_RESULT |"
             echo "| SAST | $SAST_RESULT |"
             echo "| SCA | $SCA_RESULT |"
             echo "| OSV dependency vulnerabilities | $OSV_RESULT |"
@@ -486,6 +518,7 @@ jobs:
           fi
 
           assert_result "SAST" "$SAST_RESULT" "$expected_sast"
+          assert_result "Application lint/build" "$APP_QUALITY_RESULT" "$expected_dependencies"
           assert_result "SCA" "$SCA_RESULT" "$expected_sca"
           assert_result "OSV dependency vulnerabilities" "$OSV_RESULT" "$expected_dependencies"
           assert_result "Trivy filesystem vulnerabilities" "$TRIVY_FS_RESULT" "$expected_dependencies"

@@ -1,6 +1,6 @@
 # STADEN AppSec-baslinje
 
-**Status:** PROVISIONAL — inga applikationskällor eller produktionsmiljöer kan verifieras i repot
+**Status:** PROVISIONAL — en minimal statisk applikationsyta finns; hostad miljö och framtida dataflöden är ännu inte verifierade
 
 **Datum:** 2026-08-23
 
@@ -8,7 +8,7 @@
 
 ## Sammanfattning
 
-Den nuvarande revisionen är ett konfigurationsskelett, inte en skanningsbar applikation. Det vore därför missvisande att kalla SAST, SCA, container-, DAST- eller penetrationstestning "godkänd". Baslinjen nedan gör kontrollerna till leveransgrindar som aktiveras när respektive artefakt eller miljö tillkommer. De viktigaste omedelbara riskreduceringarna är deny-by-default i Supabase, skydd av leverantörskonton/hemligheter, reproducerbara migrationer och bevisad backup/restore.
+Den nuvarande revisionen innehåller ett minimalt, statiskt Next.js-skal med låsta beroenden och en produktionsbyggd localhost-harness för dynamisk testning. Lint, produktionsbuild, lokal webbläsar-QA, dependency scan och secret scan kan därför ge meningsfull evidens för denna begränsade yta. Det vore fortfarande missvisande att kalla DAST, penetrationstestning, Supabase-säkerhet eller produktionsmiljön "godkänd" innan respektive test har körts mot rätt revision och hostad konfiguration har verifierats. De viktigaste omedelbara riskreduceringarna inför datafunktioner är deny-by-default i Supabase, skydd av leverantörskonton/hemligheter, reproducerbara migrationer och bevisad backup/restore.
 
 ## Kritiska åtgärder
 
@@ -23,7 +23,7 @@ Den nuvarande revisionen är ett konfigurationsskelett, inte en skanningsbar app
 
 ### P1 — blockerar publik preview
 
-- Lägg till låsta beroenden, SBOM och SCA; kritiska/höga exploaterbara fynd blockerar merge.
+- Generera en SBOM per release och behåll SCA på de nu låsta beroendena; kritiska/höga exploaterbara fynd blockerar merge.
 - Kör språkmedveten SAST och säkerhetslint på varje PR.
 - Kör IaC/config scanning på Supabase-migrationer och all framtida Terraform, Docker-, Vercel- eller GitHub Actions-konfiguration.
 - Lägg till authZ-, inputvaliderings-, rate-limit- och negativa RLS-tester.
@@ -39,13 +39,13 @@ Den nuvarande revisionen är ett konfigurationsskelett, inte en skanningsbar app
 
 | Område | Kontroll och rekommenderad implementation | Trigger/frekvens | Merge/release-policy | Operativ ägare | Status/evidens 2026-08-23 |
 |---|---|---|---|---|---|
-| Static Application Security Testing (SAST) | CodeQL med `security-extended` för stödda språk; komplettera med ramverksspecifika regler för Supabase-klientanvändning, SSRF, injection och osäker rendering när stacken finns | Varje PR, `main`, veckovis full scan | Mål: blockera nya high/critical; kräver GitHub-ruleset för code-scanning-resultat | AppSec + kodägare | Workflow infört men ej tillämpligt ännu: ingen stödd källkod. CodeQL är report-only tills GitHub-enforcement verifierats |
-| Software Composition Analysis (SCA) | Dependency Review, OSV-Scanner, Trivy och Dependabot; lägg till CycloneDX/SPDX-SBOM per release när appmanifest finns | Varje PR som ändrar manifest/lockfil; veckovis full scan | Blockera känd exploaterbar critical/high; tidsatt undantag kräver riskägare | Tech lead | Grinden är införd men ej tillämplig: inga manifest/lockfiler |
+| Static Application Security Testing (SAST) | CodeQL med `security-extended` för stödda språk; obligatorisk lint/produktionsbuild; komplettera med ramverksspecifika regler för Supabase-klientanvändning, SSRF, injection och osäker rendering när stacken finns | Varje PR, `main`, veckovis full scan | Mål: blockera nya high/critical; kräver GitHub-ruleset för code-scanning-resultat | AppSec + kodägare | Next.js/TypeScript-källkod finns. ESLint och produktionsbuild passerar lokalt och ingår nu i required gate; CodeQL för denna revision inväntar hosted CI och är report-only tills GitHub-enforcement verifierats |
+| Software Composition Analysis (SCA) | Dependency Review, OSV-Scanner, Trivy och Dependabot; lägg till CycloneDX/SPDX-SBOM per release | Varje PR som ändrar manifest/lockfil; veckovis full scan | Blockera känd exploaterbar critical/high; tidsatt undantag kräver riskägare | Tech lead | Exakt låst `package-lock.json` finns. `npm audit` och lokal Trivy v0.74.0 rapporterar 0 sårbarheter; hosted OSV/Trivy för revisionen inväntar CI. SBOM återstår |
 | IaC/config scanning | Trivy config för Terraform/Kubernetes/Helm/Compose/Serverless/Pulumi/CloudFormation, Zizmor för GitHub Actions; komplettera med policytester för Supabase grants/RLS | Varje PR; månatlig drift-driftjämförelse | Blockera publik datalagring, wildcard-admin, okrypterad extern transport och avsaknad av RLS på exponerade tabeller | Platform | Zizmor-grind införd och lokalt utan fynd; villkorad Trivy-grind finns men ingen deploybar IaC. Lokal TOML granskad, hosted drift ej verifierad |
 | Container scanning | Minimal, pinnad base image; Trivy image + SBOM + signering/provenance; kör som icke-root och read-only där möjligt | Build och före promotion; nattlig rescan | Ingen critical/high i körbar lagerkedja utan godkänt undantag | Platform | Villkorad build- och Trivy-grind införd; ej tillämplig: ingen Dockerfile/image |
-| Vulnerability scanning | Konsolidera SAST/SCA/IaC/containerfynd; auktoriserad Nuclei/leverantörsscanning endast mot ägd preview/prod-scope; inventera externa endpoints | Veckovis preview, månatlig produktion, efter större infraändring | Critical inom 24 h, high inom 7 dagar eller dokumenterad kompensation | AppSec | Ingen target eller asset inventory i repo |
-| Dynamic Application Security Testing (DAST) | OWASP ZAP passive baseline och försiktig Nuclei-baslinje mot repoägd localhost-harness; autentiserad aktiv scan först i separat, uttryckligen auktoriserad miljö | Manuellt per releasekandidat; aktiv scan enligt godkänd scope | Blockera verifierad high/critical; ett manuellt scan-anrop utan harness ska misslyckas som “not executed” | AppSec + QA | Manuell localhost-begränsad workflow införd; ingen körbar app/harness finns ännu |
-| Secret detection | GitHub Secret Scanning/push protection + TruffleHog för commitintervall och veckovis/manuell full historik; egna mönster för leverantörsnycklar | Varje push/PR och veckovis historik | Varje verifierad hemlighet blockerar; återkalla/rotera omedelbart | Repo admin | Gitleaks v8.30.1 körd lokalt över historik och arbetskatalog: 0 träffar; TruffleHog-grind införd. GitHub push protection ej verifierad |
+| Vulnerability scanning | Konsolidera SAST/SCA/IaC/containerfynd; auktoriserad Nuclei/leverantörsscanning endast mot ägd preview/prod-scope; inventera externa endpoints | Veckovis preview, månatlig produktion, efter större infraändring | Critical inom 24 h, high inom 7 dagar eller dokumenterad kompensation | AppSec | Lokal dependency scan gav 0 high/critical; hostad endpoint- och assetinventering återstår |
+| Dynamic Application Security Testing (DAST) | OWASP ZAP passive baseline och försiktig Nuclei-baslinje mot en produktionsbyggd, repoägd localhost-harness; autentiserad aktiv scan först i separat, uttryckligen auktoriserad miljö | Manuellt per releasekandidat; aktiv scan enligt godkänd scope | Blockera verifierad high/critical; ett manuellt scan-anrop utan harness ska misslyckas som “not executed” | AppSec + QA | Körbar, låst localhost-harness finns; DAST-workflow bygger med `next build` och skannar `next start`. Den har inte körts mot denna revision och bevisar inte Vercel CDN/WAF/TLS eller Supabase |
+| Secret detection | GitHub Secret Scanning/push protection + TruffleHog för commitintervall och veckovis/manuell full historik; egna mönster för leverantörsnycklar | Varje push/PR och veckovis historik | Varje verifierad hemlighet blockerar; återkalla/rotera omedelbart | Repo admin | Gitleaks v8.30.1 körd lokalt över historik och aktuell apparbetskatalog: 0 träffar; genererade `.next`/`node_modules` undantas uttryckligen. TruffleHog-grind införd. GitHub push protection ej verifierad |
 | Penetration scanning/testing | Oberoende manuell testning enligt signerad Rules of Engagement: authN/Z, RLS, BOLA/IDOR, SSRF i ingestion, rate limiting, affärslogik, admin och leverantörsintegrationer | Före GA, årligen, efter stor auth/data-/ingestionändring | Critical/high måste retestas stängt före GA; medel får tidsatt åtgärdsplan | Produktägare + AppSec | Ej möjlig ännu; scope och target saknas |
 | Threat model | Repo-grounded abuse-path-modell, uppdaterad tillsammans med dataflöden | Vid arkitekturändring och minst kvartalsvis före GA | Öppna critical/high måste ha ägare och plan | AppSec/Arkitekt | Provisorisk modell skapad; användarkontext saknas |
 | Disaster recovery | PITR/daglig dump enligt RPO, separat objektbackup, repo mirror, leverantörskonfigexport och isolerad restoreövning | Backup automatiskt; verifiering dagligen; restore kvartalsvis | Missad backup eller misslyckad restore är release-/incidentblockerare | Incidentledare/Platform | Provisorisk plan skapad; ingen restoreevidens |
@@ -75,6 +75,12 @@ Gitleaks v8.30.1 skannade hela den lokala Git-historiken och den aktuella arbets
 **Allvarlighetsgrad:** hög som leveransrisk.
 
 Repot saknade före denna ändring backup/restore-runbook, migrationshistorik och restoreprotokoll. Planen i `disaster-recovery-plan.md` reducerar processgapet men bevisar inte att backups finns eller går att återställa.
+
+### SB-005 — Webbskalet är verifierat lokalt men deploymenten är ännu inte evidensbelagd
+
+**Allvarlighetsgrad:** låg för den nuvarande statiska ytan, medel som leveransrisk.
+
+`src/app/`, `package.json`, `package-lock.json` och `next.config.ts` ger nu en reproducerbar Next.js-yta. Lokal produktionsbuild, mobil/desktop-QA och kontroll av säkerhetsheaders passerar. Detta bevisar inte att Vercel-projektets root directory, runtime, domän, miljövariabler eller senaste deployment är korrekta; de ska verifieras efter push utan att dokumentationen i sig räknas som driftbevis.
 
 ## Undantag och triage
 

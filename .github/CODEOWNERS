@@ -4,3 +4,6 @@
 /supabase/ @kevinmarqfarh
 /SECURITY.md @kevinmarqfarh
 /docs/security/ @kevinmarqfarh
+/package.json @kevinmarqfarh
+/package-lock.json @kevinmarqfarh
+/next.config.ts @kevinmarqfarh

@@ -2,26 +2,26 @@
 
 **Status:** PROVISIONAL, ej kontextvaliderad
 
-**Scopeankare:** Git-basrevision `bef8cd8` (`main`) plus säkerhetshärdningen som dokumenteras i detta ändringspaket, analyserad 2026-08-23
+**Scopeankare:** Git-basrevision `bef8cd8` (`main`), säkerhetshärdning till och med `861a561` samt det aktuella Next.js-applikationsdeltat, analyserat 2026-08-23
 
 **Metod:** repo-grounded abuse paths; antagna framtida komponenter markeras uttryckligen.
 
 ## Executive summary
 
-Repot innehåller ännu ingen körbar app, databasmodell eller deploymentdefinition, så det finns inga evidensbaserade kodsårbarheter att rangordna. De högsta villkorade riskerna inför en mobilförst, internetexponerad STADEN-tjänst är felaktig Supabase-auktorisering/RLS, läckta privilegierade nycklar, förgiftning eller SSRF i framtida datainhämtning samt dataförlust utan verifierad restore. Nuvarande säkerhetsarbete ska behandlas som leveransgrindar, inte som ett godkännande.
+Repot innehåller nu ett körbart, statiskt Next.js 16.3.2-skal men ingen databasmodell, Auth-, API- eller ingestionkod. Den evidensbaserade runtime-ytan är därför liten: en presentationssida, statiska resurser och bygg-/dependencykedjan. Grundläggande responsheaders, lokal produktionsbuild och dependency/secret scans finns, men hostad deployment har ännu inte verifierats. De högsta riskerna är fortfarande villkorade inför den databurna produkten: felaktig Supabase-auktorisering/RLS, läckta privilegierade nycklar, förgiftning eller SSRF i framtida datainhämtning samt dataförlust utan verifierad restore. Nuvarande säkerhetsarbete är en leveransbaslinje, inte ett produktionsgodkännande.
 
 ## Scope and assumptions
 
-**In scope:** de fyra filerna i basrevision `bef8cd8` samt aktuellt säkerhetsdelta (`README.md`, `.gitignore`, `.github/`, `SECURITY.md`, `docs/security/` och härdningar i `.mcp.json`/`supabase/config.toml`); Git som kritiskt utvecklingsflöde; villkorade risker direkt motiverade av den planerade stadsappen och Supabase-integrationen.
+**In scope:** basrevisionen, säkerhetsdeltat (`README.md`, `.gitignore`, `.github/`, `SECURITY.md`, `docs/security/` och härdningar i `.mcp.json`/`supabase/config.toml`) samt `package*.json`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs` och webbskalet i `src/app/`; Git/Vercel-byggkedjan som kritiskt utvecklingsflöde; villkorade risker direkt motiverade av den planerade stadsappen och Supabase-integrationen.
 
-**Out of scope:** leverantörernas interna plattformar, den separata äldre Viyo-koden, lokala ospårade filer, social engineering/fysisk säkerhet, destruktiv testning och varje endpoint eller produktionstjänst som inte finns dokumenterad i repot.
+**Out of scope:** genererade `.next/`/`node_modules/`, leverantörernas interna plattformar, den separata äldre Viyo-koden, social engineering/fysisk säkerhet, destruktiv testning och varje endpoint eller produktionstjänst som inte finns dokumenterad i repot.
 
 Väsentliga antaganden som ännu inte har validerats:
 
 - STADEN blir en publik webb-/mobilklient med konton, sparade listor och eventuellt platsbaserad personalisering.
 - Supabase blir system of record för Postgres/Auth/Storage och nås från en publik klient via anon-identitet, medan service role endast används i betrodda serverjobb.
 - Automatiserade jobb hämtar tredjepartsdata och media från kommunala, kulturella och kommersiella källor 1–2 gånger per dag.
-- Vercel kan användas för webb/serverfunktioner, men ingen repo-evidens bekräftar detta.
+- Vercel är vald för webbdeployment, men projektinställningar, miljöer, domän och hostad revision är ännu inte verifierade.
 - Personuppgifter kan omfatta konto, sparade listor och plats-/livsstilsinferenser; exakt dataklassning och retention är okänd.
 
 Open questions that materially change ranking:
@@ -36,17 +36,20 @@ Open questions that materially change ranking:
 
 - **Supabase local configuration:** `supabase/config.toml` aktiverar lokalt Data API, Auth och Edge Runtime samt exponerar `public` och `graphql_public`. Detta är utvecklingskonfiguration, inte bevis för hosted state.
 - **Supabase MCP developer integration:** `.mcp.json` pekar på ett project-scoped Supabase MCP-endpoint med `read_only=true` och begränsad funktionslista. Autentisering, tokenlagring och faktisk serverbehörighet finns inte i repot.
-- **Git repository:** bär i nuläget konfiguration, säkerhetsworkflows och säkerhetsdokumentation. Ingen appkälla, migration, funktion, dependency manifest eller containerdefinition finns.
-- **Future client/ingestion/deployment:** endast antagna komponenter baserade på produktbriefen; inga repoankare finns ännu och de får inte betraktas som implementerade kontroller eller entrypoints.
+- **Next.js presentation shell:** `src/app/` innehåller en server-renderad/statisk startsida, metadata, CSS och ikon. `package.json`/`package-lock.json` låser Next.js 16.3.2, React 19.2.8 och byggverktygen. Det finns inga Client Components, Route Handlers, Server Actions, formulär, Supabase-importer, `fetch`-anrop eller användarkontrollerad rendering.
+- **Web response configuration:** `next.config.ts` stänger versionsheadern och sätter `nosniff`, frame denial, referrer policy och en restriktiv Permissions Policy för hela appen.
+- **Git repository:** bär applikationskälla, låsta beroenden, konfiguration, säkerhetsworkflows och säkerhetsdokumentation. Migrationer, serverfunktioner och containerdefinition saknas.
+- **Future data client/ingestion:** antagna komponenter baserade på produktbriefen; inga repoankare finns ännu och de får inte betraktas som implementerade kontroller eller entrypoints.
 
 ### Data flows and trust boundaries
 
-- **Developer workstation → Git repository:** konfiguration och framtida kod via Git/HTTPS eller SSH; branchregler, signerade commits, MFA och CI-kontroller är okända. Validering är code review om den införs; ingen sådan kontroll är evidensbelagd.
+- **Internet user → Next.js presentation shell:** en statisk, icke-autentiserad sida och dess resurser över HTTPS när den deployas. Nuvarande interaktioner är lokala ankarlänkar och inerta knappar; ingen användardata skickas eller lagras. TLS/CDN/WAF och den hostade revisionen ligger utanför repoevidensen.
+- **Developer workstation → Git repository → Vercel build:** källkod och låsta beroenden via Git; `next build` är den definierade byggvägen. Install/build passerar npm-registret/transitiva beroenden och `next/font/google` är en extern byggtidsgräns. Branchregler, deploy-identitet, miljöskydd, artifact provenance och faktisk Vercel-konfiguration är okända.
 - **Developer MCP client → Supabase MCP endpoint:** project ref och OAuth/sessionuppgifter över HTTPS; `.mcp.json` visar endpoint men inte credential storage, scope, rate limiting eller server-side authorization. Project ref är identifierare, inte hemlighet.
 - **Supabase CLI/local services → local database/Auth/API:** TOML-konfiguration och lokala HTTP/Postgres-portar; `api.max_rows = 1000`, Auth-rate limits och refresh-tokenrotation finns i `supabase/config.toml`. Lokal API TLS och DB network restrictions är avstängda; detta är rimliga localhost-defaults men olämpliga som produktionsbevis.
-- **Future internet client → future app/Supabase:** antagna konton, sökningar, listor och positionsdata över HTTPS. AuthN, RLS, schema validation, origin controls och abuse limits är okända eftersom app och migrationer saknas.
+- **Future data-enabled client → future app/Supabase:** antagna konton, sökningar, listor och positionsdata över HTTPS. AuthN, RLS, schema validation, origin controls och abuse limits är okända eftersom dessa flöden och migrationer saknas.
 - **Future ingestion worker → third-party sources → Supabase:** antagna event-, plats-, text-, URL- och mediedata över HTTPS. Allowlists, URL-normalisering, filgränser, licensverifiering och idempotens är okända eftersom worker saknas.
-- **Security CI → GitHub:** pinnade scanner-actions med read-only standardbehörighet och villkorade jobb finns. Deploy credentials, OIDC, environment protection och artifact provenance är fortfarande okända eftersom ingen deployment finns.
+- **Security CI → GitHub:** pinnade scanner-actions med read-only standardbehörighet och villkorade jobb finns. Appmanifestet gör CodeQL/SCA-jobben tillämpliga i nästa hosted körning. Deploy credentials, OIDC, environment protection och artifact provenance är fortfarande okända.
 
 #### Diagram
 
@@ -55,11 +58,11 @@ flowchart LR
     Dev["Developer"] --> Git["Git repository"]
     Dev --> MCP["Supabase MCP"]
     Dev --> Local["Local Supabase"]
-    User["Internet user assumed"] --> App["Future app assumed"]
-    App --> Cloud["Hosted Supabase assumed"]
+    User["Internet user"] --> App["Static Next.js shell"]
+    App -. "future data flow" .-> Cloud["Hosted Supabase assumed"]
     Sources["External sources assumed"] --> Worker["Ingestion worker assumed"]
     Worker --> Cloud
-    Git --> Deploy["CI deployment assumed"]
+    Git --> Deploy["Vercel build selected; hosted state unverified"]
     Deploy --> App
 ```
 
@@ -87,7 +90,7 @@ flowchart LR
 
 ### Non-capabilities
 
-- Ingen extern app, endpoint eller databasåtkomst kan bekräftas från denna revision; modellen påstår därför inte att angreppen är möjliga idag.
+- En lokal webbapp kan bekräftas, men ingen hostad URL eller databasåtkomst kan ännu bekräftas från repot; modellen påstår därför inte att de databurna angreppen är möjliga idag.
 - Angriparen antas inte ha fysisk åtkomst till leverantörsdatacenter eller kunna bryta korrekt TLS/kryptografi.
 - Intern malicious admin, leverantörskompromiss och stulen utvecklarenhet modelleras endast som residual/supply-chain-risk tills behörighetsmodellen är känd.
 
@@ -95,12 +98,14 @@ flowchart LR
 
 | Surface | How reached | Trust boundary | Notes | Evidence (repo path / symbol) |
 |---|---|---|---|---|
+| Next.js-skal `/` och `/icon.svg` | HTTP lokalt; internet via vald men ännu overifierad Vercel-deployment | Internet → statisk presentation | Ingen indata, Auth, datafetch eller API-route. Meny-/spara-knappar saknar handlers. Grundläggande responsheaders konfigurerade för alla paths; repo-CSP saknas och HSTS måste verifieras hos hosten. | `src/app/page.tsx`, `src/app/layout.tsx`, `src/app/icon.svg`, `next.config.ts` |
+| Metadata/build-miljö | Operatörsstyrda buildvariabler | Deployment configuration → renderad metadata/build | `NEXT_PUBLIC_SITE_URL` eller `VERCEL_PROJECT_PRODUCTION_URL` påverkar `metadataBase`; ett ogiltigt explicit URL-värde kan bryta build eller skapa fel origin. | `src/app/layout.tsx` `siteUrl`, `metadataBase` |
 | Supabase Data API, lokal konfiguration | Lokalt HTTP under utveckling; hosted exposure okänd | Klient/lokal API → Postgres | `public` och `graphql_public` konfigurerade; max 1000 rader. Inga tabeller/policyer finns i repo. | `supabase/config.toml` `[api]`, `schemas`, `max_rows` |
 | Supabase Auth, lokal konfiguration | Lokala auth-anrop; hosted state okänd | Användare → Auth | Sign-up och refresh rotation aktiva; lokal mall kräver 12 tecken/komplexitet, email confirmation, secure password change och OTP 600 sekunder. | `supabase/config.toml` `[auth]`, `[auth.email]` |
 | Edge Runtime, lokal konfiguration | Framtida funktioner; inga funktioner finns | Internet/job → privilegierad serverkod | Entry point är konfigurerbar men oimplementerad. | `supabase/config.toml` `[edge_runtime]`; frånvaro av `supabase/functions/` |
 | Supabase MCP | MCP-klient över HTTPS | Utvecklare/AI-verktyg → Supabase-projekt | Project-scoped, read-only URL med begränsad funktionslista; auth och faktisk serverscope ej i repo. | `.mcp.json` `mcpServers.supabase-staden.url` |
-| Git contribution/build | Git push/PR; repo governance okänd | Utvecklare → source/build | Security CI och DAST-workflows finns; rulesets, reviewkrav och hosted körningar är ej verifierade. | `.github/workflows/security-ci.yml`, `.github/workflows/security-dast.yml` |
-| Future client and ingestion | Antagna internet-/tredjepartsanrop | Internet/källor → app/worker | Villkorad yta, måste ersättas med kodankare när den skapas. | Ingen repo-evidens; uttryckligt antagande |
+| Git contribution/build | Git push/PR och vald Vercel Git-integration; repo governance/hosted konfiguration okänd | Utvecklare → source/build/deployment | Låst buildscript, Security CI och DAST-workflows finns; rulesets, reviewkrav, apprevisionens hosted scans och Vercel-inställningar inväntar verifiering. | `package.json`, `package-lock.json`, `.github/workflows/security-ci.yml`, `.github/workflows/security-dast.yml` |
+| Future data client and ingestion | Antagna internet-/tredjepartsanrop | Internet/källor → app/worker | Villkorad yta, måste ersättas med kodankare när den skapas. | Ingen repo-evidens; uttryckligt antagande |
 
 ## Top abuse paths
 
@@ -117,16 +122,16 @@ flowchart LR
 
 | Threat ID | Threat source | Prerequisites | Threat action | Impact | Impacted assets | Existing controls (evidence) | Gaps | Recommended mitigations | Detection ideas | Likelihood | Impact severity | Priority |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| TM-001 | Lågprivilegierad användare | Publik klient och användartabeller skapas; RLS/ownership är fel eller saknas | Manipulerar direkt API-anrop för BOLA/IDOR och cross-user read/write | Integritetsintrång och manipulation av privata listor/profiler | User data, RLS, editorial integrity | Data API lokalt begränsat till 1000 rader (`supabase/config.toml` `[api]`) | Inga migrationer, grants, RLS-policyer eller negativa tester | RLS på varje exponerad tabell; explicit ownership/role claims; revoke-by-default; policytester som två användare; separata admin-RPC:er | Logga nekade policyförsök, ovanliga tabell-/objektmönster och massläsning per principal | Medel — standardangrepp mot direktnåbar backend, men ingen app finns ännu | Hög — kan exponera beteende- och kontodata | Hög |
+| TM-001 | Lågprivilegierad användare | Publik dataklient och användartabeller skapas; RLS/ownership är fel eller saknas | Manipulerar direkt API-anrop för BOLA/IDOR och cross-user read/write | Integritetsintrång och manipulation av privata listor/profiler | User data, RLS, editorial integrity | Data API lokalt begränsat till 1000 rader (`supabase/config.toml` `[api]`) | Inga migrationer, grants, RLS-policyer eller negativa tester; den nuvarande statiska appen har inget dataflöde | RLS på varje exponerad tabell; explicit ownership/role claims; revoke-by-default; policytester som två användare; separata admin-RPC:er | Logga nekade policyförsök, ovanliga tabell-/objektmönster och massläsning per principal | Medel när dataklienten införs; ej realiserad i nuvarande webbskal | Hög — kan exponera beteende- och kontodata | Hög villkorad |
 | TM-002 | Internet-/supply-chain-angripare | Privilegierad nyckel exponeras i klient, commit, artifact eller logg | Använder service role/admin-token för att kringgå RLS | Full dataexfiltration, förstörelse och kostnad | Credentials, all hosted data | Rotens `.gitignore` blockerar vanliga envfiler; full Gitleaks-historik gav 0 fynd; CI kör TruffleHog | GitHub push protection ej verifierad; ingen framtida runtime secret boundary finns ännu | Aktivera push protection; server-only service role; kortlivad OIDC för deploy; loggredigering; omedelbar rotation | Provider alerts, secret-scan alerts, service-role-anrop från ny geografi/IP, massoperationer | Medel — vanligt fel när klient/CI byggs; inte observerat nu | Hög — service role kan vara total kompromiss | Hög |
 | TM-003 | Kontrollerad extern källa eller redaktörskonto | Framtida ingestion hämtar påverkbara URL:er/server-side media | Utnyttjar redirects/DNS/URL-parser för SSRF eller resursutmattning | Intern åtkomst, credentialläcka eller compute-/bandbreddskostnad | Credentials, network, availability | Inga befintliga kodkontroller; Edge Runtime endast konfigurerad (`supabase/config.toml`) | Worker, allowlist, egresspolicy, timeout och filgränser saknas | Source allowlist; blockera privat/link-local IP efter DNS och redirect; egressproxy; MIME/magic-byte/size limits; timeout; sandboxad media pipeline | Logga slutlig destination, redirectkedja, bytes, timeout och blockad privat IP; larma anomalier | Medel — förutsätter påverkbar URL men sådan ingestion är planerad | Hög — SSRF kan nå metadata/secrets och skapa kostnad | Hög |
-| TM-004 | Datakälles-/innehållsangripare | Importer publiceras automatiskt utan provenance, schema eller moderation | Förgiftar event, öppettider, adress, biljettlänk eller media | Fysisk vilseledning, phishing, varumärkes- och rättighetsrisk | Places/events, editorial state, media | Ingen evidensbelagd kontroll | Datakällor, trust scoring, signering och human-review-gränser okända | Per-field provenance/timestamp; schema/URL validation; tvåkälleregel för riskfält; karantän och redaktionellt godkännande; snabb rollback | Diff-/volymanomalier, domänbyte, ovanliga koordinatförflyttningar, användarrapporter | Hög — publika källor förändras och kan vara fel | Medel — oftast innehållsintegritet, ibland fysisk/phishingrisk | Hög |
+| TM-004 | Datakälles-/innehållsangripare | Importer publiceras automatiskt utan provenance, schema, säker rendering eller moderation | Förgiftar event, öppettider, adress, biljettlänk, HTML eller media | Fysisk vilseledning, phishing, stored XSS, varumärkes- och rättighetsrisk | Places/events, editorial state, media | Nuvarande sida renderar endast hårdkodade React-strängar och använder ingen farlig HTML-sink | Datakällor, trust scoring, sanitization och human-review-gränser okända | Per-field provenance/timestamp; schema/URL validation; text-only rendering eller robust sanitization; CSP före CMS/ingestion; karantän, redaktionellt godkännande och snabb rollback | Diff-/volymanomalier, domänbyte, ovanliga koordinatförflyttningar, användarrapporter, CSP-rapporter | Hög när auto-publicering införs; ej realiserad i nuvarande statiska sida | Medel–hög — innehållsintegritet, fysisk/phishingrisk och möjlig XSS | Hög villkorad |
 | TM-005 | Credential stuffer/bot | Publik auth/sign-up; recovery/botkontroll är otillräcklig | Automatiserar konton eller övertar återanvända lösenord/sessioner | Kontoåtkomst, spam och kostnad | Identity/session, availability | Lokal mall har refresh rotation, rate limits, min 12/komplexitet, email confirmation, secure password change och OTP 600 sekunder | Hosted state, breached-password-kontroll, captcha/passkeys och admin-MFA är okända | Passkeys/OAuth; breached-password-kontroll; adaptive rate limit/captcha; reauth för känsliga ändringar; admin-MFA | Failed-login velocity, impossible travel, recovery bursts, new-device alerts | Medel — publik konsumentapp attraherar automation | Medel — privat data antas begränsad men konton/kostnad påverkas | Medel |
-| TM-006 | Komprometterat utvecklarkonto/beroende | Bidrag eller beroenden införs utan tillräcklig review/provenance | Injicerar kod/workflow som stjäl secrets eller ändrar artifact | Masskompromiss av klient/backend och användarförtroende | Source, artifacts, credentials | Actions är full-SHA-pinnade; CodeQL/Dependency Review/OSV/Trivy/TruffleHog och Dependabot är förberedda; `CODEOWNERS` täcker säkerhetskritiska sökvägar | Ingen ruleset, enforcement av CODEOWNERS, SBOM, hosted körning eller deploy separation verifierad | MFA; protected main med obligatorisk ägargranskning; artifact provenance; short-lived deploy identity; verifiera att scannergrinden krävs | GitHub audit, workflow changes, dependency diff, deploy-commit mismatch | Medel efter att app/deps tillkommer; låg idag | Hög — distribuerad kod har bred räckvidd | Hög villkorad |
-| TM-007 | Oautentiserad bot eller felaktigt jobb | Publika dyra routes/auth/media/AI och otillräckliga kvoter | Skapar hög samtidighet, stora resultat eller retry-loopar | Downtime, quota exhaustion och ekonomisk skada | Availability, third-party budgets | `api.max_rows=1000` och lokala Auth-rate limits (`supabase/config.toml`) | Ingen per-user/IP cost budget, queue backpressure eller circuit breaker | Endpoint-specifika limits/quotas; cached search; idempotency; queue concurrency; provider budget alerts; kill switch/degraded mode | p95/5xx, DB connections, bytes, job retries, cost per principal/source | Hög för publik app om controls saknas | Medel — främst tillgänglighet/kostnad | Hög |
+| TM-006 | Komprometterat utvecklarkonto/beroende | Bidrag eller beroenden införs utan tillräcklig review/provenance | Injicerar kod/workflow som stjäl secrets eller ändrar artifact | Masskompromiss av klient/backend och användarförtroende | Source, artifacts, credentials | Beroenden är exakt låsta; lokal audit/Trivy gav 0 fynd; actions är full-SHA-pinnade; CodeQL/Dependency Review/OSV/Trivy/TruffleHog och Dependabot finns; `CODEOWNERS` täcker säkerhetskritiska sökvägar | Ingen ruleset, enforcement av CODEOWNERS, SBOM, apprevisionens hosted scan eller deploy separation verifierad | MFA; protected main med obligatorisk ägargranskning; artifact provenance; short-lived deploy identity; verifiera att scannergrinden krävs | GitHub audit, workflow changes, dependency diff, deploy-commit mismatch | Medel — extern dependency/buildkedja finns nu | Hög — distribuerad kod har bred räckvidd | Hög |
+| TM-007 | Oautentiserad bot eller felaktigt jobb | Publika dyra routes/auth/media/AI och otillräckliga kvoter | Skapar hög samtidighet, stora resultat eller retry-loopar | Downtime, quota exhaustion och ekonomisk skada | Availability, third-party budgets | Nuvarande route är statisk och saknar dyra handlers; `api.max_rows=1000` och lokala Auth-rate limits finns (`supabase/config.toml`) | Ingen framtida per-user/IP cost budget, queue backpressure eller circuit breaker | Endpoint-specifika limits/quotas; cached search; idempotency; queue concurrency; provider budget alerts; kill switch/degraded mode | p95/5xx, DB connections, bytes, job retries, cost per principal/source | Låg nu; hög villkorad när sök/Auth/media/AI införs utan kontroller | Medel — främst tillgänglighet/kostnad | Hög villkorad |
 | TM-008 | Misstag eller komprometterad admin | Produktion innehåller data men restorekedja är otillräcklig | Raderar/korrumperar DB eller Storage och upptäcker det efter retention | Permanent dataförlust och lång outage | DB/Auth, media, audit, availability | Reproducerbara migrationer/backupbevis saknas; DR-plan är endast dokument (`docs/security/disaster-recovery-plan.md`) | Hosted backup/PITR, separat Storage backup och restoretest ej verifierade | PITR enligt RPO; dagliga logiska off-site dumps; separat object versioning/copy; immutable Git mirror; kvartalsvis full restore | Backup-age/restore-point larm, delete-volume, schema drift, quarterly measured restore | Medel — felmigration/adminincident är realistisk | Hög — oersättligt innehåll/persondata kan förloras | Hög |
 | TM-009 | Stulen utvecklarsession eller överprivilegierat AI-verktyg | MCP OAuth/session har känslig läsbehörighet och workstation komprometteras | Läser schema, loggar eller projektdata genom MCP; framtida bredare scope kan även möjliggöra mutation | Dataexponering via utvecklingsplanet; villkorad integritetsrisk | Developer credentials, hosted project | Project-scoped MCP URL med `read_only=true` och begränsad funktionslista (`.mcp.json`) | Faktiska server-scopes, audit och miljöseparation finns inte i repo | Separata dev/prod-projekt innan production-ref används; minsta lässcope; kort session; MFA/device security; audit review | MCP/provider audit, ovanliga läsvolymer, nya tokens/sessions | Låg–medel — kräver stulen session eller för bred delegation | Hög om läsningen når produktion/persondata | Medel |
-| TM-010 | Nyfiken angripare/legitim insider | Precisa plats-/livsstilssignaler samlas utan minimering eller accessgräns | Korrelaterar listor, konto och plats över tid | Profilering, stalking eller känslig inferens | Location/lifestyle data, identity | Inga datamodeller finns | Dataklassning, consent, retention, export/delete och logging okända | Samla grov/temporär plats som standard; separat consent; kort retention; kryptering; purpose-bound access; export/delete; undvik plats i loggar | Access audit, bulk-export alert, retention jobs, privacy tests | Medel om funktionen införs | Hög för exakt historisk plats, lägre för tillfällig grov plats | Hög villkorad |
+| TM-010 | Nyfiken angripare/legitim insider | Precisa plats-/livsstilssignaler samlas utan minimering eller accessgräns | Korrelaterar listor, konto och plats över tid | Profilering, stalking eller känslig inferens | Location/lifestyle data, identity | Ingen geolocationkod/datamodell finns; `Permissions-Policy` blockerar geolocation i nuvarande webbskal | Dataklassning, consent, retention, export/delete och logging okända | Ändra browserpolicy endast tillsammans med ett granskat behov; samla grov/temporär plats som standard; separat consent; kort retention; purpose-bound access; export/delete; undvik plats i loggar | Access audit, bulk-export alert, retention jobs, privacy tests | Medel om funktionen införs; ej realiserad nu | Hög för exakt historisk plats, lägre för tillfällig grov plats | Hög villkorad |
 
 ## Criticality calibration
 
@@ -145,13 +150,16 @@ Rangordningen påverkas mest av om klienten når Supabase direkt, om service rol
 | `.gitignore` och `supabase/.gitignore` | Minskar risken att lokala hemlighetsfiler spåras; scanning och push protection behövs fortfarande | TM-002 |
 | `.mcp.json` | Kopplar utvecklarverktyg read-only till ett specifikt Supabase-projekt; faktisk serverscope och miljöseparation måste granskas externt | TM-009 |
 | `.github/workflows/` | Leveransgrindar och tredjeparts-actions är supply-chain-kritiska och ska förbli SHA-pinnade/minimalt behöriga | TM-002, TM-006 |
-| `README.md` | Saknar drift-, data- och säkerhetskontext; framtida arkitekturankare bör dokumenteras här eller länkas | Samtliga |
+| `package.json` och `package-lock.json` | Definierar reproducerbar bygg- och dependencyyta för Vercel/SCA | TM-002, TM-006 |
+| `src/app/` | Nuvarande internetpresentation; framtida formulär, datafetch, Auth och rendering utökar attackytan här | TM-002, TM-006, framtida TM-001/TM-005/TM-007 |
+| `next.config.ts` | Global respons- och runtimekonfiguration; headers och framtida redirects/images/origins påverkar browsergränsen | TM-002, TM-006 |
+| `README.md` | Dokumenterar nu byggvägen; drift-, data- och säkerhetskontext måste utvecklas när funktioner tillkommer | Samtliga |
 
-När de skapas blir `supabase/migrations/`, `supabase/functions/`, paketmanifest/lockfiler och klientens auth-/dataåtkomstkod högsta fokus. Nuvarande workflows är kontroller, men ännu inte evidens för att saknade scanner-targets har testats.
+När de skapas blir `supabase/migrations/`, `supabase/functions/` och klientens auth-/dataåtkomstkod högsta fokus. Nuvarande workflows är kontroller, men en ny hosted körning krävs innan apprevisionens SAST/SCA kan räknas som evidens.
 
 ## Quality check
 
-- [x] Alla upptäckta entrypoints (lokalt Data API/Auth/Edge, MCP och Git) täcks; framtida ytor är uttryckligen antagna.
+- [x] Alla upptäckta entrypoints (Next.js `/`, lokalt Data API/Auth/Edge, MCP och Git/build) täcks; framtida ytor är uttryckligen antagna.
 - [x] Varje identifierad trust boundary förekommer i minst ett hot eller är markerad som ej implementerad.
 - [x] Runtime/produktion skiljs från lokal konfiguration, utvecklings-MCP och framtida CI.
 - [x] Inga hosted controls, endpoints eller scannerresultat har uppfunnits; repoankare anges per större påstående.

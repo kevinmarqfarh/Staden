@@ -70,6 +70,9 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Build the production scan target
+        run: npm run build
+
       - name: Start the repository-owned local scan harness
         shell: bash
         env:
@@ -78,7 +81,7 @@ jobs:
           STADEN_SECURITY_SCAN: "true"
         run: |
           set -euo pipefail
-          npm run security:dast:start -- --host 127.0.0.1 --port 4173 > "$RUNNER_TEMP/staden-dast-server.log" 2>&1 &
+          npm run security:dast:start > "$RUNNER_TEMP/staden-dast-server.log" 2>&1 &
           echo "$!" > "$RUNNER_TEMP/staden-dast-server.pid"
           for attempt in {1..60}; do
             if curl --fail --silent --show-error --max-time 2 http://127.0.0.1:4173/ >/dev/null; then
@@ -108,7 +111,6 @@ jobs:
         uses: projectdiscovery/nuclei-action@a4ae23f2522c29f17a696be94fea5f394ac6843f # v3.0.0
         with:
           version: v3.8.0
-          cache: false
           args: >-
             -u http://127.0.0.1:4173
             -severity medium,high,critical

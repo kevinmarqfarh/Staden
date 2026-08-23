@@ -8,7 +8,7 @@
 
 ## Mål och antaganden
 
-Planen antar en framtida mobilförst webbapp där GitHub lagrar kod och migrationshistorik, Supabase lagrar Postgres/Auth/Storage och Vercel kan komma att leverera webb/serverside-funktioner. Endast GitHub- och Supabase-kopplingar har nämnts; Vercel kan inte verifieras i repot. Inga riktiga användare, datavolymer, planer eller SLO:er kan verifieras.
+Repot innehåller nu ett minimalt, statiskt Next.js-skal där GitHub lagrar koden och Vercel är den valda webbplattformen. Planen antar därutöver en framtida mobilförst, databuren app där GitHub lagrar migrationshistorik och Supabase lagrar Postgres/Auth/Storage. Vercel-kopplingens hostade konfiguration och deploymentstatus kan inte verifieras enbart från repot. Inga riktiga användare, datavolymer, leverantörsplaner eller SLO:er kan verifieras.
 
 Föreslagna mål att godkänna:
 
@@ -16,7 +16,7 @@ Föreslagna mål att godkänna:
 |---|---:|---:|---|
 | Supabase Postgres/Auth | 15 minuter | 4 timmar | Kräver aktiverad och övervakad PITR. Utan PITR är interim-RPO 24 timmar och ska uttryckligen riskaccepteras. |
 | Supabase Storage-objekt | 24 timmar | 8 timmar | Kräver separat versionshanterad/off-site objektbackup; DB-backup innehåller bara Storage-metadata. |
-| Webb/API på Vercel | 0 för kodrevision; högst 1 timmes konfigurationsförlust | 1 timme | Kräver verifierad Vercel-koppling, bevarad known-good deployment och export/inventarium av miljövariabelnamn och inställningar. |
+| Next.js-webb på Vercel | 0 för kodrevision; högst 1 timmes konfigurationsförlust | 1 timme | API är inte implementerat. Målet kräver verifierad Vercel-koppling, pinnad Node-major, bevarad known-good deployment och export/inventarium av miljövariabelnamn och inställningar. |
 | GitHub-kod och migrationer | 24 timmar för nya commits | 4 timmar | Kräver daglig mirror till separat konto/leverantör och regelbunden restorekontroll. Lokala clones räknas inte ensamma som backup. |
 | Importerade externa katalogdata | 24 timmar eller återinläsning | 8 timmar | Råa snapshots måste vara reproducerbara och licens/retention dokumenterad. |
 | Redaktionellt innehåll och listor | 15 minuter | 4 timmar | Antas ligga i Postgres; om media ingår gäller Storage-målet. |
@@ -50,7 +50,7 @@ Aktivera planen när övervakning, leverantörsstatus eller rapporter visar att 
 
 1. **Säkerställ människor och scope:** utse IC, öppna privat incidentkanal, frys icke-nödvändiga deployer och identifiera om incidenten är säkerhetsrelaterad.
 2. **Bevara bevis:** exportera relevanta audit-, auth-, deploy- och databasloggar med åtkomstkontroll; skriv inte hemligheter i incidentloggen.
-3. **Begränsa:** återkalla komprometterade tokens, stoppa skadlig ingestion/Edge Function eller sätt appen read-only. Radera inte projekt/resurser under pågående triage.
+3. **Begränsa:** återkalla komprometterade tokens, stoppa skadlig ingestion/Edge Function eller sätt framtida skrivande flöden read-only. Det nuvarande webbskalet är redan statiskt/read-only; maintenance mode eller kill switch måste designas innan mutationer införs. Radera inte projekt/resurser under pågående triage.
 4. **Välj återställningspunkt:** fastställ senaste kända goda commit, deployment och DB-tidpunkt före felhändelsen. Bekräfta retention och förväntad dataförlust mot RPO.
 5. **Återställ i isolerad miljö först:** återställ backup/duplicera projekt när leverantören medger; kör integritets- och säkerhetstester utan produktionstrafik.
 6. **Återställ beroenden:** databas/Auth före serverfunktioner, därefter Storage-objekt, webb/API och slutligen bakgrundsjobb/ingestion.
@@ -96,15 +96,16 @@ Databasbackuper återställer metadata men inte raderade objekt. Därför krävs
 4. Kör secret scanning på återställt repo innan det kopplas till deployment.
 5. Be två granskare jämföra HEAD, tags och migrationskedja med senaste kända goda bevis.
 
-## Runbook: Vercel (villkorad)
+## Runbook: Vercel
 
-Ingen Vercel-anslutning kan verifieras i repot. Om Vercel väljs:
+Vercel är vald som webbplattform, men projektkoppling, miljöer, alias, åtkomstregler och known-good deployment måste verifieras i plattformen:
 
 1. Vid kodrelaterad incident, identifiera senaste kända goda produktiondeployment och använd Instant Rollback/CLI rollback.
-2. Verifiera domänalias, funktioner, cron och miljövariabelversioner. Rollback bygger inte om med aktuella miljövariabler och återställer inte externa databaser.
-3. Rotera komprometterade hemligheter i Vercel och beroende leverantörer, skapa därefter en ny deployment; anta inte att rollback tar bort en läckt hemlighet.
-4. Kör syntetiska smoke tests samt logg-/felkontroll innan trafiken anses återställd.
-5. Dokumentera deployment-ID, commit, initiativtagare och verifieringsresultat.
+2. Om en kall rebuild krävs: checka ut en known-good commit, verifiera lockfilens integritet, använd Node 24 och `npm ci`, kör `npm run build` och promota först den verifierade artefakten. Bevara en immutable known-good deployment/artefakt eftersom npm och `next/font/google` är externa byggtidsberoenden.
+3. Verifiera domänalias, funktioner, cron och miljövariabelversioner. `NEXT_PUBLIC_SITE_URL` ska vara en giltig absolut origin. Rollback bygger inte om med aktuella miljövariabler och återställer inte externa databaser.
+4. Rotera komprometterade hemligheter i Vercel och beroende leverantörer, skapa därefter en ny deployment; anta inte att rollback tar bort en läckt hemlighet.
+5. Kör syntetiska smoke tests samt logg-/felkontroll innan trafiken anses återställd.
+6. Dokumentera deployment-ID, commit, artefakt/checksumma, initiativtagare och verifieringsresultat.
 
 ## Återställningsbevis och exitkriterier
 
@@ -117,7 +118,8 @@ En incident får inte stängas enbart för att startsidan svarar. Följande ska 
 | Databas | Migrationsversion, constraints och kritiska radräkningar matchar förväntat intervall |
 | Auth/RLS | Positiva tester fungerar och cross-user/admin-negativa tester nekas |
 | Storage | Stickprovschecksummor matchar; privata objekt förblir privata; orphanlista hanterad |
-| Applikation | Hälsokontroll, fem viktigaste användarflöden och write/read-after-write passerar |
+| Applikation nu | Ren `npm ci` + produktionsbuild passerar; `/` och `/icon.svg` ger 200; assets, metadata-origin och förväntade säkerhetsheaders är korrekta; inga 5xx |
+| Framtida dataflöden | De fem viktigaste användarflödena och write/read-after-write läggs till som exitkriterier när API/databas finns |
 | Jobs | Ingestion/cron återstartas kontrollerat utan dubbletter eller replay-gap |
 | Säkerhet | Berörda tokens återkallade/roterade; inga öppna critical/high utan IC-riskacceptans |
 | RTO/RPO | Faktisk RTO och faktisk dataförlust jämförda med mål; avvikelse har åtgärdsägare |
@@ -132,14 +134,15 @@ En incident får inte stängas enbart för att startsidan svarar. Följande ska 
 | Halvårsvis | Leverantörsbortfall och credential-compromise-övning; återuppbygg deploykopplingar | Scenario, beslut och observerade gap |
 | Årligen | Full DR-simulering med kommunikation, personuppgiftsbedömning och extern beroendeinventering | Signerad rapport och reviderad plan |
 | Efter större ändring | Restoretest efter schema/auth/storage/deployment- eller backupplansändring | Releasekopplat återställningsbevis |
+| Nu, före datafunktioner | Clean checkout → `npm ci` → build → testdeployment → rollback av den statiska webbtiern | Commit/deployment-ID, tider, responses, headers och godkännare |
 
-Första fulla restoreövningen ska genomföras före publik preview. En backup som aldrig återställts är inte verifierad återställningsförmåga.
+En webbtier-restore/rollback kan och ska testas redan med det statiska skalet. Första fulla DB/Auth/Storage-restoreövningen ska genomföras före att riktiga användare eller data tillkommer. En backup som aldrig återställts är inte verifierad återställningsförmåga.
 
 ## Öppna beslut
 
 1. Vilka personer och reserver äger incident-, databas-, deploy-, säkerhets- och kommunikationsrollerna?
 2. Vilken Supabase-plan/PITR-retention används, och accepterar verksamheten kostnaden för RPO 15 minuter?
 3. Ska Storage innehålla oersättliga egna/licensierade bilder, och vilken separat objektbackup väljs?
-4. Används Vercel eller annan driftplattform, och var finns en återställningsbar export av konfigurationen?
+4. Vilket Vercel-projekt, plan, region, produktionsbranch, retention/rollback och loggupplägg används, och var finns en återställningsbar konfigurationsinventering?
 5. Vilka personuppgifter och exakt platsdata lagras, hur länge, och vilka anmälnings-/kommunikationskrav gäller?
 6. Vilken högsta acceptabla samtidiga dataförlust och downtime gäller under lansering respektive senare skala?
