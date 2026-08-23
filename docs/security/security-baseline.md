@@ -8,7 +8,7 @@
 
 ## Sammanfattning
 
-Den aktuella produktkandidaten är en interaktiv Next.js-klient med teman, 32 kulturposter, 32 restauranger, lokalt sparade objekt-ID:n och en publishable-key-baserad Supabase health-check. Ingen Auth, tabellåtkomst eller mutation finns; sessionpersistens är avstängd. Apprevision `1ba0650` har tidigare passerat Vercel och GitHubs required security gate, men den evidensen gäller inte det nya deltats kod eller dependencies. Det vore missvisande att kalla DAST, penetrationstestning, Supabase RLS/grants/backups eller produktionsmiljön godkänd innan nya hosted tester och plattformsattestering finns.
+Den aktuella produktkandidaten är en interaktiv Next.js-klient med teman, 32 kulturposter, 999 restauranger (89 redaktionella och 910 katalogposter efter att två uttryckligen stängda poster exkluderats), lokalt sparade objekt-ID:n och listor samt en publishable-key-baserad Supabase health-check. Ingen Auth, tabellåtkomst eller mutation finns; sessionpersistens är avstängd. Apprevision `1ba0650` har tidigare passerat Vercel och GitHubs required security gate, men den evidensen gäller inte det nya deltats kod eller dependencies. Det vore missvisande att kalla DAST, penetrationstestning, Supabase RLS/grants/backups eller produktionsmiljön godkänd innan nya hosted tester och plattformsattestering finns.
 
 ## Kritiska åtgärder
 

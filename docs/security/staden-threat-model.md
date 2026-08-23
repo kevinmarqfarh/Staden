@@ -8,7 +8,7 @@
 
 ## Executive summary
 
-Repot innehåller nu en interaktiv Next.js 16.3.2-klient med 32 källkodade kulturposter, 32 restauranger, tre teman, lokalt sparade objekt-ID:n och en manuell Supabase-hälsokontroll från webbläsaren. Ingen Auth, användartabell, mutation eller ingestion-worker är implementerad. Publishable key är avsiktligt publik och sessionpersistens är avstängd; den enda nätverksoperationen mot Supabase är `/auth/v1/health`. Apprevision `1ba0650` har tidigare passerat Vercel och hosted Security CI, men det beviset gäller inte denna produktkandidat. Högsta aktuella leveransrisk är att hostade grants/RLS/backups är overifierade innan riktig data införs.
+Repot innehåller nu en interaktiv Next.js 16.3.2-klient med 32 källkodade kulturposter, 999 visningsbara restaurangposter (89 redaktionella och 910 katalogposter efter att två uttryckligen stängda poster exkluderats), tre teman, lokalt sparade objekt-ID:n och namngivna listor samt en manuell Supabase-hälsokontroll från webbläsaren. Ingen Auth, användartabell, mutation eller ingestion-worker är implementerad. Publishable key är avsiktligt publik och sessionpersistens är avstängd; den enda nätverksoperationen mot Supabase är `/auth/v1/health`. Apprevision `1ba0650` har tidigare passerat Vercel och hosted Security CI, men det beviset gäller inte denna produktkandidat. Högsta aktuella leveransrisk är att hostade grants/RLS/backups är overifierade innan riktig data införs.
 
 ## Scope and assumptions
 

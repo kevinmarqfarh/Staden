@@ -8,7 +8,7 @@
 
 ## Mål och antaganden
 
-Git är nu system of record för 32 kulturposter, 32 restauranger, käll-URL:er och redaktionell media. Webbläsaren lagrar tema och sparade event-/restaurang-ID:n i `localStorage`; de har ingen central backup, konto- eller enhetssynk och kan försvinna vid rensad lagring eller originbyte. Supabase används endast för en publik Auth-hälsokontroll och ett avbrott där ska därför degradera anslutningsstatusen, inte katalogen. Vercel-revision `1ba0650` är tidigare verifierad, men den aktuella produktkandidaten saknar ännu hosted deployment/scannerbevis.
+Git är nu system of record för 32 kulturposter, 999 aktiva/okända restaurangposter (89 redaktionella och 910 katalogposter), käll-URL:er och redaktionell media. Två uttryckligen stängda katalogposter exkluderas i aggregeringen. Webbläsaren lagrar tema, sparade event-/restaurang-ID:n och namngivna listor i `localStorage`; de har ingen central backup, konto- eller enhetssynk och kan försvinna vid rensad lagring eller originbyte. Supabase används endast för en publik Auth-hälsokontroll och ett avbrott där ska därför degradera anslutningsstatusen, inte katalogen. Vercel-revision `1ba0650` är tidigare verifierad, men den aktuella produktkandidaten saknar ännu hosted deployment/scannerbevis.
 
 Föreslagna mål att godkänna:
 
@@ -123,7 +123,7 @@ En incident får inte stängas enbart för att startsidan svarar. Följande ska 
 | Applikation nu | Ren `npm ci` + produktionsbuild passerar; `/` och `/icon.svg` ger 200; assets, metadata-origin och förväntade säkerhetsheaders är korrekta; inga 5xx |
 | Browser state | Spara/ta bort, reload, cross-tab, korrupt JSON, blockerad storage och alla tre teman testas; originbyte dokumenteras som dataförlust tills synk finns |
 | Supabase health | connected/error/timeout/missing-env fungerar; CORS tillåter avsett flöde; ingen service-role/secret finns i bundle, Git eller `NEXT_PUBLIC_*` |
-| Kultur-/restaurangkatalog | Samtliga 32 + 32 poster finns; primära källor är HTTPS/allowlistade och aktuella; restaurangernas HTTPS-webbplatser kontrolleras separat; nya flikar använder `noopener noreferrer`; 4xx-länkar tombstonas och bildfilen laddas |
+| Kultur-/restaurangkatalog | Samtliga 32 + 999 visningsbara poster finns; uttryckligen stängda poster är exkluderade; primära källor är HTTPS/allowlistade och aktuella; restaurangernas HTTPS-webbplatser kontrolleras separat; nya flikar använder `noopener noreferrer`; 4xx-länkar tombstonas och bildfilen laddas |
 | Framtida dataflöden | De fem viktigaste användarflödena och write/read-after-write läggs till som exitkriterier när API/databas finns |
 | Jobs | Ingestion/cron återstartas kontrollerat utan dubbletter eller replay-gap |
 | Säkerhet | Berörda tokens återkallade/roterade; inga öppna critical/high utan IC-riskacceptans |

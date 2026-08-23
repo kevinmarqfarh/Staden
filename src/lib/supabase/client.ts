@@ -40,11 +40,12 @@ export function getSupabaseBrowserClient(): SupabaseClient {
 
   browserClient ??= createClient(supabaseUrl, supabasePublishableKey, {
     auth: {
-      // Auth is intentionally disabled until its cookie/session and RLS model is
-      // implemented. This prevents implicit long-lived token storage in Web Storage.
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
+      // The admin workspace is client-rendered. Authorization is enforced by
+      // Supabase RLS; this persisted browser session only controls the UI gate.
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: "staden-auth",
     },
   });
 

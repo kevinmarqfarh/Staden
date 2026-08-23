@@ -1,10 +1,16 @@
+import { OBJEKT } from "@/data/goteborg";
+
 export type CulturalEventCategory =
   | "Festival"
   | "Konst"
   | "Museum"
   | "Musik"
+  | "Film"
+  | "Litteratur"
+  | "Samtal"
   | "Scenkonst"
-  | "Skapande";
+  | "Skapande"
+  | "Kulturhus";
 
 export type CulturalEvent = {
   id: string;
@@ -531,7 +537,315 @@ const scannedCulturalEvents = [
     sourceLabel: "Kulturnatta · Göteborgs Stad",
     sourceUrl: "https://kulturnatta.goteborg.se/",
   },
+  {
+    id: "hanna-vihriala-same-moment-of-pleasure-2026",
+    title: "Hanna Vihriälä – Same Moment of Pleasure",
+    category: "Museum",
+    dateLabel: "Nu–1 nov",
+    startDate: "2026-05-09",
+    endDate: "2026-11-01",
+    time: "Tis/tor 11–18 · ons 11–20 · fre–sön 11–17",
+    venue: "Göteborgs konstmuseum, Götaplatsen",
+    area: "Götaplatsen",
+    description:
+      "Sommarutställning med tidigare och nyproducerade verk av Hanna Vihriälä, där vardagliga material blir skulpturer och rumsliga installationer.",
+    sourceLabel: "Göteborgs konstmuseum",
+    sourceUrl: "https://goteborgskonstmuseum.se/utstallningar/hanna-vihriala/",
+    isOngoing: true,
+  },
+  {
+    id: "goteborgskalaset-konstmuseum-2026",
+    title: "Göteborgskalaset på Göteborgs konstmuseum",
+    category: "Museum",
+    dateLabel: "29 aug",
+    startDate: "2026-08-29",
+    time: "11:00–17:00",
+    venue: "Göteborgs konstmuseum, Götaplatsen",
+    area: "Götaplatsen",
+    description:
+      "Fri entré till samlingen, Kropp. Ideal, blick, frihet och Hanna Vihriälä, Same Moment of Pleasure, med visningar, skapande verkstad och dansperformance.",
+    sourceLabel: "Göteborgs konstmuseum",
+    sourceUrl:
+      "https://goteborgskonstmuseum.se/2026/07/goteborgskalaset-pa-goteborgs-konstmuseum/",
+    isFree: true,
+  },
+  {
+    id: "asplund-och-radhuset-2026",
+    title: "Asplund och rådhuset",
+    category: "Museum",
+    dateLabel: "Nu–30 aug",
+    startDate: "2025-09-27",
+    endDate: "2026-08-30",
+    time: "Tis–ons 11–18 · tors 11–20 · fre–sön 11–17",
+    venue: "Röhsska museet, Vasagatan 37–39",
+    area: "Vasastaden",
+    description:
+      "Ett urval av möbler, textilier, ritningar och reproduktioner som lyfter Gunnar Asplunds arbete med Göteborgs rådhus.",
+    sourceLabel: "Röhsska museet",
+    sourceUrl:
+      "https://rohsska.se/utstallningar/asplund-och-radhuset-en-dold-modern-klassiker-i-goteborg/",
+    isOngoing: true,
+  },
+  {
+    id: "bland-helgon-pavar-och-vanligt-folk-2026",
+    title: "Bland helgon, påvar och vanligt folk",
+    category: "Museum",
+    dateLabel: "23 sep",
+    startDate: "2026-09-23",
+    time: "18:00–19:00",
+    venue: "Göteborgs stadsmuseum, Companisalen",
+    area: "Centrum",
+    description:
+      "Föreläsning om helgonkulten, från de tidiga kristna i Romarriket till medeltidens Europa och vidare till andra religioner.",
+    sourceLabel: "Göteborgs stadsmuseum",
+    sourceUrl:
+      "https://goteborgsstadsmuseum.se/aktivitet/historieonsdag-bland-helgon-pavar-och-vanligt-folk/?date=202609231800",
+  },
+  {
+    id: "cross-backa-teater-2026",
+    title: "Cross",
+    category: "Scenkonst",
+    dateLabel: "Urpremiär 2 okt",
+    startDate: "2026-10-02",
+    time: "19:00 på premiären",
+    venue: "Backa Teater",
+    area: "Lindholmen",
+    description:
+      "En skamlöst rolig föreställning om att vara sig själv i en värld full av åsikter om vem man borde vara.",
+    sourceLabel: "Backa Teater",
+    sourceUrl:
+      "https://stadsteatern.goteborg.se/backa-teater/produktioner/2026-2027/cross/",
+  },
+  {
+    id: "konstrundan-ostra-goteborg-2026",
+    title: "Konstrundan i Östra Göteborg 2026",
+    category: "Konst",
+    dateLabel: "6–8 nov",
+    startDate: "2026-11-06",
+    endDate: "2026-11-08",
+    time: "Fre 17–20 · lör–sön 11–16",
+    venue: "Kulturhuset Bergsjön + ateljéer i Östra Göteborg",
+    area: "Bergsjön + Östra Göteborg",
+    description:
+      "Årlig konsthelg där vernissagen hålls på Kulturhuset Bergsjön och lokala konstnärer öppnar ateljéer, hem och utställningslokaler.",
+    sourceLabel: "Konstrundan i Östra Göteborg",
+    sourceUrl:
+      "https://goteborg.se/wps/portal?uri=gbglnk%3A202631384850168",
+  },
+  {
+    id: "diktgymnasiet-konversationer-frolunda-2026",
+    title: "Diktgymnasiet – Konversationer",
+    category: "Konst",
+    dateLabel: "Nu–13 sep",
+    startDate: "2026-08-15",
+    endDate: "2026-09-13",
+    time: "Mån–fre 10–20 · lör–sön 10–17",
+    venue: "Frölunda Kulturhus, Valthornsgatan 13",
+    area: "Frölunda",
+    description:
+      "En utställning om de samtal och konstnärliga samarbeten som blir avgörande när kronisk sjukdom eller funktionsvariation begränsar fysiska möten.",
+    sourceLabel: "Göteborgs Stad · Frölunda Kulturhus",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/kultur/kulturhus/program-pa-kulturhusen?activityId=6454201a-b05b-486c-ac6c-fa9418087b68",
+    isFree: true,
+    isOngoing: true,
+  },
+  {
+    id: "sarah-klang-goteborgssymfoniker-kalaset-2026",
+    title: "Sarah Klang & Göteborgs Symfoniker",
+    category: "Musik",
+    dateLabel: "27 aug",
+    startDate: "2026-08-27",
+    time: "17:00–ca 18:30",
+    venue: "Götaplatsen",
+    area: "Götaplatsen",
+    description:
+      "Sarah Klang möter Göteborgs Symfoniker under bar himmel med sällan framfört material och nya orkesterarrangemang av hennes mest älskade låtar.",
+    sourceLabel: "Göteborgs Konserthus",
+    sourceUrl:
+      "https://www.gso.se/program/konserter/goteborgskalaset-sarah-klang-goteborgs-symfoniker/",
+    isFree: true,
+  },
+  {
+    id: "kulturkvall-vem-betalar-kulturen-2026",
+    title: "Kulturkväll: Vem ska betala för kulturen?",
+    category: "Samtal",
+    dateLabel: "2 sep",
+    startDate: "2026-09-02",
+    time: "19:00–ca 20:15",
+    venue: "Göteborgs Konserthus, Stenhammarsalen",
+    area: "Götaplatsen",
+    description:
+      "Ett publikt samtal om kulturfinansiering och prioriteringar med röster från konst, musik, journalistik, scenkonst och politik.",
+    sourceLabel: "Göteborgs Konserthus",
+    sourceUrl:
+      "https://www.gso.se/program/konserter/kulturkvall-vem-ska-betala-for-kulturen/",
+  },
+  {
+    id: "hagabion-oppningshelg-valet-2026",
+    title: "Hagabions öppningshelg: Tema Valet",
+    category: "Film",
+    dateLabel: "4–6 sep",
+    startDate: "2026-09-04",
+    endDate: "2026-09-06",
+    time: "Program från fre 18:00 · lör 12:15 · sön 13:15",
+    venue: "Hagabion, Skeppsbron 4",
+    area: "Skeppsbron",
+    description:
+      "Tre dagar med filmer om demokrati, integration, omvårdnad och miljö, plus premiärer, förhandsvisningar och publiksamtal med gäster.",
+    sourceLabel: "Hagabion",
+    sourceUrl: "https://hagabion.se/event/oppningshelg-tema-valet/",
+  },
+  {
+    id: "bokcirkel-fantastik-gamlestaden-host-2026",
+    title: "Bokcirkel i fantastik",
+    category: "Litteratur",
+    dateLabel: "7 sep–30 nov",
+    startDate: "2026-09-07",
+    endDate: "2026-11-30",
+    time: "Var tredje måndag 17:00–18:00",
+    venue: "Gamlestadens Bibliotek, Gamlestads Torg 11",
+    area: "Gamlestaden",
+    description:
+      "En höstserie för läsare av science fiction, fantasy, dystopier och rysare. Föranmälan krävs via biblioteket.",
+    sourceLabel: "Göteborgs Stad · Gamlestadens Bibliotek",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/bibliotek/alla-arrangemang-pa-biblioteken?activityId=da1df1ac-f2f9-4b3c-8621-967c38fb7afb",
+    isFree: true,
+  },
+  {
+    id: "johannes-anyuru-upplyst-sten-2026",
+    title: "Johannes Anyuru: Upplyst sten",
+    category: "Litteratur",
+    dateLabel: "9 sep",
+    startDate: "2026-09-09",
+    time: "18:00–19:30",
+    venue: "Världskulturmuseet, Trappscenen",
+    area: "Korsvägen",
+    description:
+      "Johannes Anyuru samtalar om essäsamlingen Upplyst sten, språkets gränser och författarens roll i en tid av upprepade brott mot mänskligheten.",
+    sourceLabel: "Världskulturmuseet",
+    sourceUrl:
+      "https://www.varldskulturmuseet.se/kalendarium/program/johannes-anyuru-upplyst-sten/",
+  },
+  {
+    id: "pyssla-kawaii-varldskulturmuseet-2026",
+    title: "Pyssla kawaii",
+    category: "Skapande",
+    dateLabel: "19 sep",
+    startDate: "2026-09-19",
+    time: "13:00–15:00",
+    venue: "Världskulturmuseet, Världslabbet",
+    area: "Korsvägen",
+    description:
+      "Drop-in för barn från sex år och tonåringar som vill skapa nyckelringar och magneter med egna eller färdiga kawaii-motiv.",
+    sourceLabel: "Världskulturmuseet",
+    sourceUrl:
+      "https://www.varldskulturmuseet.se/kalendarium/barn-och-familj/pyssla-kawaii2/",
+  },
+  {
+    id: "vemod-vals-och-vanvett-operan-2026",
+    title: "Vemod, vals och vanvett",
+    category: "Musik",
+    dateLabel: "20 sep",
+    startDate: "2026-09-20",
+    time: "18:00 · ca 2 tim 5 min",
+    venue: "GöteborgsOperan, Stora scenen",
+    area: "Lilla Bommen",
+    description:
+      "GöteborgsOperans Orkester inleder hösten med Bruchs violinkonsert, franska orkesterfärger och Ravels stegrande Boléro.",
+    sourceLabel: "GöteborgsOperan",
+    sourceUrl:
+      "https://www.opera.se/forestallningar/sasong-2026-2027/vemod-vals-och-vanvett/",
+  },
+  {
+    id: "utblick-fran-anstalten-frolunda-2026",
+    title: "Utblick från anstalten",
+    category: "Konst",
+    dateLabel: "22 sep–11 okt",
+    startDate: "2026-09-22",
+    endDate: "2026-10-11",
+    time: "Mån–fre 10–20 · lör–sön 10–17",
+    venue: "Frölunda Kulturhus, Valthornsgatan 13",
+    area: "Frölunda",
+    description:
+      "En mobil utställning med skulptur och film som synliggör interners erfarenheter av kriminalvård, tillvaro och framtid.",
+    sourceLabel: "Göteborgs Stad · Frölunda Kulturhus",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/kultur/kulturhus/utstallningar-pa-kulturhusen/aktuella-utstallningar?activityId=c2185055-5ebf-4b45-b59c-5b25aded7757",
+    isFree: true,
+  },
+  {
+    id: "fornuft-och-kanslor-varldskulturmuseet-2026",
+    title: "Förnuft och känslor",
+    category: "Samtal",
+    dateLabel: "23 sep",
+    startDate: "2026-09-23",
+    time: "18:00–19:00",
+    venue: "Världskulturmuseet, Trappscenen",
+    area: "Korsvägen",
+    description:
+      "Sociologen Åsa Wettergren och psykologen Pär Bjälkebring undersöker hur känslor och förnuft formar våra val, relationer och samhällen.",
+    sourceLabel: "Världskulturmuseet",
+    sourceUrl:
+      "https://www.varldskulturmuseet.se/kalendarium/program/existens-fornuft-och-kanslor/",
+    isFree: true,
+  },
 ] satisfies CulturalEvent[];
+
+const museumDirectoryEvents: CulturalEvent[] = OBJEKT.filter(
+  (object) =>
+    object.slag === "plats" &&
+    object.sal === "kultur" &&
+    !object.id.startsWith("obj-kulturhus-"),
+).map((object) => {
+  const sourceUrl = object.lankar.find((link) => link.slag === "hemsida")?.url;
+
+  if (!sourceUrl) {
+    throw new Error(`Museum saknar hemsida: ${object.titel}`);
+  }
+
+  return {
+    id: `museum-directory-${object.id}`,
+    title: object.titel,
+    category: "Museum",
+    dateLabel: "Permanent",
+    startDate: "2026-08-23",
+    venue: `${object.platsNamn ?? object.titel}, ${object.adress ?? "Göteborg"}`,
+    area: object.kvarter ?? "Göteborg med närregion",
+    description: object.varfor,
+    sourceLabel: object.platsNamn ?? object.titel,
+    sourceUrl,
+    isOngoing: true,
+  };
+});
+
+const kulturhusDirectoryEvents: CulturalEvent[] = OBJEKT.filter(
+  (object) =>
+    object.slag === "plats" &&
+    object.sal === "kultur" &&
+    object.id.startsWith("obj-kulturhus-"),
+).map((object) => {
+  const sourceUrl = object.lankar.find((link) => link.slag === "hemsida")?.url;
+
+  if (!sourceUrl) {
+    throw new Error(`Kulturhus saknar hemsida: ${object.titel}`);
+  }
+
+  return {
+    id: `kulturhus-directory-${object.id}`,
+    title: object.titel,
+    category: "Kulturhus",
+    dateLabel: "Permanent",
+    startDate: "2026-08-23",
+    venue: `${object.platsNamn ?? object.titel}, ${object.adress ?? "Göteborg"}`,
+    area: object.kvarter ?? "Göteborg",
+    description: object.varfor,
+    sourceLabel: object.platsNamn ?? object.titel,
+    sourceUrl,
+    isOngoing: true,
+  };
+});
 
 const trustedSourceHosts = new Set([
   "botaniska.se",
@@ -544,6 +858,7 @@ const trustedSourceHosts = new Set([
   "gdtf.se",
   "gso.se",
   "hasselbladfoundation.org",
+  "hagabion.se",
   "kulturnatta.goteborg.se",
   "opera.se",
   "rohsska.se",
@@ -558,11 +873,52 @@ const trustedSourceHosts = new Set([
   "www.gdtf.se",
   "www.gso.se",
   "www.hasselbladfoundation.org",
+  "www.hagabion.se",
   "www.opera.se",
   "www.rohsska.se",
   "www.sjofartsmuseetakvariet.se",
   "www.stadsteatern.goteborg.se",
   "www.varldskulturmuseet.se",
+  "aeroseum.se",
+  "akvarellmuseet.org",
+  "fiskemuseet.se",
+  "gallerithomassen.se",
+  "goteborgenergi.se",
+  "gnm.se",
+  "goteborgskonsthall.se",
+  "gotheborg.se",
+  "maritiman.se",
+  "molndal.se",
+  "paradoxmuseumgothenburg.com",
+  "radiomuseet.se",
+  "remfabriken.se",
+  "ringlinien.org",
+  "rodasten.com",
+  "sahlgrenska.se",
+  "universeum.se",
+  "wisdome.se",
+  "www.wisdome.se",
+  "worldofvolvo.com",
+  "www.worldofvolvo.com",
+  "www.aeroseum.se",
+  "www.akvarellmuseet.org",
+  "www.fiskemuseet.se",
+  "www.gallerithomassen.se",
+  "www.goteborgenergi.se",
+  "www.gnm.se",
+  "www.goteborgskonsthall.se",
+  "www.gotheborg.se",
+  "www.maritiman.se",
+  "www.molndal.se",
+  "www.paradoxmuseumgothenburg.com",
+  "www.radiomuseet.se",
+  "www.remfabriken.se",
+  "www.ringlinien.org",
+  "www.rodasten.com",
+  "medicinhistoriska.sahlgrenska.se",
+  "www.medicinhistoriska.sahlgrenska.se",
+  "www.oscariiifort.se",
+  "oscariiifort.se",
 ]);
 
 function canonicalSource(url: string) {
@@ -628,7 +984,11 @@ export function appendOnlyNewCulturalEvents(
 
 export const culturalEvents = appendOnlyNewCulturalEvents(
   [],
-  scannedCulturalEvents,
+  [
+    ...scannedCulturalEvents,
+    ...museumDirectoryEvents,
+    ...kulturhusDirectoryEvents,
+  ],
 );
 
 export const culturalCatalogVerifiedAt = "2026-08-23";

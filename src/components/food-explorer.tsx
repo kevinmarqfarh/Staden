@@ -1,11 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import {
   ArrowUpRight,
+  BookOpenText,
   BookmarkSimple,
+  CaretRight,
   Check,
+  Clock,
+  EnvelopeSimple,
   MapPin,
   MagnifyingGlass,
+  Phone,
+  SlidersHorizontal,
   Sparkle,
 } from "@phosphor-icons/react";
 import {
@@ -17,10 +24,12 @@ import {
 import {
   RESTAURANT_SCAN_DATE,
   restaurantCuisines,
+  restaurantCoverage,
   restaurants,
   type Restaurant,
   type RestaurantPriceTier,
 } from "@/data/restaurants";
+import { foodGuides, type FoodGuideTag } from "@/data/food-guides";
 
 const SAVED_RESTAURANTS_KEY = "staden:saved-restaurants";
 const SAVED_RESTAURANTS_CHANGED = "staden:saved-restaurants-changed";
@@ -37,18 +46,29 @@ const priceFilters: Array<{
   label: string;
 }> = [
   { value: 0, label: "Alla priser" },
-  { value: 1, label: "Budget" },
-  { value: 2, label: "Mellan" },
-  { value: 3, label: "Hög" },
-  { value: 4, label: "Avsmakning" },
+  { value: 1, label: "Budget <180" },
+  { value: 2, label: "Mellan 180–350" },
+  { value: 3, label: "Hög 350–700" },
+  { value: 4, label: "Premium 700+" },
 ];
 
 const priceLabels: Record<RestaurantPriceTier, string> = {
   1: "Budget · under 180 kr",
   2: "Mellan · 180–350 kr",
   3: "Hög · 350–700 kr",
-  4: "Avsmakning · 700+ kr",
+  4: "Premium · 700+ kr",
 };
+
+function scrollToResults() {
+  const reduceMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+
+  document.getElementById("mat-resultat")?.scrollIntoView({
+    behavior: reduceMotion ? "auto" : "smooth",
+    block: "start",
+  });
+}
 
 function subscribeToSavedRestaurants(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange);
@@ -129,6 +149,11 @@ function RestaurantCard({
           {restaurant.isWorkLunch ? (
             <span className="restaurant-badge">Jobblunch</span>
           ) : null}
+          {restaurant.verificationStatus === "directory" ? (
+            <span className="restaurant-badge restaurant-badge--directory">
+              Katalog · kontrollera
+            </span>
+          ) : null}
           {restaurant.isVegan ? (
             <span className="restaurant-badge">Växtbaserat</span>
           ) : null}
@@ -161,11 +186,42 @@ function RestaurantCard({
             {"·".repeat(restaurant.priceTier)}
           </span>
           <span>
-            {priceLabels[restaurant.priceTier]}
+            {restaurant.verificationStatus === "directory"
+              ? `Prisindikation · ${priceLabels[restaurant.priceTier]}`
+              : priceLabels[restaurant.priceTier]}
             {restaurant.opened ? <small>Öppnade {restaurant.opened}</small> : null}
           </span>
         </p>
+        {restaurant.hours ? (
+          <p className="restaurant-card__hours">
+            <Clock aria-hidden="true" size={17} weight="bold" />
+            <span>
+              <small>Öppettider</small>
+              {restaurant.hours}
+              {restaurant.lastVerified ? (
+                <small>Kontrollerad {restaurant.lastVerified}</small>
+              ) : null}
+            </span>
+          </p>
+        ) : null}
       </div>
+
+      {restaurant.phone || restaurant.email ? (
+        <div className="restaurant-card__contact" aria-label="Kontakt">
+          {restaurant.phone ? (
+            <a href={`tel:${restaurant.phone.replace(/[^+\d]/g, "")}`}>
+              <Phone aria-hidden="true" size={15} weight="bold" />
+              {restaurant.phone}
+            </a>
+          ) : null}
+          {restaurant.email ? (
+            <a href={`mailto:${restaurant.email}`}>
+              <EnvelopeSimple aria-hidden="true" size={15} weight="bold" />
+              {restaurant.email}
+            </a>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="restaurant-card__best-for" aria-label="Passar bäst för">
         {restaurant.bestFor.map((occasion) => (
@@ -189,6 +245,16 @@ function RestaurantCard({
           <span>{isSaved ? "Sparad" : "Spara"}</span>
         </button>
         <div>
+          {restaurant.bookingUrl ? (
+            <a
+              href={restaurant.bookingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Boka
+              <ArrowUpRight aria-hidden="true" size={15} weight="bold" />
+            </a>
+          ) : null}
           {restaurant.websiteUrl ? (
             <a
               href={restaurant.websiteUrl}
@@ -224,6 +290,10 @@ export function FoodExplorer({
   const [priceTier, setPriceTier] = useState<0 | RestaurantPriceTier>(0);
   const [activeCollection, setActiveCollection] =
     useState<RestaurantCollection>("all");
+  const [activeGuideTag, setActiveGuideTag] = useState<FoodGuideTag | null>(
+    null,
+  );
+  const [visibleLimit, setVisibleLimit] = useState(60);
   const savedRestaurantsSnapshot = useSyncExternalStore(
     subscribeToSavedRestaurants,
     getSavedRestaurantsSnapshot,
@@ -281,6 +351,20 @@ export function FoodExplorer({
     },
   ];
 
+  const cuisineCounts = useMemo(
+    () =>
+      new Map(
+        restaurantCuisines.map((option) => [
+          option,
+          option === "Alla"
+            ? restaurants.length
+            : restaurants.filter((restaurant) => restaurant.cuisine === option)
+                .length,
+        ]),
+      ),
+    [],
+  );
+
   const filteredRestaurants = useMemo(() => {
     const normalizedQuery = normalize(query.trim());
 
@@ -295,6 +379,9 @@ export function FoodExplorer({
           restaurant.description,
           ...restaurant.flavours,
           ...restaurant.bestFor,
+          restaurant.phone ?? "",
+          restaurant.email ?? "",
+          restaurant.hours ?? "",
           restaurant.isMichelin ? "Michelin stjärnkrog" : "",
           restaurant.isWorkLunch ? "Jobblunch vardagslunch" : "",
         ].join(" "),
@@ -306,14 +393,33 @@ export function FoodExplorer({
         (activeCollection === "michelin" && restaurant.isMichelin) ||
         (activeCollection === "work-lunch" && restaurant.isWorkLunch);
 
+      const matchesGuide =
+        activeGuideTag === null ||
+        restaurant.editorialTags?.includes(activeGuideTag);
+
       return (
         (!normalizedQuery || searchable.includes(normalizedQuery)) &&
         (cuisine === "Alla" || restaurant.cuisine === cuisine) &&
         (priceTier === 0 || restaurant.priceTier === priceTier) &&
-        matchesCollection
+        matchesCollection &&
+        matchesGuide
       );
     });
-  }, [activeCollection, cuisine, priceTier, query]);
+  }, [activeCollection, activeGuideTag, cuisine, priceTier, query]);
+
+  const groupedRestaurants = useMemo(() => {
+    const grouped = new Map<string, Restaurant[]>();
+
+    filteredRestaurants.slice(0, visibleLimit).forEach((restaurant) => {
+      const group = grouped.get(restaurant.cuisine) ?? [];
+      group.push(restaurant);
+      grouped.set(restaurant.cuisine, group);
+    });
+
+    return Array.from(grouped.entries()).sort(([left], [right]) =>
+      left.localeCompare(right, "sv-SE"),
+    );
+  }, [filteredRestaurants, visibleLimit]);
 
   function toggleSavedRestaurant(id: string) {
     const next = savedRestaurantIds.includes(id)
@@ -332,20 +438,46 @@ export function FoodExplorer({
   }
 
   function resetFilters() {
+    setVisibleLimit(60);
     setQuery("");
     setCuisine("Alla");
     setPriceTier(0);
     setActiveCollection("all");
+    setActiveGuideTag(null);
+  }
+
+  function selectCuisine(option: string) {
+    setVisibleLimit(60);
+    setCuisine(option);
+    setActiveGuideTag(null);
+
+    window.requestAnimationFrame(scrollToResults);
+  }
+
+  function openGuide(tag: FoodGuideTag) {
+    setVisibleLimit(60);
+    setQuery("");
+    setCuisine("Alla");
+    setActiveCollection("all");
+    setActiveGuideTag(tag);
+
+    window.requestAnimationFrame(scrollToResults);
   }
 
   return (
     <section className="food-section" id="mat">
       <div className="section-heading">
-        <p className="kicker">MATSCANNERN · VERIFIERAD {RESTAURANT_SCAN_DATE}</p>
+        <p className="kicker">MATKATALOGEN · UPPDATERAD {RESTAURANT_SCAN_DATE}</p>
         <h2>Göteborg på tallrik.</h2>
         <p>
           En växande restaurangbank som bryter ner staden efter kök, pris och
           kvarter — från nyöppnade luckor till institutioner och avsmakning.
+        </p>
+        <p className="food-confidence-note">
+          {restaurantCoverage.editorial} redaktionella val är källkontrollerade.
+          Katalogen breddar med {restaurantCoverage.directory} OpenStreetMap-poster;
+          {" "}{restaurantCoverage.excludedClosed} uttryckligen stängda verksamheter
+          är bortfiltrerade. Pris och öppettider ska dubbelkollas före besök.
         </p>
       </div>
 
@@ -368,23 +500,145 @@ export function FoodExplorer({
         </div>
       </div>
 
-      <div className="food-collections" aria-label="Kuraterade restaurangkategorier">
-        {collections.map((collection) => (
-          <button
-            className={activeCollection === collection.value ? "is-active" : ""}
-            type="button"
-            aria-pressed={activeCollection === collection.value}
-            onClick={() => setActiveCollection(collection.value)}
-            key={collection.value}
-          >
-            <span className="food-collection__topline">
-              <strong>{collection.label}</strong>
-              <b>{collection.count}</b>
-            </span>
-            <span>{collection.description}</span>
-          </button>
-        ))}
+      <div className="cuisine-browser">
+        <div className="food-subheading">
+          <div>
+            <p className="kicker">BÖRJA MED KÖKET</p>
+            <h3>Vad är du sugen på?</h3>
+          </div>
+          <p>
+            Alla adresser är sorterade efter cuisine från start. Välj ett kök
+            eller fortsätt till hela listan.
+          </p>
+        </div>
+        <div className="cuisine-rail" aria-label="Välj typ av kök">
+          {restaurantCuisines.map((option, index) => (
+            <button
+              type="button"
+              className={cuisine === option ? "is-active" : ""}
+              aria-pressed={cuisine === option}
+              onClick={() => selectCuisine(option)}
+              key={option}
+            >
+              <span>{String(index).padStart(2, "0")}</span>
+              <strong>{option === "Alla" ? "Alla kök" : option}</strong>
+              <b>{cuisineCounts.get(option)}</b>
+            </button>
+          ))}
+        </div>
       </div>
+
+      <section className="editorial-food" aria-labelledby="editorial-food-title">
+        <div className="food-subheading">
+          <div>
+            <p className="kicker">STADEN VÄLJER</p>
+            <h3 id="editorial-food-title">Ät efter livet du lever.</h3>
+          </div>
+          <p>
+            Redaktionella guider som börjar i ett humör, ett sällskap eller en
+            kväll — och slutar i ett konkret urval att spara.
+          </p>
+        </div>
+
+        <div className="food-guide-feed">
+          {foodGuides.map((guide, index) => {
+            const guideCount = restaurants.filter((restaurant) =>
+              restaurant.editorialTags?.includes(guide.tag),
+            ).length;
+
+            return (
+              <article className="food-guide-card" key={guide.id}>
+                <div className="food-guide-card__media">
+                  <Image
+                    src={guide.imagePath}
+                    alt={guide.imageAlt}
+                    fill
+                    sizes="(min-width: 900px) 33vw, 100vw"
+                  />
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                </div>
+                <div className="food-guide-card__copy">
+                  <p>{guide.eyebrow}</p>
+                  <h4>{guide.title}</h4>
+                  <p>{guide.description}</p>
+                  <div className="food-guide-card__meta">
+                    <span>
+                      <BookOpenText aria-hidden="true" size={16} weight="bold" />
+                      Kurerat urval
+                    </span>
+                    <span>{guideCount} platser</span>
+                  </div>
+                  <div className="food-guide-card__actions">
+                    <button
+                      type="button"
+                      aria-pressed={activeGuideTag === guide.tag}
+                      onClick={() => openGuide(guide.tag)}
+                    >
+                      Visa {guideCount} platser
+                      <CaretRight aria-hidden="true" size={17} weight="bold" />
+                    </button>
+                    {guide.sourceUrl ? (
+                      <a
+                        href={guide.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Öppna källan för ${guide.title}`}
+                      >
+                        Källa
+                        <ArrowUpRight
+                          aria-hidden="true"
+                          size={15}
+                          weight="bold"
+                        />
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <div className="food-filter-panel" id="mat-filter">
+        <div className="food-filter-panel__heading">
+          <SlidersHorizontal aria-hidden="true" size={20} weight="bold" />
+          <div>
+            <h3>Filtrera restaurangbanken</h3>
+            <p>Kombinera fritext, urval och ungefärlig kostnad.</p>
+          </div>
+        </div>
+
+        <div
+          className="food-collections"
+          aria-label="Snabba restaurangurval"
+        >
+          {collections.map((collection) => (
+            <button
+              className={
+                activeCollection === collection.value && activeGuideTag === null
+                  ? "is-active"
+                  : ""
+              }
+              type="button"
+              aria-pressed={
+                activeCollection === collection.value && activeGuideTag === null
+              }
+              onClick={() => {
+                setVisibleLimit(60);
+                setActiveCollection(collection.value);
+                setActiveGuideTag(null);
+              }}
+              key={collection.value}
+            >
+              <span className="food-collection__topline">
+                <strong>{collection.label}</strong>
+                <b>{collection.count}</b>
+              </span>
+              <span>{collection.description}</span>
+            </button>
+          ))}
+        </div>
 
       <div className="food-controls">
         <label className="food-search">
@@ -393,23 +647,12 @@ export function FoodExplorer({
           <input
             type="search"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setVisibleLimit(60);
+              setQuery(event.target.value);
+            }}
             placeholder="Sök kök, område eller restaurang"
           />
-        </label>
-
-        <label className="cuisine-select">
-          <span>Kök</span>
-          <select
-            value={cuisine}
-            onChange={(event) => setCuisine(event.target.value)}
-          >
-            {restaurantCuisines.map((option) => (
-              <option value={option} key={option}>
-                {option}
-              </option>
-            ))}
-          </select>
         </label>
 
         <div className="price-filters" aria-label="Filtrera efter prisnivå">
@@ -418,33 +661,74 @@ export function FoodExplorer({
               type="button"
               className={priceTier === filter.value ? "is-active" : ""}
               aria-pressed={priceTier === filter.value}
-              onClick={() => setPriceTier(filter.value)}
+              onClick={() => {
+                setVisibleLimit(60);
+                setPriceTier(filter.value);
+              }}
               key={filter.value}
             >
               {filter.label}
             </button>
           ))}
         </div>
-
+        <p className="price-scroll-hint" aria-hidden="true">
+          Svep för fler prisnivåer →
+        </p>
+      </div>
       </div>
 
-      <div className="food-results-heading">
-        <p aria-live="polite">{filteredRestaurants.length} träffar</p>
+      <div className="food-results-heading" id="mat-resultat">
+        <p aria-live="polite">
+          {filteredRestaurants.length} träffar
+          {activeGuideTag ? ` · ${activeGuideTag}` : ""}
+          {!activeGuideTag && cuisine !== "Alla" ? ` · ${cuisine}` : ""}
+        </p>
         <p>Pris per person, ungefärligt och utan dryck</p>
       </div>
 
       {filteredRestaurants.length > 0 ? (
-        <div className="restaurant-grid">
-          {filteredRestaurants.map((restaurant, index) => (
-            <RestaurantCard
-              restaurant={restaurant}
-              number={index + 1}
-              isSaved={savedRestaurantIds.includes(restaurant.id)}
-              onToggleSave={toggleSavedRestaurant}
-              key={restaurant.id}
-            />
-          ))}
-        </div>
+        <>
+          <div className="cuisine-results">
+            {groupedRestaurants.map(([groupName, groupRestaurants]) => (
+              <section
+                className="cuisine-group"
+                aria-labelledby={`cuisine-${normalize(groupName)}`}
+                key={groupName}
+              >
+                <header>
+                  <h3 id={`cuisine-${normalize(groupName)}`}>{groupName}</h3>
+                  <span>{groupRestaurants.length} platser</span>
+                </header>
+                <div className="restaurant-grid">
+                  {groupRestaurants.map((restaurant) => (
+                    <RestaurantCard
+                      restaurant={restaurant}
+                      number={filteredRestaurants.indexOf(restaurant) + 1}
+                      isSaved={savedRestaurantIds.includes(restaurant.id)}
+                      onToggleSave={toggleSavedRestaurant}
+                      key={restaurant.id}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+
+        {filteredRestaurants.length > visibleLimit ? (
+          <div className="food-load-more">
+            <p>
+              Visar {visibleLimit} av {filteredRestaurants.length} träffar
+            </p>
+            <button
+              type="button"
+              onClick={() => setVisibleLimit((current) => current + 60)}
+            >
+              Visa fler
+              <CaretRight aria-hidden="true" size={17} weight="bold" />
+            </button>
+          </div>
+          ) : null}
+        </>
       ) : (
         <div className="food-empty-state">
           <p>Inga restauranger matchar den kombinationen ännu.</p>
@@ -453,6 +737,16 @@ export function FoodExplorer({
           </button>
         </div>
       )}
+
+      <p className="food-data-note">
+        <strong>Källnivå:</strong> Redaktionella poster är handplockade från
+        officiella restaurang- och Göteborgskällor. Katalogposter täcker hela
+        Göteborgs kommun via OpenStreetMap; kontakt- och öppettidsfält visas
+        när de finns och koordinat visas när gatuadress saknas. Dubbelkolla
+        katalogposter före besök; saknad prisdata får neutral prisklass 2.
+        <a href="https://www.openstreetmap.org/" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>
+        · senast skannad {RESTAURANT_SCAN_DATE}.
+      </p>
     </section>
   );
 }

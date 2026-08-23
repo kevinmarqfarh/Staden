@@ -65,10 +65,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24.19.0
+          # Keep npm's lockfile semantics identical to the checked-in toolchain.
+          node-version: 24.13.0
 
       - name: Install locked dependencies
-        run: npm ci
+        # The DAST target does not require optional image/wasm native bindings.
+        run: npm ci --omit=optional
 
       - name: Build the production scan target
         run: npm run build

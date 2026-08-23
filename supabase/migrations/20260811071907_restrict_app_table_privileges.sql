@@ -1,0 +1,16 @@
+begin;
+revoke all on table public.tasks from public, anon, authenticated;
+revoke all on table public.calendar_events from public, anon, authenticated;
+revoke all on table public.health_plans from public, anon, authenticated;
+revoke all on table public.health_habits from public, anon, authenticated;
+revoke all on table public.health_habit_logs from public, anon, authenticated;
+revoke all on table public.recipes from public, anon, authenticated;
+revoke all on table public.shopping_items from public, anon, authenticated;
+grant select, insert, update, delete on table public.tasks to authenticated;
+grant select, insert, update, delete on table public.calendar_events to authenticated;
+grant select, insert, update, delete on table public.health_plans to authenticated;
+grant select, insert, update, delete on table public.health_habits to authenticated;
+grant select, insert, update, delete on table public.health_habit_logs to authenticated;
+grant select, insert, update, delete on table public.recipes to authenticated;
+grant select, insert, update, delete on table public.shopping_items to authenticated;
+commit;
