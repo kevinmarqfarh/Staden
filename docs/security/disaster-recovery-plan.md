@@ -8,7 +8,7 @@
 
 ## Mål och antaganden
 
-Repot innehåller nu ett minimalt, statiskt Next.js-skal där GitHub lagrar koden och Vercel är den valda webbplattformen. Planen antar därutöver en framtida mobilförst, databuren app där GitHub lagrar migrationshistorik och Supabase lagrar Postgres/Auth/Storage. Vercel-kopplingens hostade konfiguration och deploymentstatus kan inte verifieras enbart från repot. Inga riktiga användare, datavolymer, leverantörsplaner eller SLO:er kan verifieras.
+Repot innehåller ett minimalt, statiskt Next.js-skal där GitHub lagrar koden och Vercel levererar produktion på `https://staden.vercel.app`; apprevision `1ba0650` är verifierad som deployad. Planen antar därutöver en framtida mobilförst, databuren app där GitHub lagrar migrationshistorik och Supabase lagrar Postgres/Auth/Storage. Vercel-projektets fulla konfiguration, rollback/retention och teamåtkomst kan inte verifieras enbart från repot. Inga riktiga användare, datavolymer, leverantörsplaner eller SLO:er kan verifieras.
 
 Föreslagna mål att godkänna:
 
@@ -98,7 +98,7 @@ Databasbackuper återställer metadata men inte raderade objekt. Därför krävs
 
 ## Runbook: Vercel
 
-Vercel är vald som webbplattform, men projektkoppling, miljöer, alias, åtkomstregler och known-good deployment måste verifieras i plattformen:
+Vercel Git-integration, Production-deployment och stabil `vercel.app`-alias är verifierade för `1ba0650`; miljövariabelinventering, åtkomstregler, custom domain, retention och rollback behöver fortfarande attesteras i plattformen:
 
 1. Vid kodrelaterad incident, identifiera senaste kända goda produktiondeployment och använd Instant Rollback/CLI rollback.
 2. Om en kall rebuild krävs: checka ut en known-good commit, verifiera lockfilens integritet, använd Node 24 och `npm ci`, kör `npm run build` och promota först den verifierade artefakten. Bevara en immutable known-good deployment/artefakt eftersom npm och `next/font/google` är externa byggtidsberoenden.
