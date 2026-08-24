@@ -2544,29 +2544,6 @@ export const osmDirectoryRestaurants: Restaurant[] = [
     "verificationStatus": "directory"
   },
   {
-    "id": "osm-14m2bao-node-1632019747",
-    "name": "14m2 Bao",
-    "cuisine": "Kinesiskt",
-    "flavours": [
-      "chinese"
-    ],
-    "priceTier": 2,
-    "area": "Inom Vallgraven",
-    "address": "Kungstorget 18, 411 10 Göteborg",
-    "format": "Restaurang",
-    "description": "Katalogpost om kinesiskt kök. Uppgifter visas när de finns registrerade i OpenStreetMap.",
-    "bestFor": [
-      "Vardag"
-    ],
-    "sourceLabel": "OpenStreetMap · Göteborgs kommun · 23 aug 2026",
-    "sourceUrl": "https://www.openstreetmap.org/node/1632019747",
-    "websiteUrl": "https://14m2bao.se/",
-    "phone": "+46 760250800",
-    "hours": "Mån-Fre 09:00-18:00 · Lör 11:00-17:00",
-    "lastVerified": "2026-08-23",
-    "verificationStatus": "directory"
-  },
-  {
     "id": "osm-brunnsbopizzeria-node-1632081169",
     "name": "Brunnsbo Pizzeria",
     "cuisine": "Italienskt",
@@ -19774,5 +19751,132 @@ export const osmDirectoryRestaurants: Restaurant[] = [
     "lastVerified": "2026-08-23",
     "verificationStatus": "directory",
     "isVegan": true
+  },
+  {
+    "id": "osm-restaurant-masalakitchen-node-929002236",
+    "name": "Masala Kitchen · Lindholmen",
+    "cuisine": "Indiskt",
+    "flavours": [
+      "indian"
+    ],
+    "priceTier": 2,
+    "area": "Lindholmshamnen",
+    "address": "Theres Svenssons Gata 6, 41755 Göteborg",
+    "format": "Restaurang",
+    "description": "Katalogpost om indiskt kök. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Vardag"
+    ],
+    "sourceLabel": "OpenStreetMap · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/929002236",
+    "hours": "Mån-Fre 11:00-14:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-restaurant-ilovepizza-node-1780484893",
+    "name": "I Love Pizza · Stampen",
+    "cuisine": "Italienskt",
+    "flavours": [
+      "pizza"
+    ],
+    "priceTier": 1,
+    "area": "Stampen",
+    "address": "Friggagatan 14D, 411 01 Göteborg",
+    "format": "Pizzeria",
+    "description": "Katalogpost om italienskt kök. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Budget",
+      "Vardag"
+    ],
+    "sourceLabel": "OpenStreetMap · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/1780484893",
+    "hours": "Mån-Tors 11:00-21:00 · Fre 11:00-22:00 · Lör 12:00-22:00 · Sön 12:00-21:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-restaurant-corner-node-2073313714",
+    "name": "Corner · Mässans Gata 16",
+    "cuisine": "Internationellt",
+    "flavours": [
+      "Internationellt"
+    ],
+    "priceTier": 2,
+    "area": "Lorensberg",
+    "address": "Mässans Gata 16, 412 51 Göteborg",
+    "format": "Restaurang",
+    "description": "Katalogpost om internationellt kök. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Vardag"
+    ],
+    "sourceLabel": "OpenStreetMap · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/2073313714",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-restaurant-mikado-node-2931010901",
+    "name": "Mikado · Heden",
+    "cuisine": "Japanskt",
+    "flavours": [
+      "japanese"
+    ],
+    "priceTier": 2,
+    "area": "Heden",
+    "address": "Sten Sturegatan 42, 412 52 Göteborg",
+    "format": "Restaurang",
+    "description": "Katalogpost om japanskt kök. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Vardag"
+    ],
+    "sourceLabel": "OpenStreetMap · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/2931010901",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-restaurant-masalakitchen-node-9391250687",
+    "name": "Masala Kitchen · Bjurslätts Torg",
+    "cuisine": "Indiskt",
+    "flavours": [
+      "indian"
+    ],
+    "priceTier": 2,
+    "area": "Bjurslätts Torg",
+    "address": "Hjalmar Brantingsgatan 102, 41716 Göteborg",
+    "format": "Restaurang",
+    "description": "Katalogpost om indiskt kök. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Vardag"
+    ],
+    "sourceLabel": "OpenStreetMap · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/9391250687",
+    "hours": "Mån-Fre 11:00-22:00 · Lör 12:00-22:00 · Sön 12:00-21:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-restaurant-bennepastabar-node-11047834826",
+    "name": "Benne Pastabar · Lindholmshamnen",
+    "cuisine": "Italienskt",
+    "flavours": [
+      "pasta"
+    ],
+    "priceTier": 2,
+    "area": "Lindholmshamnen",
+    "address": "Götaverksgatan 39, 417 55 Göteborg",
+    "format": "Pastabar",
+    "description": "Katalogpost om italienskt kök. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Vardag"
+    ],
+    "sourceLabel": "OpenStreetMap · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/11047834826",
+    "websiteUrl": "https://bennepastabar.se/",
+    "phone": "+46 31 492 905",
+    "hours": "Mån-Fre 11:00-20:00 · Lör-Sön 12:00-20:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
   },
 ];

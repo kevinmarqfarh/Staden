@@ -2,13 +2,13 @@
 
 **Status:** PROVISIONAL — mål och beroenden är antaganden tills de godkänts och testats
 
-**Version:** 0.2, 2026-08-23
+**Version:** 0.3, 2026-08-24
 
 **Ägare:** ej utsedd (blockerare före produktion)
 
 ## Mål och antaganden
 
-Git är nu system of record för 32 kulturposter, 999 aktiva/okända restaurangposter (89 redaktionella och 910 katalogposter), käll-URL:er och redaktionell media. Två uttryckligen stängda katalogposter exkluderas i aggregeringen. Webbläsaren lagrar tema, sparade event-/restaurang-ID:n och namngivna listor i `localStorage`; de har ingen central backup, konto- eller enhetssynk och kan försvinna vid rensad lagring eller originbyte. Supabase används endast för en publik Auth-hälsokontroll och ett avbrott där ska därför degradera anslutningsstatusen, inte katalogen. Vercel-revision `1ba0650` är tidigare verifierad, men den aktuella produktkandidaten saknar ännu hosted deployment/scannerbevis.
+Git är system of record för kultur-, nöjes- och restaurangkatalogerna, käll-URL:er, platsresolver och redaktionell media. Reproducerbara migrationer skapar `public.discovery_places`, PostGIS/RLS/RPC och seedar 1 255 kartlagda poster (110 kultur, 144 nöje, 1 001 restauranger). Webbläsaren lagrar tema, sparade event-/restaurang-ID:n och namngivna listor i `localStorage`; den exakta enhetspositionen hålls däremot endast i minnet och kan varken återställas eller historikåtervinnas. Nuvarande UI kan fortsätta med Git-katalogen, lokal avståndsberäkning och manuell områdesfallback vid Supabase-avbrott. Vercel-revision `1ba0650` är tidigare verifierad, men den aktuella produktkandidaten saknar ännu hosted deployment/scannerbevis.
 
 Föreslagna mål att godkänna:
 
@@ -20,7 +20,7 @@ Föreslagna mål att godkänna:
 | GitHub-kod och migrationer | 24 timmar för nya commits | 4 timmar | Kräver daglig mirror till separat konto/leverantör och regelbunden restorekontroll. Lokala clones räknas inte ensamma som backup. |
 | Nuvarande katalog och media i Git | 0 efter push; fram till push kan lokalt delta förloras | 4 timmar | Återställ från signerad/known-good Git-revision och verifiera källor/bild. |
 | Lokalt tema och sparade event-/restaurang-ID:n | Inget centralt RPO | Ingen serverrestore möjlig | Bekvämlighetsdata per browser-origin; kommunicera tydligt tills kontosynk finns. |
-| Framtida importerade katalogdata | 24 timmar eller återinläsning | 8 timmar | Råa snapshots, provenance och licens/retention måste vara reproducerbara. |
+| Publik PostGIS-katalog | 24 timmar eller återinläsning | 8 timmar | Kan återskapas från Git-källor, resolver, generator och migrationer; framtida ingestion-snapshots/provenance måste läggas till. |
 | Framtida centrala listor | 15 minuter | 4 timmar | Kräver Postgres, RLS, backup och verifierad restore innan aktivering. |
 
 Supabase dokumenterar att betalda projekt får dagliga databasbackuper och att PITR ger finare återställningspunkter, men aktuell plan/status för STADEN är inte verifierad. Databasbackup omfattar inte själva Storage-objekten. Se [Supabase Database Backups](https://supabase.com/docs/guides/platform/backups). Vercels rollback återpekar trafik till en tidigare deployment men återställer inte databas eller aktuella miljövariabler; se [Vercel Instant Rollback](https://vercel.com/docs/instant-rollback). GitHub rekommenderar mirror-clone eller separat backupverktyg för återställningsbar kodhistorik; se [GitHub: Backing up a repository](https://docs.github.com/en/repositories/archiving-a-github-repository/backing-up-a-repository).
@@ -65,7 +65,7 @@ Aktivera planen när övervakning, leverantörsstatus eller rapporter visar att 
 ### Förberedelser
 
 - Bekräfta plan, region, senaste/äldsta restorepunkt och om PITR är aktiverat. Spara endast metadata, aldrig access token, i bevispaketet.
-- Säkerställ att alla scheman, extensions, RLS-policyer, funktioner och grants finns som granskade migrationer i Git. Detta är ännu inte uppfyllt.
+- Säkerställ att alla scheman, extensions, RLS-policyer, funktioner och grants finns som granskade migrationer i Git. PostGIS-katalogen uppfyller detta; framtida Auth/list-/ingestiontabeller måste läggas till innan aktivering.
 - Ta regelbunden logisk dump till krypterad, separat backupdomän med immutable retention. Testa att dumpen kan läsas och registrera checksumma.
 - Dokumentera custom roles; Supabase anger att lösenord för egna roller inte ingår i nedladdade dagliga backups och kan behöva sättas om.
 
@@ -123,7 +123,8 @@ En incident får inte stängas enbart för att startsidan svarar. Följande ska 
 | Applikation nu | Ren `npm ci` + produktionsbuild passerar; `/` och `/icon.svg` ger 200; assets, metadata-origin och förväntade säkerhetsheaders är korrekta; inga 5xx |
 | Browser state | Spara/ta bort, reload, cross-tab, korrupt JSON, blockerad storage och alla tre teman testas; originbyte dokumenteras som dataförlust tills synk finns |
 | Supabase health | connected/error/timeout/missing-env fungerar; CORS tillåter avsett flöde; ingen service-role/secret finns i bundle, Git eller `NEXT_PUBLIC_*` |
-| Kultur-/restaurangkatalog | Samtliga 32 + 999 visningsbara poster finns; uttryckligen stängda poster är exkluderade; primära källor är HTTPS/allowlistade och aktuella; restaurangernas HTTPS-webbplatser kontrolleras separat; nya flikar använder `noopener noreferrer`; 4xx-länkar tombstonas och bildfilen laddas |
+| Publik upptäcktskatalog | Git-katalogen bygger; `discovery_places` innehåller 1 255 kartlagda poster (110/144/1 001); anon-RPC returnerar närmast först; GiST-index syns i `EXPLAIN`; uttryckligen stängda restauranger förblir exkluderade; platsläge markeras `area` när det är ungefärligt |
+| Platsintegritet | Ingen koordinat skrivs till URL, `localStorage`, Supabase eller logg; nekad/otillgänglig/timeout och manuell områdesfallback fungerar; `Permissions-Policy` tillåter endast `self` |
 | Framtida dataflöden | De fem viktigaste användarflödena och write/read-after-write läggs till som exitkriterier när API/databas finns |
 | Jobs | Ingestion/cron återstartas kontrollerat utan dubbletter eller replay-gap |
 | Säkerhet | Berörda tokens återkallade/roterade; inga öppna critical/high utan IC-riskacceptans |

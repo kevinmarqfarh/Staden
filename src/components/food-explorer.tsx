@@ -30,12 +30,39 @@ import {
   type RestaurantPriceTier,
 } from "@/data/restaurants";
 import { foodGuides, type FoodGuideTag } from "@/data/food-guides";
+import { MapLink } from "@/components/map-link";
+import { NearbyControl } from "@/components/nearby-control";
+import { useNearbyLocation } from "@/hooks/use-nearby-location";
+import {
+  distanceInMeters,
+  formatDistance,
+  resolveGothenburgPoint,
+} from "@/lib/geo";
 
 const SAVED_RESTAURANTS_KEY = "staden:saved-restaurants";
 const SAVED_RESTAURANTS_CHANGED = "staden:saved-restaurants-changed";
 const EMPTY_SAVED_RESTAURANTS = "[]";
 const MAX_SAVED_RESTAURANTS = 200;
 type RestaurantCollection = "all" | "new" | "michelin" | "work-lunch";
+type RestaurantResult = {
+  restaurant: Restaurant;
+  distanceMeters: number | null;
+  approximateDistance: boolean;
+};
+
+const restaurantPoints = new Map(
+  restaurants.map((restaurant) => [
+    restaurant.id,
+    resolveGothenburgPoint(
+      restaurant.address,
+      restaurant.area,
+      restaurant.name,
+    ),
+  ]),
+);
+const mappedRestaurantCount = Array.from(restaurantPoints.values()).filter(
+  Boolean,
+).length;
 
 const validRestaurantIds = new Set(
   restaurants.map((restaurant) => restaurant.id),
@@ -121,22 +148,18 @@ function normalize(value: string) {
     .replace(/\p{Diacritic}/gu, "");
 }
 
-function googleMapsUrl(restaurant: Restaurant) {
-  const query = [restaurant.address, restaurant.area, "Göteborg"]
-    .filter(Boolean)
-    .join(", ");
-
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-}
-
 function RestaurantCard({
   restaurant,
   number,
+  distanceMeters,
+  approximateDistance,
   isSaved,
   onToggleSave,
 }: {
   restaurant: Restaurant;
   number: number;
+  distanceMeters: number | null;
+  approximateDistance: boolean;
   isSaved: boolean;
   onToggleSave: (id: string) => void;
 }) {
@@ -145,6 +168,12 @@ function RestaurantCard({
       <div className="restaurant-card__topline">
         <span>{String(number).padStart(2, "0")}</span>
         <div className="restaurant-card__badges">
+          {distanceMeters !== null ? (
+            <span className="restaurant-badge restaurant-badge--distance">
+              <MapPin aria-hidden="true" size={12} weight="fill" />
+              {approximateDistance ? "≈ " : ""}{formatDistance(distanceMeters)}
+            </span>
+          ) : null}
           {restaurant.isNew ? (
             <span className="restaurant-badge restaurant-badge--new">
               <Sparkle aria-hidden="true" size={12} weight="fill" />
@@ -184,18 +213,18 @@ function RestaurantCard({
       <div className="restaurant-card__details">
         <p>
           <MapPin aria-hidden="true" size={17} weight="bold" />
-          <a
+          <MapLink
             className="restaurant-card__address-link"
-            href={googleMapsUrl(restaurant)}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Öppna ${restaurant.name} i Google Maps`}
+            query={[restaurant.address, restaurant.area, "Göteborg"]
+              .filter(Boolean)
+              .join(", ")}
+            label={restaurant.name}
           >
             <span>
               {restaurant.address}
-              <small>{restaurant.area} · Öppna karta</small>
+              <small>{restaurant.area} · Vägbeskrivning</small>
             </span>
-          </a>
+          </MapLink>
         </p>
         <p>
           <span className="price-symbol" aria-hidden="true">
@@ -310,6 +339,7 @@ export function FoodExplorer({
     null,
   );
   const [visibleLimit, setVisibleLimit] = useState(60);
+  const nearby = useNearbyLocation();
   const savedRestaurantsSnapshot = useSyncExternalStore(
     subscribeToSavedRestaurants,
     getSavedRestaurantsSnapshot,
@@ -384,58 +414,98 @@ export function FoodExplorer({
   const filteredRestaurants = useMemo(() => {
     const normalizedQuery = normalize(query.trim());
 
-    return restaurants.filter((restaurant) => {
-      const searchable = normalize(
-        [
-          restaurant.name,
-          restaurant.cuisine,
-          restaurant.area,
-          restaurant.address,
-          restaurant.format,
-          restaurant.description,
-          ...restaurant.flavours,
-          ...restaurant.bestFor,
-          restaurant.phone ?? "",
-          restaurant.email ?? "",
-          restaurant.hours ?? "",
-          restaurant.isMichelin ? "Michelin stjärnkrog" : "",
-          restaurant.isWorkLunch ? "Jobblunch vardagslunch" : "",
-        ].join(" "),
-      );
+    return restaurants
+      .filter((restaurant) => {
+        const searchable = normalize(
+          [
+            restaurant.name,
+            restaurant.cuisine,
+            restaurant.area,
+            restaurant.address,
+            restaurant.format,
+            restaurant.description,
+            ...restaurant.flavours,
+            ...restaurant.bestFor,
+            restaurant.phone ?? "",
+            restaurant.email ?? "",
+            restaurant.hours ?? "",
+            restaurant.isMichelin ? "Michelin stjärnkrog" : "",
+            restaurant.isWorkLunch ? "Jobblunch vardagslunch" : "",
+          ].join(" "),
+        );
 
-      const matchesCollection =
-        activeCollection === "all" ||
-        (activeCollection === "new" && restaurant.isNew) ||
-        (activeCollection === "michelin" && restaurant.isMichelin) ||
-        (activeCollection === "work-lunch" && restaurant.isWorkLunch);
+        const matchesCollection =
+          activeCollection === "all" ||
+          (activeCollection === "new" && restaurant.isNew) ||
+          (activeCollection === "michelin" && restaurant.isMichelin) ||
+          (activeCollection === "work-lunch" && restaurant.isWorkLunch);
 
-      const matchesGuide =
-        activeGuideTag === null ||
-        restaurant.editorialTags?.includes(activeGuideTag);
+        const matchesGuide =
+          activeGuideTag === null ||
+          restaurant.editorialTags?.includes(activeGuideTag);
 
-      return (
-        (!normalizedQuery || searchable.includes(normalizedQuery)) &&
-        (cuisine === "Alla" || restaurant.cuisine === cuisine) &&
-        (priceTier === 0 || restaurant.priceTier === priceTier) &&
-        matchesCollection &&
-        matchesGuide
-      );
-    });
-  }, [activeCollection, activeGuideTag, cuisine, priceTier, query]);
+        return (
+          (!normalizedQuery || searchable.includes(normalizedQuery)) &&
+          (cuisine === "Alla" || restaurant.cuisine === cuisine) &&
+          (priceTier === 0 || restaurant.priceTier === priceTier) &&
+          matchesCollection &&
+          matchesGuide
+        );
+      })
+      .map<RestaurantResult>((restaurant) => {
+        const point = restaurantPoints.get(restaurant.id) ?? null;
+        const distanceMeters =
+          nearby.point && point
+            ? distanceInMeters(nearby.point, point)
+            : null;
+
+        return {
+          restaurant,
+          distanceMeters,
+          approximateDistance:
+            nearby.source === "manual" || point?.precision === "area",
+        };
+      })
+      .filter(
+        (result) =>
+          !nearby.point ||
+          (result.distanceMeters !== null &&
+            result.distanceMeters <= nearby.radiusMeters),
+      )
+      .sort((left, right) => {
+        if (!nearby.point) return 0;
+        return (left.distanceMeters ?? Infinity) - (right.distanceMeters ?? Infinity);
+      });
+  }, [
+    activeCollection,
+    activeGuideTag,
+    cuisine,
+    nearby.point,
+    nearby.radiusMeters,
+    nearby.source,
+    priceTier,
+    query,
+  ]);
 
   const groupedRestaurants = useMemo(() => {
-    const grouped = new Map<string, Restaurant[]>();
+    if (nearby.point) {
+      return [
+        ["Närmast dig", filteredRestaurants.slice(0, visibleLimit)],
+      ] as Array<[string, RestaurantResult[]]>;
+    }
 
-    filteredRestaurants.slice(0, visibleLimit).forEach((restaurant) => {
-      const group = grouped.get(restaurant.cuisine) ?? [];
-      group.push(restaurant);
-      grouped.set(restaurant.cuisine, group);
+    const grouped = new Map<string, RestaurantResult[]>();
+
+    filteredRestaurants.slice(0, visibleLimit).forEach((result) => {
+      const group = grouped.get(result.restaurant.cuisine) ?? [];
+      group.push(result);
+      grouped.set(result.restaurant.cuisine, group);
     });
 
     return Array.from(grouped.entries()).sort(([left], [right]) =>
       left.localeCompare(right, "sv-SE"),
     );
-  }, [filteredRestaurants, visibleLimit]);
+  }, [filteredRestaurants, nearby.point, visibleLimit]);
 
   function toggleSavedRestaurant(id: string) {
     const next = savedRestaurantIds.includes(id)
@@ -516,6 +586,8 @@ export function FoodExplorer({
           <span>nya 2025–26</span>
         </div>
       </div>
+
+      <NearbyControl mappedCount={mappedRestaurantCount} noun="matställen" />
 
       <div className="cuisine-browser">
         <div className="food-subheading">
@@ -697,6 +769,7 @@ export function FoodExplorer({
       <div className="food-results-heading" id="mat-resultat">
         <p aria-live="polite">
           {filteredRestaurants.length} träffar
+          {nearby.point ? ` · närmast ${nearby.label}` : ""}
           {activeGuideTag ? ` · ${activeGuideTag}` : ""}
           {!activeGuideTag && cuisine !== "Alla" ? ` · ${cuisine}` : ""}
         </p>
@@ -717,13 +790,15 @@ export function FoodExplorer({
                   <span>{groupRestaurants.length} platser</span>
                 </header>
                 <div className="restaurant-grid">
-                  {groupRestaurants.map((restaurant) => (
+                  {groupRestaurants.map((result) => (
                     <RestaurantCard
-                      restaurant={restaurant}
-                      number={filteredRestaurants.indexOf(restaurant) + 1}
-                      isSaved={savedRestaurantIds.includes(restaurant.id)}
+                      restaurant={result.restaurant}
+                      number={filteredRestaurants.indexOf(result) + 1}
+                      distanceMeters={result.distanceMeters}
+                      approximateDistance={result.approximateDistance}
+                      isSaved={savedRestaurantIds.includes(result.restaurant.id)}
                       onToggleSave={toggleSavedRestaurant}
-                      key={restaurant.id}
+                      key={result.restaurant.id}
                     />
                   ))}
                 </div>

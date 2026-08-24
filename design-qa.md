@@ -168,3 +168,69 @@ For Profil, `staden-profile-source-settings-mobile.png` and `staden-profile-sett
 - [x] Applied editorial tables, explicit grants, admin-claim RLS, storage policies and indexed policy/foreign-key access paths.
 
 final result: passed
+
+---
+
+# Theme QA · 2026-08-24
+
+## Comparison target
+
+- Source visual truth:
+  - `/var/folders/48/mp9c9xhn0678qr8jl943_tjr0000gn/T/codex-clipboard-4e400e94-17f6-491d-ae83-dcd406e285a9.png` — Söndagsupplagan.
+  - `/var/folders/48/mp9c9xhn0678qr8jl943_tjr0000gn/T/codex-clipboard-f029e870-8a16-43db-aa59-7f9334bd4e50.png` — Blå Linjen.
+  - `/var/folders/48/mp9c9xhn0678qr8jl943_tjr0000gn/T/codex-clipboard-cad3dc38-90b1-49d6-858c-d9ac3feadf51.png` — Efter Regnet.
+- Rendered implementation: `http://127.0.0.1:4173/#profil`.
+- Implementation screenshots:
+  - `docs/design/theme-previews-2026-08-24/sunday-edition-mobile.png`
+  - `docs/design/theme-previews-2026-08-24/blue-line-mobile.png`
+  - `docs/design/theme-previews-2026-08-24/after-rain-mobile.png`
+  - `docs/design/theme-previews-2026-08-24/sunday-edition-desktop.png`
+  - `docs/design/theme-previews-2026-08-24/blue-line-desktop.png`
+  - `docs/design/theme-previews-2026-08-24/after-rain-desktop.png`
+  - `docs/design/theme-previews-2026-08-24/theme-selector-mobile.png`
+- Source pixel dimensions: 853 × 1844 for all three references.
+- Mobile implementation dimensions: 390 × 844 pixels at a 390 × 844 CSS viewport and device pixel ratio 1.
+- Density normalization: the source ratio normalizes to approximately 390 × 843; the one-pixel height difference does not affect composition or type judgement. Desktop implementation was also captured at 1440 × 900 CSS pixels and device pixel ratio 1.
+- State: Göteborg, public home dashboard, each named theme selected in turn. The settings selector was inspected at 390 × 844.
+- Scope note: the screenshots are art-direction targets for three themes, not replacement information architectures. Existing STADEN navigation, content order and product behavior were retained intentionally.
+
+## Full-view comparison evidence
+
+Each reference and its corresponding 390 × 844 implementation screenshot were opened together in the same comparison input. Söndagsupplagan carries the source's warm ivory paper, hard black rules, condensed black display, coral signal and serif editorial contrast over the jazz image. Blå Linjen carries the source's off-white/black grid, electric cobalt state, fully condensed display treatment, square surfaces and a new blue-hour vernissage asset. Efter Regnet carries the source's near-black ground, off-white serif display, cobalt signal, amber action color and a new rainy Göteborg tram/gallery image.
+
+The existing home structure creates a shorter first-screen composition than the three long-form reference screens. That is an intentional product constraint rather than design drift: the requested theme DNA is present without changing the current dashboard or bottom-navigation model.
+
+## Focused region comparison evidence
+
+`docs/design/theme-previews-2026-08-24/theme-selector-mobile.png` was inspected as the focused control state. All six themes are visible in one independently scrolling settings sheet; the three new previews expose their own paper/background, typography and signal colors before selection. Each option has a readable name, description and selected state. Additional focused image comparison was unnecessary because the full-view mobile captures preserve the reference aspect ratio closely enough for display type, rules, palette, image crop and navigation state to remain legible.
+
+## Required fidelity surfaces
+
+- Fonts and typography: Söndagsupplagan combines condensed display and cultural serif; Blå Linjen uses a condensed non-italic display throughout; Efter Regnet uses editorial serif display with mono metadata. Weight, line height and wrapping stay legible at 390 px.
+- Spacing and layout rhythm: the established 22 px mobile gutter, 1 px rules and square cards are preserved. Blue Linjen adds a stricter black grid and desktop hero divider. No controls collide or clip at the tested viewports.
+- Colors and visual tokens: all three themes have independent paper, raised surface, ink, muted, line, signal and supporting category tokens. Efter Regnet also has dedicated amber action and mint success tokens. Contrast remains readable in the inspected first views and Nöje dashboard.
+- Image quality and asset fidelity: the jazz source is reused for Söndagsupplagan. Blå Linjen and Efter Regnet use full-resolution project-local raster assets created to match the source subjects and crop slots. No placeholder, CSS drawing, emoji or handcrafted SVG substitutes the photography or icons.
+- Copy and content: names and descriptions are concise Swedish labels that distinguish mood without changing Göteborg content. Hero captions identify each edition.
+- Responsiveness and accessibility: theme selection uses semantic buttons with `aria-pressed`; the settings dialog remains scrollable at 390 × 844; reduced-motion disables all theme entry animations; the supplied icon library and existing focus states are retained.
+
+## Findings
+
+- No actionable P0, P1 or P2 findings remain.
+- [P3] The references use larger mastheads and custom event-first compositions. The implementation deliberately retains STADEN's existing home dashboard so the themes can be compared without coupling them to three different page structures.
+
+## Interaction and runtime evidence
+
+- All six themes render in Settings; the three new selections update `data-theme` and persist across a full reload.
+- Söndagsupplagan on `#kultur`, Blå Linjen on `#mat` and Efter Regnet on `#noje` were opened at 390 × 844 with `scrollWidth === innerWidth` in every case.
+- Home was tested for every new theme at 390 × 844 and 1440 × 900 with no horizontal overflow.
+- The settings sheet remained usable and independently scrollable with six theme options at 390 × 844.
+- Browser console log check returned an empty result.
+- `npm run lint` and `npm run build` both completed successfully.
+
+## Comparison history
+
+- Iteration 10, pass 1: same-input comparison found one P2 mismatch in Blå Linjen: the emphasized home display word remained italic serif while the reference uses a fully condensed display system.
+- Iteration 10, fix: `blue-line` now overrides the emphasized display with the condensed family, normal style, cobalt signal and matching optical weight. A stricter desktop hero divider was also added.
+- Iteration 10, pass 2: the revised 390 × 844 and 1440 × 900 captures were regenerated. Same-input comparison shows the blue theme now preserves condensed hierarchy, hard grid, cobalt state and gallery crop without remaining P0/P1/P2 findings.
+
+final result: passed

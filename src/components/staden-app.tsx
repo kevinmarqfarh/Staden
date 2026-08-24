@@ -34,7 +34,15 @@ import { restaurants } from "@/data/restaurants";
 import { entertainmentExperiences } from "@/data/entertainment";
 import { EntertainmentExplorer } from "@/components/entertainment-explorer";
 import { FoodExplorer } from "@/components/food-explorer";
+import { MapLink } from "@/components/map-link";
+import { NearbyControl } from "@/components/nearby-control";
 import { SavedPocket } from "@/components/saved-pocket";
+import { useNearbyLocation } from "@/hooks/use-nearby-location";
+import {
+  distanceInMeters,
+  formatDistance,
+  resolveGothenburgPoint,
+} from "@/lib/geo";
 import {
   isSupabaseConfigured,
   verifySupabaseConnection,
@@ -84,6 +92,10 @@ const monthLabels = [
   "DEC",
 ] as const;
 
+function eventMapQuery(event: CulturalEvent) {
+  return [event.venue, event.area, "Göteborg"].filter(Boolean).join(", ");
+}
+
 const [verifiedYear, verifiedMonth, verifiedDay] =
   culturalCatalogVerifiedAt.split("-");
 const culturalCatalogVerifiedLabel = `${Number(verifiedDay)} ${
@@ -105,7 +117,13 @@ const discoveryEvents = [...culturalEvents].sort((left, right) => {
 });
 
 type CategoryFilter = (typeof categories)[number];
-type ThemeId = "staden" | "atelier" | "blue-hour";
+type ThemeId =
+  | "staden"
+  | "atelier"
+  | "blue-hour"
+  | "sunday-edition"
+  | "blue-line"
+  | "after-rain";
 type ConnectionStatus = "idle" | "checking" | "connected" | "error";
 type AppView = "home" | "kultur" | "noje" | "mat" | "profile";
 
@@ -142,6 +160,15 @@ const cultureDashboardEvents = [
     (event) => !event.featured && !citywideFestivalIds.has(event.id),
   ),
 ].slice(0, 5);
+const culturePoints = new Map(
+  culturalEvents.map((event) => [
+    event.id,
+    resolveGothenburgPoint(event.venue, event.area, event.title),
+  ]),
+);
+const mappedCultureCount = Array.from(culturePoints.values()).filter(
+  Boolean,
+).length;
 
 const homeFeaturedRestaurant = restaurants[0];
 const entertainmentEventCount =
@@ -198,7 +225,58 @@ const themes: Array<{
     name: "Blå timmen",
     description: "Elektriskt blå och byggd kring tiden.",
   },
+  {
+    id: "sunday-edition",
+    name: "Söndagsupplagan",
+    description: "Varmt tidningspapper, korall och kulturserif.",
+  },
+  {
+    id: "blue-line",
+    name: "Blå Linjen",
+    description: "Kobolt, hårda rutnät och kondenserad typ.",
+  },
+  {
+    id: "after-rain",
+    name: "Efter Regnet",
+    description: "Svart kväll, kobolt, bärnsten och redaktionell serif.",
+  },
 ];
+
+const themeHeroMedia: Record<
+  ThemeId,
+  { src: string; alt: string; caption: string }
+> = {
+  staden: {
+    src: "/media/jazz-under-traden.png",
+    alt: "En jazztrio spelar utomhus inför publik i Göteborg.",
+    caption: "Redaktionell bild",
+  },
+  atelier: {
+    src: "/media/jazz-under-traden.png",
+    alt: "En jazztrio spelar utomhus inför publik i Göteborg.",
+    caption: "Redaktionell bild",
+  },
+  "blue-hour": {
+    src: "/media/jazz-under-traden.png",
+    alt: "En jazztrio spelar utomhus inför publik i Göteborg.",
+    caption: "Redaktionell bild",
+  },
+  "sunday-edition": {
+    src: "/media/jazz-under-traden.png",
+    alt: "En jazztrio spelar under träden inför publik i Göteborg.",
+    caption: "Söndagsupplagan · 01",
+  },
+  "blue-line": {
+    src: "/media/theme-blue-line-gallery.png",
+    alt: "Besökare på en vernissage i ett samtida galleri i Göteborg.",
+    caption: "Blå Linjen · Utgåva 02",
+  },
+  "after-rain": {
+    src: "/media/theme-after-rain-tram.png",
+    alt: "En blå spårvagn och människor med paraplyer på en regnig gata i Göteborg.",
+    caption: "Efter Regnet · Kvällsutgåva",
+  },
+};
 
 function subscribeToSavedEvents(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange);
@@ -260,9 +338,8 @@ function subscribeToTheme(onStoreChange: () => void) {
 function getThemeSnapshot(): ThemeId {
   try {
     const stored = window.localStorage.getItem(THEME_KEY);
-    return stored === "staden" || stored === "blue-hour" || stored === "atelier"
-      ? stored
-      : DEFAULT_THEME;
+    const validTheme = themes.some((theme) => theme.id === stored);
+    return validTheme ? (stored as ThemeId) : DEFAULT_THEME;
   } catch {
     return DEFAULT_THEME;
   }
@@ -355,11 +432,15 @@ function SaveButton({
 function EventCard({
   event,
   number,
+  distanceMeters = null,
+  approximateDistance = false,
   isSaved,
   onToggleSave,
 }: {
   event: CulturalEvent;
   number: number;
+  distanceMeters?: number | null;
+  approximateDistance?: boolean;
   isSaved: boolean;
   onToggleSave: (id: string) => void;
 }) {
@@ -389,10 +470,20 @@ function EventCard({
         </p>
         <p>
           <MapPin aria-hidden="true" size={17} weight="bold" />
-          <span>
+          <MapLink
+            className="event-card__map-link"
+            query={eventMapQuery(event)}
+            label={event.venue}
+          >
             {event.venue}
-            <small>{event.area}</small>
-          </span>
+            <small>
+              {event.area}
+              {distanceMeters !== null
+                ? ` · ${approximateDistance ? "≈ " : ""}${formatDistance(distanceMeters)}`
+                : ""}
+              {" · Vägbeskrivning"}
+            </small>
+          </MapLink>
         </p>
       </div>
 
@@ -431,9 +522,13 @@ function CultureDashboardCard({
           {event.time ? ` · ${event.time}` : ""}
         </p>
         <h3>{event.title}</h3>
-        <span>
-          {event.venue} · {event.area}
-        </span>
+        <MapLink
+          className="culture-dashboard-card__map-link"
+          query={eventMapQuery(event)}
+          label={event.venue}
+        >
+          {event.venue} · {event.area} · Karta
+        </MapLink>
       </div>
       <div className="culture-dashboard-card__actions">
         <SaveButton
@@ -458,6 +553,7 @@ export function StadenApp() {
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("idle");
   const [activeView, setActiveView] = useState<AppView>("home");
+  const nearby = useNearbyLocation();
   const [connectionMessage, setConnectionMessage] = useState(
     isSupabaseConfigured
       ? "Klientvariablerna finns. Testa den direkta anslutningen."
@@ -490,6 +586,7 @@ export function StadenApp() {
     getThemeSnapshot,
     getServerThemeSnapshot,
   );
+  const heroMedia = themeHeroMedia[selectedTheme];
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", selectedTheme);
@@ -571,31 +668,85 @@ export function StadenApp() {
     () => {
       const query = cultureQuery.trim().toLocaleLowerCase("sv-SE");
 
-      return discoveryEvents.filter((event) => {
-        const isPermanent = event.dateLabel === "Permanent";
-        const matchesScope =
-          cultureScope === "alla" ||
-          (cultureScope === "permanenta" && isPermanent) ||
-          (cultureScope === "kommande" && !isPermanent);
-        const haystack = [
-          event.title,
-          event.venue,
-          event.area,
-          event.description,
-          event.category,
-        ]
-          .join(" ")
-          .toLocaleLowerCase("sv-SE");
+      return discoveryEvents
+        .filter((event) => {
+          const isPermanent = event.dateLabel === "Permanent";
+          const matchesScope =
+            cultureScope === "alla" ||
+            (cultureScope === "permanenta" && isPermanent) ||
+            (cultureScope === "kommande" && !isPermanent);
+          const haystack = [
+            event.title,
+            event.venue,
+            event.area,
+            event.description,
+            event.category,
+          ]
+            .join(" ")
+            .toLocaleLowerCase("sv-SE");
+          const point = culturePoints.get(event.id);
+          const distance = nearby.point && point
+            ? distanceInMeters(nearby.point, point)
+            : null;
+          const matchesDistance =
+            !nearby.point ||
+            (distance !== null && distance <= nearby.radiusMeters);
 
-        return (
-          matchesScope &&
-          (activeCategory === "Alla" || event.category === activeCategory) &&
-          (!query || haystack.includes(query))
-        );
-      });
+          return (
+            matchesScope &&
+            matchesDistance &&
+            (activeCategory === "Alla" || event.category === activeCategory) &&
+            (!query || haystack.includes(query))
+          );
+        })
+        .sort((left, right) => {
+          if (!nearby.point) return 0;
+          const leftPoint = culturePoints.get(left.id);
+          const rightPoint = culturePoints.get(right.id);
+          const leftDistance = leftPoint
+            ? distanceInMeters(nearby.point, leftPoint)
+            : Infinity;
+          const rightDistance = rightPoint
+            ? distanceInMeters(nearby.point, rightPoint)
+            : Infinity;
+          return leftDistance - rightDistance;
+        });
     },
-    [activeCategory, cultureQuery, cultureScope],
+    [
+      activeCategory,
+      cultureQuery,
+      cultureScope,
+      nearby.point,
+      nearby.radiusMeters,
+    ],
   );
+
+  const nearestCultureEvents = useMemo(() => {
+    const origin = nearby.point;
+    if (!origin) return [];
+
+    return discoveryEvents
+      .map((event) => {
+        const point = culturePoints.get(event.id);
+        return {
+          event,
+          point,
+          distanceMeters: point
+            ? distanceInMeters(origin, point)
+            : null,
+        };
+      })
+      .filter(
+        (result) =>
+          result.distanceMeters !== null &&
+          result.distanceMeters <= nearby.radiusMeters,
+      )
+      .sort(
+        (left, right) =>
+          (left.distanceMeters ?? Infinity) - (right.distanceMeters ?? Infinity),
+      )
+      .slice(0, 5);
+  }, [nearby.point, nearby.radiusMeters]);
 
   const visibleCultureEvents = showAllCultureResults
     ? filteredCultureEvents
@@ -810,8 +961,8 @@ export function StadenApp() {
 
         <div className="hero-art">
           <Image
-            src="/media/jazz-under-traden.png"
-            alt="En jazztrio spelar utomhus inför publik i Göteborg."
+            src={heroMedia.src}
+            alt={heroMedia.alt}
             fill
             priority
             sizes="(min-width: 900px) 50vw, 100vw"
@@ -823,7 +974,7 @@ export function StadenApp() {
           </div>
           <div className="event-caption">
             <span>GÖTEBORG I SEPTEMBER</span>
-            <span>Redaktionell bild</span>
+            <span>{heroMedia.caption}</span>
           </div>
         </div>
       </section>
@@ -943,6 +1094,45 @@ export function StadenApp() {
           </p>
         </div>
 
+        <NearbyControl mappedCount={mappedCultureCount} noun="kulturplatser" />
+
+        {nearby.point ? (
+          <section className="culture-nearby" aria-labelledby="culture-nearby-title">
+            <div className="culture-subheading">
+              <div>
+                <p className="kicker">NÄRMAST {nearby.label?.toLocaleUpperCase("sv-SE")}</p>
+                <h3 id="culture-nearby-title">Fem nära vägar in.</h3>
+              </div>
+              <p>
+                Inom {formatDistance(nearby.radiusMeters)} och sorterat från
+                närmast till längst bort. Områdeslägen markeras med ≈.
+              </p>
+            </div>
+            {nearestCultureEvents.length ? (
+              <div className="event-grid">
+                {nearestCultureEvents.map((result, index) => (
+                  <EventCard
+                    event={result.event}
+                    number={index + 1}
+                    distanceMeters={result.distanceMeters}
+                    approximateDistance={
+                      nearby.source === "manual" || result.point?.precision === "area"
+                    }
+                    isSaved={savedEventIds.includes(result.event.id)}
+                    onToggleSave={toggleSavedEvent}
+                    key={result.event.id}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="culture-nearby__empty">
+                Inga kartlagda kulturval finns inom den valda radien. Prova
+                5 eller 10 km.
+              </p>
+            )}
+          </section>
+        ) : null}
+
         <section
           className="city-festival-section"
           aria-labelledby="city-festival-title"
@@ -974,9 +1164,13 @@ export function StadenApp() {
                 </div>
                 <div className="city-festival-card__place">
                   <MapPin aria-hidden="true" size={17} weight="bold" />
-                  <span>
-                    {event.venue} · {event.area}
-                  </span>
+                  <MapLink
+                    className="city-festival-card__map-link"
+                    query={eventMapQuery(event)}
+                    label={event.venue}
+                  >
+                    {event.venue} · {event.area} · Karta
+                  </MapLink>
                 </div>
                 <div className="city-festival-card__actions">
                   <SaveButton
@@ -1174,6 +1368,18 @@ export function StadenApp() {
                 key={event.id}
                 event={event}
                 number={index + 1}
+                distanceMeters={
+                  nearby.point && culturePoints.get(event.id)
+                    ? distanceInMeters(
+                        nearby.point,
+                        culturePoints.get(event.id)!,
+                      )
+                    : null
+                }
+                approximateDistance={
+                  nearby.source === "manual" ||
+                  culturePoints.get(event.id)?.precision === "area"
+                }
                 isSaved={savedEventIds.includes(event.id)}
                 onToggleSave={toggleSavedEvent}
               />
@@ -1235,7 +1441,15 @@ export function StadenApp() {
               </div>
               <p>
                 {entertainmentEvents[0]?.title}
-                <span>{entertainmentEvents[0]?.venue}</span>
+                {entertainmentEvents[0] ? (
+                  <MapLink
+                    className="entertainment-pulse__map-link"
+                    query={eventMapQuery(entertainmentEvents[0])}
+                    label={entertainmentEvents[0].venue}
+                  >
+                    {entertainmentEvents[0].venue} · Vägbeskrivning
+                  </MapLink>
+                ) : null}
               </p>
               <button type="button" onClick={showMusicInCulture}>
                 Alla musikval
@@ -1256,9 +1470,13 @@ export function StadenApp() {
                     {event.dateLabel}
                     {event.time ? ` · ${event.time}` : ""}
                   </span>
-                  <small>
-                    {event.venue} · {event.area}
-                  </small>
+                  <MapLink
+                    className="entertainment-pick__map-link"
+                    query={eventMapQuery(event)}
+                    label={event.venue}
+                  >
+                    {event.venue} · {event.area} · Karta
+                  </MapLink>
                 </div>
                 <div className="entertainment-pick__actions">
                   <SaveButton

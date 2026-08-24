@@ -20,6 +20,14 @@ import {
   type EntertainmentAudience,
   type EntertainmentCategory,
 } from "@/data/entertainment";
+import { MapLink } from "@/components/map-link";
+import { NearbyControl } from "@/components/nearby-control";
+import { useNearbyLocation } from "@/hooks/use-nearby-location";
+import {
+  distanceInMeters,
+  formatDistance,
+  resolveGothenburgPoint,
+} from "@/lib/geo";
 
 type AudienceFilter = "alla" | EntertainmentAudience;
 type CategoryFilter = "Alla" | EntertainmentCategory;
@@ -39,6 +47,15 @@ const quickFilters: Array<{ id: QuickFilter; label: string }> = [
 ];
 
 const INITIAL_RESULT_COUNT = 18;
+const entertainmentPoints = new Map(
+  entertainmentExperiences.map((item) => [
+    item.id,
+    resolveGothenburgPoint(item.title, item.area),
+  ]),
+);
+const mappedEntertainmentCount = Array.from(
+  entertainmentPoints.values(),
+).filter(Boolean).length;
 
 function normalize(value: string) {
   return value
@@ -66,6 +83,7 @@ export function EntertainmentExplorer() {
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("alla");
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
+  const nearby = useNearbyLocation();
 
   const filteredExperiences = useMemo(() => {
     const normalizedQuery = normalize(query.trim());
@@ -87,13 +105,28 @@ export function EntertainmentExplorer() {
         );
         const matchesQuery = !normalizedQuery || haystack.includes(normalizedQuery);
 
-        return matchesAudience && matchesCategory && matchesQuickFilter && matchesQuery;
+        const point = entertainmentPoints.get(item.id);
+        const distance = nearby.point && point
+          ? distanceInMeters(nearby.point, point)
+          : null;
+        const matchesDistance =
+          !nearby.point ||
+          (distance !== null && distance <= nearby.radiusMeters);
+
+        return matchesAudience && matchesCategory && matchesQuickFilter && matchesQuery && matchesDistance;
       })
       .sort((a, b) => {
+        if (nearby.point) {
+          const pointA = entertainmentPoints.get(a.id);
+          const pointB = entertainmentPoints.get(b.id);
+          const distanceA = pointA ? distanceInMeters(nearby.point, pointA) : Infinity;
+          const distanceB = pointB ? distanceInMeters(nearby.point, pointB) : Infinity;
+          return distanceA - distanceB;
+        }
         const featuredDifference = Number(Boolean(b.featured)) - Number(Boolean(a.featured));
         return featuredDifference || a.title.localeCompare(b.title, "sv-SE");
       });
-  }, [audience, category, query, quickFilter]);
+  }, [audience, category, nearby.point, nearby.radiusMeters, query, quickFilter]);
 
   const visibleExperiences = showAll
     ? filteredExperiences
@@ -163,6 +196,8 @@ export function EntertainmentExplorer() {
           <dd>{indoorCount}</dd>
         </div>
       </dl>
+
+      <NearbyControl mappedCount={mappedEntertainmentCount} noun="upplevelser" />
 
       <section className="entertainment-journeys" aria-labelledby="noje-start-title">
         <div className="entertainment-subheading">
@@ -317,6 +352,7 @@ export function EntertainmentExplorer() {
           <div className="entertainment-results-heading">
             <p aria-live="polite">
               {filteredExperiences.length} {filteredExperiences.length === 1 ? "TRÄFF" : "TRÄFFAR"}
+              {nearby.point ? ` · NÄRMAST ${nearby.label?.toLocaleUpperCase("sv-SE")}` : ""}
               {category !== "Alla" ? ` · ${category.toLocaleUpperCase("sv-SE")}` : ""}
               {audience !== "alla" ? ` · ${audienceLabels.get(audience)?.toLocaleUpperCase("sv-SE")}` : ""}
             </p>
@@ -327,7 +363,14 @@ export function EntertainmentExplorer() {
 
           {visibleExperiences.length ? (
             <div className="experience-directory">
-              {visibleExperiences.map((item, index) => (
+              {visibleExperiences.map((item, index) => {
+                const itemPoint = entertainmentPoints.get(item.id);
+                const distance = nearby.point && itemPoint
+                  ? distanceInMeters(nearby.point, itemPoint)
+                  : null;
+                const approximate = nearby.source === "manual" || itemPoint?.precision === "area";
+
+                return (
                 <details className="experience-row" key={item.id}>
                   <summary>
                     <span className="experience-row__number">
@@ -336,11 +379,23 @@ export function EntertainmentExplorer() {
                     <span className="experience-row__title">
                       <small>{item.category}</small>
                       <strong>{item.title}</strong>
-                      <span>{item.subtitle}</span>
+                      <span>
+                        {item.subtitle}
+                        {distance !== null ? (
+                          <small className="experience-row__distance">
+                            {approximate ? "≈ " : ""}{formatDistance(distance)} bort
+                          </small>
+                        ) : null}
+                      </span>
                     </span>
                     <span className="experience-row__where">
                       <MapPin aria-hidden="true" size={14} />
-                      {item.area}
+                      <span>
+                        {item.area}
+                        {distance !== null ? (
+                          <small>{approximate ? "≈ " : ""}{formatDistance(distance)}</small>
+                        ) : null}
+                      </span>
                     </span>
                     <span className="experience-row__time">{item.duration}</span>
                     <CaretDown className="experience-row__caret" aria-hidden="true" size={19} weight="bold" />
@@ -356,19 +411,29 @@ export function EntertainmentExplorer() {
                       <div><dt>SÄSONG</dt><dd>{item.season}</dd></div>
                     </dl>
                     <div className="experience-row__footer">
-                      <div aria-label="Passar för">
+                      <div className="experience-row__audiences" aria-label="Passar för">
                         {item.audiences.map((audienceId) => (
                           <span key={audienceId}>{audienceLabels.get(audienceId)}</span>
                         ))}
                       </div>
-                      <a href={item.url} target="_blank" rel="noreferrer">
-                        Planera besöket
-                        <ArrowUpRight aria-hidden="true" size={16} weight="bold" />
-                      </a>
+                      <div className="experience-row__links">
+                        <MapLink
+                          query={[item.title, item.area, "Göteborg"].join(", ")}
+                          label={item.title}
+                        >
+                          Vägbeskrivning
+                          <MapPin aria-hidden="true" size={16} weight="bold" />
+                        </MapLink>
+                        <a href={item.url} target="_blank" rel="noreferrer">
+                          Planera besöket
+                          <ArrowUpRight aria-hidden="true" size={16} weight="bold" />
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </details>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="entertainment-empty-state">

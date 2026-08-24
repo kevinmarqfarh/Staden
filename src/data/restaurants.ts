@@ -56,7 +56,7 @@ export type Restaurant = {
   isWorkLunch?: boolean;
 };
 
-export const RESTAURANT_SCAN_DATE = "2026-08-23";
+export const RESTAURANT_SCAN_DATE = "2026-08-24";
 
 // Price tiers are editorial estimates for one meal per person without drinks.
 // Menus and prices change, so every card links back to its verification source.
@@ -222,6 +222,77 @@ const scannedRestaurants: Restaurant[] = [
       "https://thatsup.se/goteborg/guide/nya-restauranger-i-goteborg/",
     opened: "aug 2026",
     isNew: true,
+  },
+  {
+    id: "restaurang-flavour-lindholmen",
+    name: "Restaurang Flavour Lindholmen",
+    cuisine: "Internationellt",
+    flavours: ["Svenskt", "Internationellt", "Dagens lunch"],
+    priceTier: 2,
+    area: "Lindholmen",
+    address: "Lindholmsallén 2, 417 55 Göteborg",
+    format: "Lunchrestaurang",
+    description:
+      "Ny lunchrestaurang på Lindholmen med vardagsservering och rätter som varierar från vecka till vecka.",
+    bestFor: ["Jobblunch", "Vardagar", "Takeaway"],
+    sourceLabel: "Restaurang Flavour Lindholmen",
+    sourceUrl:
+      "https://www.compass-group.se/restauranger-och-menyer/ovriga-restauranger/restaurang-flavour/",
+    websiteUrl:
+      "https://www.compass-group.se/restauranger-och-menyer/ovriga-restauranger/restaurang-flavour/",
+    phone: "+46 73 311 56 93",
+    email: "flavour@compass-group.se",
+    hours: "Lunch vardagar 11:00–13:30",
+    lastVerified: "2026-08-24",
+    verificationStatus: "editorial",
+    isNew: true,
+    isWorkLunch: true,
+  },
+  {
+    id: "bistro-3-lindholmen",
+    name: "Bistro 3",
+    cuisine: "Internationellt",
+    flavours: ["Wraps", "Sallad", "Pinsa"],
+    priceTier: 2,
+    area: "Lindholmen",
+    address: "Elin Svenssons gata 2, 417 55 Göteborg",
+    format: "Lunchrestaurang & bistro",
+    description:
+      "Modern lunchbistro med fräscha sallader, wraps, pinsa och buffé för vardagens snabba men vällagade lunch.",
+    bestFor: ["Jobblunch", "Vardagar", "Takeaway"],
+    sourceLabel: "Bistro 3",
+    sourceUrl: "https://www.bistro3.se/",
+    websiteUrl: "https://www.bistro3.se/",
+    email: "info@bistro3.se",
+    hours: "Mån–fre 11:00–14:00",
+    lastVerified: "2026-08-24",
+    verificationStatus: "editorial",
+    isWorkLunch: true,
+  },
+  {
+    id: "the-social-bar-bistro-lindholmen",
+    name: "The Social Bar & Bistro Lindholmen",
+    cuisine: "Internationellt",
+    flavours: ["Europeiskt", "Bistro", "Cocktails"],
+    priceTier: 2,
+    area: "Lindholmen",
+    address: "Cassiopejagatan 14, 417 55 Göteborg",
+    format: "Hotellrestaurang & bar",
+    description:
+      "Internationell hotellbistro på Clarion Hotel Karlatornet med moderna europeiska rätter, middag, afterwork och affärslunch.",
+    bestFor: ["Affärslunch", "Afterwork", "Middag"],
+    sourceLabel: "The Social Bar & Bistro Lindholmen",
+    sourceUrl:
+      "https://www.strawberry.se/restaurang/sverige/goteborg/the-social-lindholmen/",
+    websiteUrl:
+      "https://www.strawberry.se/restaurang/sverige/goteborg/the-social-lindholmen/",
+    phone: "031-361 91 10",
+    email: "lindholmen.karlatornet@socialbarbistro.se",
+    hours:
+      "Mån-Tors 16:00-23:00 · Fre-Lör 15:00-00:00 · Sön 16:00-22:00",
+    lastVerified: "2026-08-24",
+    verificationStatus: "editorial",
+    isWorkLunch: true,
   },
   {
     id: "bar-schiacciate",
@@ -1818,9 +1889,12 @@ const trustedRestaurantSourceHosts = new Set([
   "restaurangossemellan.se",
   "thatsup.se",
   "www.14m2bao.se",
+  "www.bistro3.se",
+  "www.compass-group.se",
   "www.goteborg.com",
   "www.himalayakochb.se",
   "www.openstreetmap.org",
+  "www.strawberry.se",
   "yammykitchen.se",
 ]);
 

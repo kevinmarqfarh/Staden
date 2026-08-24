@@ -5481,4 +5481,246 @@ export const osmFastFoodRestaurants: Restaurant[] = [
     "lastVerified": "2026-08-23",
     "verificationStatus": "directory"
   },
+  {
+    "id": "osm-fast-thehive-node-6559558035",
+    "name": "The Hive",
+    "cuisine": "Internationellt",
+    "flavours": [
+      "Food court"
+    ],
+    "priceTier": 2,
+    "area": "Låssby",
+    "address": "Göteborg · koordinat 57.72912, 11.85885",
+    "format": "Food court",
+    "description": "Katalogpost för en food court i Göteborg. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Vardag",
+      "Takeaway"
+    ],
+    "sourceLabel": "OpenStreetMap · snabbmat · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/6559558035",
+    "websiteUrl": "https://thehivefoodmarket.se/",
+    "hours": "Mån-Fre 07:30-18:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-fast-harvestbymannerstrom-node-7934349808",
+    "name": "Harvest By Mannerström",
+    "cuisine": "Internationellt",
+    "flavours": [
+      "Food court"
+    ],
+    "priceTier": 2,
+    "area": "Låssby",
+    "address": "Göteborg · koordinat 57.72789, 11.85888",
+    "format": "Food court",
+    "description": "Katalogpost för en food court i Göteborg. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Vardag"
+    ],
+    "sourceLabel": "OpenStreetMap · snabbmat · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/7934349808",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-fast-touistthaikok-way-73849243",
+    "name": "Toui's Thaikök · Påvelund",
+    "cuisine": "Thailändskt",
+    "flavours": [
+      "thai"
+    ],
+    "priceTier": 1,
+    "area": "Påvelund",
+    "address": "Tandkullegatan 11, Göteborg",
+    "format": "Thairestaurang",
+    "description": "Katalogpost i Göteborgs vardags- och snabbmatsutbud. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Budget",
+      "Snabbt",
+      "Takeaway",
+      "Uteservering"
+    ],
+    "sourceLabel": "OpenStreetMap · snabbmat · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/way/73849243",
+    "phone": "+46 31 291111",
+    "hours": "Helgdagar, Mån-Sön 11:00-21:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-fast-thaisamila-node-676846001",
+    "name": "Thai Samila · Nya Varvet",
+    "cuisine": "Thailändskt",
+    "flavours": [
+      "thai"
+    ],
+    "priceTier": 1,
+    "area": "Nya Varvet",
+    "address": "Långedragsvägen 18, 42671 Göteborg",
+    "format": "Thairestaurang",
+    "description": "Katalogpost i Göteborgs vardags- och snabbmatsutbud. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Budget",
+      "Snabbt"
+    ],
+    "sourceLabel": "OpenStreetMap · snabbmat · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/676846001",
+    "websiteUrl": "https://www.thaisamila.nu/",
+    "hours": "Mån-Fre 11:00-20:30 · Lör-Sön 12:00-20:30",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-fast-omami-node-1691294702",
+    "name": "Omami · Linné",
+    "cuisine": "Amerikanskt",
+    "flavours": [
+      "burger"
+    ],
+    "priceTier": 1,
+    "area": "Haga",
+    "address": "Linnégatan 13, 413 04 Göteborg",
+    "format": "Burgerrestaurang",
+    "description": "Katalogpost i Göteborgs vardags- och snabbmatsutbud. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Budget",
+      "Snabbt",
+      "Takeaway",
+      "Uteservering"
+    ],
+    "sourceLabel": "OpenStreetMap · snabbmat · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/1691294702",
+    "hours": "Mån-Tors 11:00-21:00 · Fre-Lör 11:00-03:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory",
+    "isVegan": true
+  },
+  {
+    "id": "osm-fast-vialunapizzeria-node-2751980768",
+    "name": "Via Luna Pizzeria · Bergsjön",
+    "cuisine": "Italienskt",
+    "flavours": [
+      "pizza"
+    ],
+    "priceTier": 1,
+    "area": "Västra Bergsjön",
+    "address": "Astronomgatan 7, 41517 Göteborg",
+    "format": "Pizzeria",
+    "description": "Katalogpost i Göteborgs vardags- och snabbmatsutbud. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Budget",
+      "Snabbt",
+      "Takeaway"
+    ],
+    "sourceLabel": "OpenStreetMap · snabbmat · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/2751980768",
+    "websiteUrl": "https://onlinepizza.se/goteborg/via-luna-pizzeria-1/",
+    "phone": "+46 31 46 42 46",
+    "hours": "Mån-Sön 12:00-22:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-fast-pita-node-3647230295",
+    "name": "Pita · Backaplan",
+    "cuisine": "Mellanöstern",
+    "flavours": [
+      "Pita"
+    ],
+    "priceTier": 1,
+    "area": "Backaplan",
+    "address": "Göteborg · koordinat 57.72193, 11.94492",
+    "format": "Snabbmat",
+    "description": "Katalogpost i Göteborgs vardags- och snabbmatsutbud. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Budget",
+      "Snabbt",
+      "Takeaway",
+      "Uteservering"
+    ],
+    "sourceLabel": "OpenStreetMap · snabbmat · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/3647230295",
+    "hours": "Mån-Tors 10:00-20:00 · Fre 10:00-19:00 · Lör-Sön 11:00-17:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-fast-togogo-node-3663485825",
+    "name": "togogo · Centralstationen",
+    "cuisine": "Internationellt",
+    "flavours": [
+      "salad",
+      "bowl",
+      "sandwich"
+    ],
+    "priceTier": 1,
+    "area": "Nordstaden",
+    "address": "Nils Ericsonsplatsen 7, Göteborg",
+    "format": "Snabbmat",
+    "description": "Katalogpost i Göteborgs vardags- och snabbmatsutbud. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Budget",
+      "Snabbt",
+      "Takeaway"
+    ],
+    "sourceLabel": "OpenStreetMap · snabbmat · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/3663485825",
+    "websiteUrl": "https://www.togogo.se/",
+    "phone": "+46 76 348 19 20",
+    "hours": "Mån-Fre 06:00-21:00 · Lör 08:00-18:00 · Sön 08:00-21:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory",
+    "isVegan": true
+  },
+  {
+    "id": "osm-fast-tomtoms-node-9915384224",
+    "name": "TomToms · Olivedal",
+    "cuisine": "Mexikanskt",
+    "flavours": [
+      "mexican"
+    ],
+    "priceTier": 1,
+    "area": "Olivedal",
+    "address": "Göteborg · koordinat 57.69631, 11.94931",
+    "format": "Snabbmat",
+    "description": "Katalogpost i Göteborgs vardags- och snabbmatsutbud. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Budget",
+      "Snabbt",
+      "Takeaway"
+    ],
+    "sourceLabel": "OpenStreetMap · snabbmat · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/node/9915384224",
+    "websiteUrl": "https://www.tomtoms.se/",
+    "phone": "+46 31 142440",
+    "hours": "Mån-Tors 11:30-20:30 · Fre 11:30-21:00 · Lör 12:00-21:00 · Sön 12:00-18:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
+  {
+    "id": "osm-fast-misteryork-way-311201586",
+    "name": "Mister York · Backa",
+    "cuisine": "Amerikanskt",
+    "flavours": [
+      "burger"
+    ],
+    "priceTier": 1,
+    "area": "Skräppekärr",
+    "address": "Importgatan 2, 42246 Hisings Backa",
+    "format": "Burgerrestaurang",
+    "description": "Katalogpost i Göteborgs vardags- och snabbmatsutbud. Uppgifter visas när de finns registrerade i OpenStreetMap.",
+    "bestFor": [
+      "Budget",
+      "Snabbt",
+      "Takeaway"
+    ],
+    "sourceLabel": "OpenStreetMap · snabbmat · Göteborgs kommun · 24 aug 2026",
+    "sourceUrl": "https://www.openstreetmap.org/way/311201586",
+    "websiteUrl": "https://www.misteryork.se",
+    "hours": "Sön-Tors 10:00-22:00 · Fre-Lör 10:00-01:00",
+    "lastVerified": "2026-08-24",
+    "verificationStatus": "directory"
+  },
 ];
