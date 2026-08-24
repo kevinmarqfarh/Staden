@@ -10,7 +10,6 @@ import {
   CaretRight,
   Check,
   Confetti,
-  Database,
   ForkKnife,
   MapPin,
   Palette,
@@ -43,10 +42,6 @@ import {
   formatDistance,
   resolveGothenburgPoint,
 } from "@/lib/geo";
-import {
-  isSupabaseConfigured,
-  verifySupabaseConnection,
-} from "@/lib/supabase/client";
 
 const SAVED_EVENTS_KEY = "staden:saved-cultural-events";
 const SAVED_EVENTS_CHANGED = "staden:saved-cultural-events-changed";
@@ -124,7 +119,6 @@ type ThemeId =
   | "sunday-edition"
   | "blue-line"
   | "after-rain";
-type ConnectionStatus = "idle" | "checking" | "connected" | "error";
 type AppView = "home" | "kultur" | "noje" | "mat" | "profile";
 
 const cultureCategories = categories.slice(1) as readonly Exclude<
@@ -550,18 +544,12 @@ export function StadenApp() {
   const [cultureQuery, setCultureQuery] = useState("");
   const [cultureScope, setCultureScope] = useState<"alla" | "kommande" | "permanenta">("alla");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [connectionStatus, setConnectionStatus] =
-    useState<ConnectionStatus>("idle");
   const [activeView, setActiveView] = useState<AppView>("home");
   const nearby = useNearbyLocation();
-  const [connectionMessage, setConnectionMessage] = useState(
-    isSupabaseConfigured
-      ? "Klientvariablerna finns. Testa den direkta anslutningen."
-      : "Projektadressen finns, men den publika nyckeln måste läggas in.",
-  );
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const lastSettingsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const settingsDialogRef = useRef<HTMLElement>(null);
+  const viewFocusRequestedRef = useRef(false);
   const overlayOpen = settingsOpen;
   const savedEventsSnapshot = useSyncExternalStore(
     subscribeToSavedEvents,
@@ -662,6 +650,25 @@ export function StadenApp() {
     });
 
     return () => window.cancelAnimationFrame(titleFrame);
+  }, [activeView]);
+
+  useEffect(() => {
+    if (!viewFocusRequestedRef.current) return;
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      const heading = document.querySelector<HTMLElement>(
+        `[data-view="${activeView}"] h1, [data-view="${activeView}"] h2`,
+      );
+
+      if (heading) {
+        heading.tabIndex = -1;
+        heading.focus({ preventScroll: true });
+      }
+
+      viewFocusRequestedRef.current = false;
+    });
+
+    return () => window.cancelAnimationFrame(focusFrame);
   }, [activeView]);
 
   const filteredCultureEvents = useMemo(
@@ -775,8 +782,9 @@ export function StadenApp() {
 
     setCultureCatalogOpen(false);
     setShowAllCultureResults(false);
+    viewFocusRequestedRef.current = true;
     setActiveView(view);
-    window.scrollTo({ top: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
 
   function openCultureCategory(category: CategoryFilter) {
@@ -822,15 +830,8 @@ export function StadenApp() {
     }
   }
 
-  async function testConnection() {
-    setConnectionStatus("checking");
-    const result = await verifySupabaseConnection();
-    setConnectionStatus(result.ok ? "connected" : "error");
-    setConnectionMessage(result.message);
-  }
-
   return (
-    <main id="top">
+    <div id="top">
       <div
         className="app-content"
         aria-hidden={overlayOpen ? "true" : undefined}
@@ -909,6 +910,8 @@ export function StadenApp() {
           </a>
         </div>
       </header>
+
+      <main className="view-main">
 
       {activeView === "home" ? (
         <div className="content-view content-view--home" data-view="home">
@@ -1094,45 +1097,6 @@ export function StadenApp() {
           </p>
         </div>
 
-        <NearbyControl mappedCount={mappedCultureCount} noun="kulturplatser" />
-
-        {nearby.point ? (
-          <section className="culture-nearby" aria-labelledby="culture-nearby-title">
-            <div className="culture-subheading">
-              <div>
-                <p className="kicker">NÄRMAST {nearby.label?.toLocaleUpperCase("sv-SE")}</p>
-                <h3 id="culture-nearby-title">Fem nära vägar in.</h3>
-              </div>
-              <p>
-                Inom {formatDistance(nearby.radiusMeters)} och sorterat från
-                närmast till längst bort. Områdeslägen markeras med ≈.
-              </p>
-            </div>
-            {nearestCultureEvents.length ? (
-              <div className="event-grid">
-                {nearestCultureEvents.map((result, index) => (
-                  <EventCard
-                    event={result.event}
-                    number={index + 1}
-                    distanceMeters={result.distanceMeters}
-                    approximateDistance={
-                      nearby.source === "manual" || result.point?.precision === "area"
-                    }
-                    isSaved={savedEventIds.includes(result.event.id)}
-                    onToggleSave={toggleSavedEvent}
-                    key={result.event.id}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="culture-nearby__empty">
-                Inga kartlagda kulturval finns inom den valda radien. Prova
-                5 eller 10 km.
-              </p>
-            )}
-          </section>
-        ) : null}
-
         <section
           className="city-festival-section"
           aria-labelledby="city-festival-title"
@@ -1184,6 +1148,45 @@ export function StadenApp() {
             ))}
           </div>
         </section>
+
+        <NearbyControl mappedCount={mappedCultureCount} noun="kulturplatser" />
+
+        {nearby.point ? (
+          <section className="culture-nearby" aria-labelledby="culture-nearby-title">
+            <div className="culture-subheading">
+              <div>
+                <p className="kicker">NÄRMAST {nearby.label?.toLocaleUpperCase("sv-SE")}</p>
+                <h3 id="culture-nearby-title">Fem nära vägar in.</h3>
+              </div>
+              <p>
+                Inom {formatDistance(nearby.radiusMeters)} och sorterat från
+                närmast till längst bort. Områdeslägen markeras med ≈.
+              </p>
+            </div>
+            {nearestCultureEvents.length ? (
+              <div className="event-grid">
+                {nearestCultureEvents.map((result, index) => (
+                  <EventCard
+                    event={result.event}
+                    number={index + 1}
+                    distanceMeters={result.distanceMeters}
+                    approximateDistance={
+                      nearby.source === "manual" || result.point?.precision === "area"
+                    }
+                    isSaved={savedEventIds.includes(result.event.id)}
+                    onToggleSave={toggleSavedEvent}
+                    key={result.event.id}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="culture-nearby__empty">
+                Inga kartlagda kulturval finns inom den valda radien. Prova
+                5 eller 10 km.
+              </p>
+            )}
+          </section>
+        ) : null}
 
         <section
           className="culture-dashboard-picks"
@@ -1420,8 +1423,6 @@ export function StadenApp() {
           </p>
         </div>
 
-        <EntertainmentExplorer />
-
         <section className="entertainment-tonight" aria-labelledby="entertainment-tonight-title">
           <div className="entertainment-subheading entertainment-subheading--tonight">
             <div>
@@ -1490,6 +1491,8 @@ export function StadenApp() {
             ))}
           </div>
         </section>
+
+        <EntertainmentExplorer />
       </section>
       ) : null}
 
@@ -1509,6 +1512,8 @@ export function StadenApp() {
           />
         </div>
       ) : null}
+
+      </main>
 
       <footer>
         <p>GÖTEBORG, SVERIGE</p>
@@ -1646,35 +1651,12 @@ export function StadenApp() {
               </div>
             </div>
 
-            <div className="settings-section data-setting">
-              <div className="settings-label">
-                <Database aria-hidden="true" size={19} weight="regular" />
-                <div>
-                  <h3>Supabase</h3>
-                  <p>rucwlpzrumxejvhwazat.supabase.co</p>
-                </div>
-              </div>
-              <div className={`connection-card ${connectionStatus}`}>
-                <div>
-                  <span className="status-dot" aria-hidden="true" />
-                  <p aria-live="polite">{connectionMessage}</p>
-                </div>
-                <button
-                  type="button"
-                  disabled={
-                    !isSupabaseConfigured || connectionStatus === "checking"
-                  }
-                  onClick={testConnection}
-                >
-                  {connectionStatus === "checking"
-                    ? "Testar…"
-                    : "Testa anslutning"}
-                </button>
-              </div>
-            </div>
+            <p className="settings-admin-note">
+              Databas, anslutning och publicering hanteras separat i adminytan.
+            </p>
           </section>
         </div>
       ) : null}
-    </main>
+    </div>
   );
 }

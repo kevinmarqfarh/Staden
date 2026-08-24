@@ -1239,3 +1239,61 @@
   .admin-access-loader span { animation: none; }
   .admin-media-grid article img { transition: none; }
 }
+
+/* UI/UX audit polish: readable editorial controls and explicit state. */
+.admin-editor-action-stack {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.admin-publish-note {
+  color: #6d6e74;
+  max-width: 62ch;
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.admin-field--title textarea {
+  field-sizing: content;
+  min-height: calc(3lh + 32px);
+  max-height: 10lh;
+  overflow-y: auto;
+}
+
+.admin-preview-panel {
+  scrollbar-color: var(--admin-signal) var(--admin-paper-raised);
+  scrollbar-width: thin;
+  border-bottom: 3px solid var(--admin-signal);
+}
+
+.admin-kicker,
+.admin-count,
+.admin-stat > span,
+.admin-draft-row > span:first-child,
+.admin-draft-row time,
+.admin-draft-row > span:nth-child(2) small,
+.admin-status,
+.admin-field--title small,
+.admin-slug > span,
+.admin-story-preview__objects > span,
+.admin-story-preview__objects > div > strong,
+.admin-story-preview__objects small,
+.admin-selected-panel > div:first-child,
+.admin-selected-item > span,
+.admin-selected-item p small,
+.admin-health-row,
+.admin-mobile-nav button {
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+}
+
+.admin-selected-item p strong,
+.admin-selected-empty { font-size: 0.8125rem; }
+
+.admin-mobile-nav { background: #0b0c11; }
+
+@media (min-width: 1440px) {
+  .admin-editor-action-stack { min-width: 520px; }
+}

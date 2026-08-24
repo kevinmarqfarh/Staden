@@ -50,6 +50,9 @@ type RestaurantResult = {
   approximateDistance: boolean;
 };
 
+const INITIAL_VISIBLE_RESTAURANTS = 5;
+const RESTAURANT_LOAD_MORE_BATCH = 10;
+
 const restaurantPoints = new Map(
   restaurants.map((restaurant) => [
     restaurant.id,
@@ -338,7 +341,7 @@ export function FoodExplorer({
   const [activeGuideTag, setActiveGuideTag] = useState<FoodGuideTag | null>(
     null,
   );
-  const [visibleLimit, setVisibleLimit] = useState(60);
+  const [visibleLimit, setVisibleLimit] = useState(INITIAL_VISIBLE_RESTAURANTS);
   const nearby = useNearbyLocation();
   const savedRestaurantsSnapshot = useSyncExternalStore(
     subscribeToSavedRestaurants,
@@ -524,7 +527,7 @@ export function FoodExplorer({
   }
 
   function resetFilters() {
-    setVisibleLimit(60);
+    setVisibleLimit(INITIAL_VISIBLE_RESTAURANTS);
     setQuery("");
     setCuisine("Alla");
     setPriceTier(0);
@@ -533,7 +536,7 @@ export function FoodExplorer({
   }
 
   function selectCuisine(option: string) {
-    setVisibleLimit(60);
+    setVisibleLimit(INITIAL_VISIBLE_RESTAURANTS);
     setCuisine(option);
     setActiveGuideTag(null);
 
@@ -541,7 +544,7 @@ export function FoodExplorer({
   }
 
   function openGuide(tag: FoodGuideTag) {
-    setVisibleLimit(60);
+    setVisibleLimit(INITIAL_VISIBLE_RESTAURANTS);
     setQuery("");
     setCuisine("Alla");
     setActiveCollection("all");
@@ -553,19 +556,25 @@ export function FoodExplorer({
   return (
     <section className="food-section" id="mat">
       <div className="section-heading">
-        <p className="kicker">MATKATALOGEN · UPPDATERAD {RESTAURANT_SCAN_DATE}</p>
+        <p className="kicker">
+          MATKATALOGEN · UPPDATERAD <span className="date-token">{RESTAURANT_SCAN_DATE}</span>
+        </p>
         <h2>Göteborg på tallrik.</h2>
         <p>
           En växande restaurangbank som bryter ner staden efter kök, pris och
           kvarter — från nyöppnade luckor till institutioner och avsmakning.
         </p>
-        <p className="food-confidence-note">
-          {restaurantCoverage.editorial} redaktionella val är källkontrollerade.
-          Katalogen breddar med {restaurantCoverage.directory + restaurantCoverage.fastFood} OpenStreetMap-poster
-          ({restaurantCoverage.directory} restauranger och {restaurantCoverage.fastFood} snabbmat);
-          {" "}{restaurantCoverage.excludedClosed} uttryckligen stängda verksamheter
-          är bortfiltrerade. Pris och öppettider ska dubbelkollas före besök.
-        </p>
+        <details className="food-confidence-note">
+          <summary>
+            {restaurantCoverage.editorial} redaktionella val · {restaurantCoverage.directory + restaurantCoverage.fastFood} katalogposter
+          </summary>
+          <p>
+            De redaktionella valen är källkontrollerade. Katalogen breddar med
+            OpenStreetMap ({restaurantCoverage.directory} restauranger och {restaurantCoverage.fastFood} snabbmat),
+            och {restaurantCoverage.excludedClosed} uttryckligen stängda verksamheter är bortfiltrerade.
+            Pris och öppettider ska dubbelkollas före besök.
+          </p>
+        </details>
       </div>
 
       <div className="food-stats" aria-label="Restaurangbankens täckning">
@@ -587,8 +596,6 @@ export function FoodExplorer({
         </div>
       </div>
 
-      <NearbyControl mappedCount={mappedRestaurantCount} noun="matställen" />
-
       <div className="cuisine-browser">
         <div className="food-subheading">
           <div>
@@ -600,7 +607,7 @@ export function FoodExplorer({
             eller fortsätt till hela listan.
           </p>
         </div>
-        <div className="cuisine-rail" aria-label="Välj typ av kök">
+        <div className="cuisine-rail" role="group" aria-label="Välj typ av kök">
           {restaurantCuisines.map((option, index) => (
             <button
               type="button"
@@ -689,6 +696,8 @@ export function FoodExplorer({
         </div>
       </section>
 
+      <NearbyControl mappedCount={mappedRestaurantCount} noun="matställen" />
+
       <div className="food-filter-panel" id="mat-filter">
         <div className="food-filter-panel__heading">
           <SlidersHorizontal aria-hidden="true" size={20} weight="bold" />
@@ -700,6 +709,7 @@ export function FoodExplorer({
 
         <div
           className="food-collections"
+          role="group"
           aria-label="Snabba restaurangurval"
         >
           {collections.map((collection) => (
@@ -714,7 +724,7 @@ export function FoodExplorer({
                 activeCollection === collection.value && activeGuideTag === null
               }
               onClick={() => {
-                setVisibleLimit(60);
+                setVisibleLimit(INITIAL_VISIBLE_RESTAURANTS);
                 setActiveCollection(collection.value);
                 setActiveGuideTag(null);
               }}
@@ -737,7 +747,7 @@ export function FoodExplorer({
             type="search"
             value={query}
             onChange={(event) => {
-              setVisibleLimit(60);
+              setVisibleLimit(INITIAL_VISIBLE_RESTAURANTS);
               setQuery(event.target.value);
             }}
             placeholder="Sök kök, område eller restaurang"
@@ -751,7 +761,7 @@ export function FoodExplorer({
               className={priceTier === filter.value ? "is-active" : ""}
               aria-pressed={priceTier === filter.value}
               onClick={() => {
-                setVisibleLimit(60);
+                setVisibleLimit(INITIAL_VISIBLE_RESTAURANTS);
                 setPriceTier(filter.value);
               }}
               key={filter.value}
@@ -813,7 +823,9 @@ export function FoodExplorer({
             </p>
             <button
               type="button"
-              onClick={() => setVisibleLimit((current) => current + 60)}
+              onClick={() =>
+                setVisibleLimit((current) => current + RESTAURANT_LOAD_MORE_BATCH)
+              }
             >
               Visa fler
               <CaretRight aria-hidden="true" size={17} weight="bold" />

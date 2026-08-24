@@ -46,7 +46,7 @@ const quickFilters: Array<{ id: QuickFilter; label: string }> = [
   { id: "spontant", label: "Spontant" },
 ];
 
-const INITIAL_RESULT_COUNT = 18;
+const INITIAL_RESULT_COUNT = 5;
 const entertainmentPoints = new Map(
   entertainmentExperiences.map((item) => [
     item.id,
@@ -197,8 +197,6 @@ export function EntertainmentExplorer() {
         </div>
       </dl>
 
-      <NearbyControl mappedCount={mappedEntertainmentCount} noun="upplevelser" />
-
       <section className="entertainment-journeys" aria-labelledby="noje-start-title">
         <div className="entertainment-subheading">
           <div>
@@ -233,6 +231,8 @@ export function EntertainmentExplorer() {
         </div>
       </section>
 
+      <NearbyControl mappedCount={mappedEntertainmentCount} noun="upplevelser" />
+
       <section
         className="entertainment-catalogue"
         id="noje-katalog"
@@ -250,7 +250,7 @@ export function EntertainmentExplorer() {
             </p>
           </div>
 
-          <div className="entertainment-category-index" aria-label="Välj tema">
+          <div className="entertainment-category-index" role="group" aria-label="Välj tema">
             {entertainmentCategoryInfo.map((item, index) => {
               const count = entertainmentExperiences.filter(
                 (experience) => experience.category === item.id,

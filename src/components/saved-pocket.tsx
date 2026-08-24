@@ -654,7 +654,7 @@ export function SavedPocket({
             </form>
           ) : null}
 
-          <div className="saved-pocket-list-tabs" aria-label="Filtrera sparat på lista">
+          <div className="saved-pocket-list-tabs" role="group" aria-label="Filtrera sparat på lista">
             <button
               type="button"
               aria-pressed={selectedListId === null}
@@ -689,6 +689,7 @@ export function SavedPocket({
             })}
           </div>
 
+          {selectedListId ? (
           <div className="saved-pocket-list-manager" aria-live="polite">
             <div className="saved-pocket-list-manager__copy">
               <p>{selectedList ? "Aktiv lista" : "Översikt"}</p>
@@ -759,6 +760,7 @@ export function SavedPocket({
               </div>
             ) : null}
           </div>
+          ) : null}
         </section>
 
         <section className="saved-pocket-content" aria-labelledby="saved-items-title">
@@ -909,7 +911,7 @@ export function SavedPocket({
         .saved-pocket-item-copy > p {
           margin: 0 0 7px;
           font-family: var(--font-geist-mono), monospace;
-          font-size: 0.6rem;
+          font-size: 0.75rem;
           font-weight: 750;
           letter-spacing: 0.11em;
           text-transform: uppercase;
@@ -928,11 +930,11 @@ export function SavedPocket({
         .saved-pocket-header p:last-child {
           margin: 18px 0 0;
           color: var(--muted, #626057);
-          font-size: 0.76rem;
+          font-size: 0.8125rem;
         }
 
         .saved-pocket-header--page {
-          min-height: clamp(270px, 34svh, 340px);
+          min-height: clamp(240px, 30svh, 300px);
           padding-top: 22px;
         }
 
@@ -1005,7 +1007,7 @@ export function SavedPocket({
         .saved-pocket-section-heading p {
           margin-top: 4px;
           color: var(--muted, #626057);
-          font-size: 0.72rem;
+          font-size: 0.8125rem;
           line-height: 1.45;
         }
 
@@ -1029,7 +1031,7 @@ export function SavedPocket({
           padding: 0 13px;
           color: inherit;
           font-family: var(--font-geist-mono), monospace;
-          font-size: 0.62rem;
+          font-size: 0.75rem;
           font-weight: 750;
           letter-spacing: 0.06em;
           text-transform: uppercase;
@@ -1048,7 +1050,7 @@ export function SavedPocket({
           display: block;
           margin-bottom: 6px;
           font-family: var(--font-geist-mono), monospace;
-          font-size: 0.56rem;
+          font-size: 0.75rem;
           font-weight: 750;
           letter-spacing: 0.08em;
           text-transform: uppercase;
@@ -1099,7 +1101,7 @@ export function SavedPocket({
         .saved-pocket-error {
           margin: 8px 0 0;
           color: #c4332b;
-          font-size: 0.68rem;
+          font-size: 0.8125rem;
         }
 
         .saved-pocket-list-actions {
@@ -1263,7 +1265,7 @@ export function SavedPocket({
         .saved-pocket-list-tab-copy small {
           color: var(--muted, #626057);
           font-family: var(--font-geist-mono), monospace;
-          font-size: 0.52rem;
+          font-size: 0.75rem;
           letter-spacing: 0.07em;
           text-transform: uppercase;
         }
@@ -1298,7 +1300,7 @@ export function SavedPocket({
           margin: 0 0 8px;
           color: var(--signal, #ff4f1f);
           font-family: var(--font-geist-mono), monospace;
-          font-size: 0.54rem;
+          font-size: 0.75rem;
           font-weight: 750;
           letter-spacing: 0.1em;
           text-transform: uppercase;
@@ -1318,7 +1320,7 @@ export function SavedPocket({
           display: block;
           margin-top: 9px;
           color: var(--muted, #626057);
-          font-size: 0.7rem;
+          font-size: 0.8125rem;
         }
 
         .saved-pocket-delete-list {
@@ -1377,7 +1379,7 @@ export function SavedPocket({
           display: block;
           margin-top: 9px;
           color: var(--muted, #626057);
-          font-size: 0.7rem;
+          font-size: 0.8125rem;
           line-height: 1.4;
         }
 
@@ -1390,7 +1392,7 @@ export function SavedPocket({
           padding-block: 8px;
           color: inherit;
           font-family: var(--font-geist-mono), monospace;
-          font-size: 0.58rem;
+          font-size: 0.75rem;
           line-height: 1.4;
           text-decoration: underline;
           text-decoration-thickness: 1px;
@@ -1435,7 +1437,7 @@ export function SavedPocket({
           gap: 6px;
           padding: 0 11px;
           color: inherit;
-          font-size: 0.65rem;
+          font-size: 0.75rem;
           font-weight: 700;
           background: transparent;
           border: 1px solid var(--line, rgba(17, 17, 15, 0.25));
@@ -1480,6 +1482,23 @@ export function SavedPocket({
           outline-offset: 2px;
         }
 
+        @media (max-width: 359px) {
+          .saved-pocket-header--page {
+            min-height: 230px;
+          }
+
+          .saved-pocket-header--page h2 {
+            max-width: 8ch;
+            font-size: 3.35rem;
+            line-height: 0.86;
+          }
+
+          .saved-pocket-list-tabs {
+            margin-inline: calc(-1 * var(--mobile-gutter, 22px));
+            padding-inline: 24px;
+          }
+        }
+
         @media (min-width: 760px) {
           .saved-pocket-page {
             padding: 86px 36px 110px;
@@ -1508,11 +1527,11 @@ export function SavedPocket({
 
           .saved-pocket-header--page {
             align-items: flex-start;
-            min-height: clamp(300px, 34svh, 380px);
+            min-height: clamp(260px, 29svh, 320px);
           }
 
           .saved-pocket-header--page h2 {
-            font-size: clamp(6.2rem, 10vw, 10rem);
+            font-size: clamp(5.6rem, 9vw, 9rem);
           }
 
           .saved-pocket-sheet--page .saved-pocket-lists,
@@ -1566,7 +1585,7 @@ export function SavedPocket({
           }
 
           .saved-pocket-header--page {
-            min-height: clamp(320px, 32svh, 400px);
+            min-height: clamp(280px, 28svh, 340px);
           }
 
           .saved-pocket-sheet--page .saved-pocket-list-tabs {

@@ -95,7 +95,7 @@ export function NearbyControl({
       </div>
 
       {isReady ? (
-        <div className="nearby-panel__radius" aria-label="Sökradie">
+        <div className="nearby-panel__radius" role="group" aria-label="Sökradie">
           <span>VISA INOM</span>
           <div>
             {radiusOptions.map((option) => (

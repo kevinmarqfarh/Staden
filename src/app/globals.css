@@ -48,7 +48,7 @@ h1, h2, h3, p { margin-top: 0px; }
 
 .settings-button, .close-button { border: 1px solid var(--line); background: 0px 0px; border-radius: 50%; flex: 0 0 auto; justify-content: center; align-items: center; width: 44px; height: 44px; padding: 0px; display: inline-flex; }
 
-.hero { min-height: calc(100svh - 74px - var(--safe-top)); display: grid; }
+.hero { min-height: calc(100svh - 74px - var(--safe-top) - var(--mobile-nav-floor) - var(--safe-bottom-floor)); display: grid; }
 
 .hero-copy { flex-direction: column; justify-content: center; padding: 68px 22px 54px; display: flex; }
 
@@ -1878,4 +1878,210 @@ footer p { margin: 0px; }
   .entertainment-category-index > button > span:first-child,
   .entertainment-category-index > button > b { padding-top: 2px; }
   .entertainment-filter-panel { grid-template-columns: minmax(280px, 0.7fr) minmax(0px, 1.3fr); }
+}
+
+/* UI/UX audit polish: stable navigation, readable metadata and robust reflow. */
+html,
+body,
+.app-content {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.site-header {
+  width: 100%;
+  min-width: 0;
+}
+
+.mobile-bottom-nav { background: var(--paper-raised); }
+.desktop-main-nav a { min-height: 44px; }
+
+.date-token { white-space: nowrap; }
+
+@keyframes staden-view-in {
+  from { transform: translateY(8px); }
+  to { transform: translateY(0); }
+}
+
+@keyframes sunday-edition-in {
+  from { transform: translateY(10px); }
+  to { transform: translateY(0); }
+}
+
+@keyframes blue-line-in {
+  from { transform: translateX(-6px); }
+  to { transform: translateX(0); }
+}
+
+@keyframes after-rain-in {
+  from { transform: translateY(12px); }
+  to { transform: translateY(0); }
+}
+
+.nearby-panel__manual:focus-within {
+  border-color: currentColor;
+  box-shadow: 0 0 0 2px var(--paper-raised), 0 0 0 5px currentColor;
+}
+
+.nearby-panel__manual select:focus-visible { outline: 0; }
+
+.nearby-panel__heading > div:last-child > p:last-child,
+.nearby-panel__status,
+.nearby-panel__locate,
+.nearby-panel__manual,
+.nearby-panel__radius button {
+  font-size: 0.75rem;
+}
+
+.nearby-panel__radius > span,
+.entertainment-filter-group > p,
+.entertainment-results-heading p,
+.experience-row__number,
+.experience-row__title small,
+.experience-row__details dt,
+.experience-row__footer > div span {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+}
+
+.entertainment-filter-group button,
+.entertainment-filter-group button > span,
+.experience-row__title > span:last-child,
+.experience-row__details dd,
+.experience-row__footer a,
+.experience-row__where,
+.experience-row__time {
+  font-size: 0.8125rem;
+}
+
+.experience-row__details > p { font-size: 0.9375rem; }
+
+.food-confidence-note {
+  border-left: 3px solid var(--signal);
+  color: var(--muted);
+  margin: 18px 0 0;
+  padding-left: 13px;
+}
+
+.food-confidence-note summary {
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 0;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 720;
+  line-height: 1.45;
+}
+
+.food-confidence-note p {
+  max-width: 72ch;
+  margin: 4px 0 10px;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.food-empty-state button { min-height: 44px; }
+
+.settings-sheet > header h2 {
+  overflow-wrap: normal;
+  hyphens: none;
+}
+
+.theme-option-copy,
+.theme-option-copy > span,
+.theme-option-copy strong,
+.theme-option-copy small {
+  min-width: 0;
+}
+
+.theme-option-copy strong,
+.theme-option-copy small { overflow-wrap: anywhere; }
+
+.settings-admin-note {
+  color: var(--muted);
+  margin: 16px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/* Functional copy remains legible on dense mobile layouts. */
+.mobile-bottom-nav a,
+.mobile-bottom-nav button,
+.primary-action {
+  font-size: 0.8125rem;
+}
+
+.home-quick-nav span,
+.secondary-action,
+.hero-art__stamp,
+.culture-dashboard-card__topline,
+.culture-dashboard-card__body > p,
+.culture-dashboard-card__map-link,
+.food-stats span,
+.theme-option-copy small,
+.entertainment-source-note p,
+.entertainment-source-note strong,
+.entertainment-source-note a {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+}
+
+.home-overview-grid,
+.culture-dashboard-rail,
+.cuisine-rail,
+.filter-row,
+.entertainment-filter-group > div {
+  touch-action: pan-x;
+  scroll-padding-inline: 24px;
+}
+
+@media (max-width: 359px) {
+  .hero-copy { padding-top: 48px; padding-bottom: 34px; }
+  h1 { margin-bottom: 28px; font-size: 4rem; }
+  .hero-description { margin-bottom: 26px; font-size: 0.9375rem; }
+  .home-quick-nav a { min-height: 66px; }
+
+  .settings-sheet > header h2 {
+    font-size: 2.35rem;
+    line-height: 0.96;
+  }
+
+  .theme-option {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 299px) {
+  .settings-sheet { padding-inline: 14px; }
+  .settings-sheet > header { grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; }
+  .settings-sheet > header h2 {
+    font-size: 1.55rem;
+    line-height: 1;
+  }
+
+  .theme-option {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .theme-preview { min-height: 88px; }
+  .experience-row__details dl { grid-template-columns: minmax(0, 1fr); }
+  .experience-row__details dl > div,
+  .experience-row__details dl > div:nth-child(odd),
+  .experience-row__details dl > div:nth-child(even) {
+    border-right: 0;
+    padding-left: 0;
+  }
+}
+
+@media (min-width: 1600px) {
+  .home-dashboard,
+  .culture-section,
+  .entertainment-section,
+  .food-section {
+    padding-left: calc((100vw - 1560px) / 2);
+    padding-right: calc((100vw - 1560px) / 2);
+  }
 }

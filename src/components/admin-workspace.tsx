@@ -866,6 +866,7 @@ export function AdminWorkspace() {
           <p className="admin-kicker">Redaktion · Ny berättelse</p>
           <h1>Komponera ett<br /><em>inlägg.</em></h1>
         </div>
+        <div className="admin-editor-action-stack">
         <div className="admin-editor-actions">
           <label>
             <span>Status</span>
@@ -894,6 +895,12 @@ export function AdminWorkspace() {
             <CloudArrowUp size={19} /> Publicera
           </button>
         </div>
+        {accessMode !== "authorized" ? (
+          <p className="admin-publish-note">
+            Publicering kräver en ansluten Supabase-admin. Utkast kan fortfarande sparas lokalt.
+          </p>
+        ) : null}
+        </div>
       </header>
 
       {notice && (
@@ -914,7 +921,7 @@ export function AdminWorkspace() {
             </label>
             <label className="admin-field admin-field--title">
               <span>Rubrik</span>
-              <textarea value={draft.title} onChange={(event) => updateTitle(event.target.value)} rows={2} maxLength={120} placeholder="Sätt en rubrik som öppnar staden" />
+              <textarea value={draft.title} onChange={(event) => updateTitle(event.target.value)} rows={3} maxLength={120} placeholder="Sätt en rubrik som öppnar staden" />
               <small>{draft.title.length}/120</small>
             </label>
             <label className="admin-field">
