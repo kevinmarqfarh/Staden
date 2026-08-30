@@ -3,13 +3,14 @@
 import {
   ArrowDown,
   ArrowUpRight,
+  BookmarkSimple,
   CaretDown,
   Check,
   MagnifyingGlass,
   MapPin,
   X,
 } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   entertainmentAudienceOptions,
   entertainmentCategories,
@@ -28,6 +29,13 @@ import {
   formatDistance,
   resolveGothenburgPoint,
 } from "@/lib/geo";
+import {
+  getSavedEntertainmentSnapshot,
+  getServerSavedEntertainmentSnapshot,
+  parseSavedEntertainmentIds,
+  subscribeToSavedEntertainment,
+  writeSavedEntertainmentIds,
+} from "@/lib/saved-entertainment";
 
 type AudienceFilter = "alla" | EntertainmentAudience;
 type CategoryFilter = "Alla" | EntertainmentCategory;
@@ -84,6 +92,15 @@ export function EntertainmentExplorer() {
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
   const nearby = useNearbyLocation();
+  const savedEntertainmentSnapshot = useSyncExternalStore(
+    subscribeToSavedEntertainment,
+    getSavedEntertainmentSnapshot,
+    getServerSavedEntertainmentSnapshot,
+  );
+  const savedEntertainmentIds = useMemo(
+    () => parseSavedEntertainmentIds(savedEntertainmentSnapshot),
+    [savedEntertainmentSnapshot],
+  );
 
   const filteredExperiences = useMemo(() => {
     const normalizedQuery = normalize(query.trim());
@@ -174,6 +191,14 @@ export function EntertainmentExplorer() {
     setQuickFilter("alla");
     setQuery("");
     setShowAll(false);
+  }
+
+  function toggleSavedExperience(id: string) {
+    const next = savedEntertainmentIds.includes(id)
+      ? savedEntertainmentIds.filter((savedId) => savedId !== id)
+      : [...savedEntertainmentIds, id];
+
+    writeSavedEntertainmentIds(next);
   }
 
   return (
@@ -370,8 +395,11 @@ export function EntertainmentExplorer() {
                   : null;
                 const approximate = nearby.source === "manual" || itemPoint?.precision === "area";
 
+                const isSaved = savedEntertainmentIds.includes(item.id);
+
                 return (
-                <details className="experience-row" key={item.id}>
+                <div className="experience-row-wrap" key={item.id}>
+                <details className="experience-row">
                   <summary>
                     <span className="experience-row__number">
                       {String(index + 1).padStart(2, "0")}
@@ -432,6 +460,21 @@ export function EntertainmentExplorer() {
                     </div>
                   </div>
                 </details>
+                <button
+                  className={`experience-row__save${isSaved ? " is-saved" : ""}`}
+                  type="button"
+                  aria-pressed={isSaved}
+                  aria-label={`${isSaved ? "Ta bort" : "Spara"} ${item.title}`}
+                  onClick={() => toggleSavedExperience(item.id)}
+                >
+                  {isSaved ? (
+                    <Check aria-hidden="true" size={17} weight="bold" />
+                  ) : (
+                    <BookmarkSimple aria-hidden="true" size={17} weight="bold" />
+                  )}
+                  <span>{isSaved ? "Sparad" : "Spara"}</span>
+                </button>
+                </div>
                 );
               })}
             </div>

@@ -1,9 +1,12 @@
 "use client";
 
 import {
+  ArrowUpRight,
   BookmarkSimple,
   Buildings,
+  CaretDown,
   Check,
+  Confetti,
   ForkKnife,
   FolderSimplePlus,
   GearSix,
@@ -22,7 +25,17 @@ import {
 } from "react";
 import { culturalEvents, type CulturalEvent } from "@/data/cultural-events";
 import { restaurants, type Restaurant } from "@/data/restaurants";
+import {
+  entertainmentExperiences,
+  type EntertainmentExperience,
+} from "@/data/entertainment";
 import { MapLink } from "@/components/map-link";
+import {
+  EMPTY_SAVED_ENTERTAINMENT,
+  SAVED_ENTERTAINMENT_CHANGED,
+  SAVED_ENTERTAINMENT_KEY,
+  parseSavedEntertainmentIds,
+} from "@/lib/saved-entertainment";
 
 const SAVED_EVENTS_KEY = "staden:saved-cultural-events";
 const SAVED_EVENTS_CHANGED = "staden:saved-cultural-events-changed";
@@ -36,17 +49,23 @@ const MAX_RAW_SNAPSHOT_LENGTH = 100_000;
 const MAX_SAVED_ITEMS_PER_KIND = 200;
 const MAX_LISTS = 24;
 const MAX_LIST_NAME_LENGTH = 48;
-const MAX_ASSIGNMENTS = MAX_SAVED_ITEMS_PER_KIND * 2;
+const MAX_ASSIGNMENTS = MAX_SAVED_ITEMS_PER_KIND * 3;
 
 const eventById = new Map(culturalEvents.map((event) => [event.id, event]));
 const restaurantById = new Map(
   restaurants.map((restaurant) => [restaurant.id, restaurant]),
+);
+const entertainmentById = new Map(
+  entertainmentExperiences.map((experience) => [experience.id, experience]),
 );
 const validEventIds = new Set(eventById.keys());
 const validRestaurantIds = new Set(restaurantById.keys());
 const validItemKeys = new Set([
   ...culturalEvents.map((event) => `culture:${event.id}`),
   ...restaurants.map((restaurant) => `restaurant:${restaurant.id}`),
+  ...entertainmentExperiences.map(
+    (experience) => `entertainment:${experience.id}`,
+  ),
 ]);
 
 type SavedList = {
@@ -66,7 +85,14 @@ type PocketState = {
 
 type SavedPocketItem =
   | { itemKey: string; kind: "culture"; item: CulturalEvent }
-  | { itemKey: string; kind: "restaurant"; item: Restaurant };
+  | { itemKey: string; kind: "restaurant"; item: Restaurant }
+  | {
+      itemKey: string;
+      kind: "entertainment";
+      item: EntertainmentExperience;
+    };
+
+type SavedKindFilter = "all" | SavedPocketItem["kind"];
 
 export type SavedPocketProps = {
   open?: boolean;
@@ -90,12 +116,14 @@ function subscribeToSavedPocket(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange);
   window.addEventListener(SAVED_EVENTS_CHANGED, onStoreChange);
   window.addEventListener(SAVED_RESTAURANTS_CHANGED, onStoreChange);
+  window.addEventListener(SAVED_ENTERTAINMENT_CHANGED, onStoreChange);
   window.addEventListener(SAVED_LISTS_CHANGED, onStoreChange);
 
   return () => {
     window.removeEventListener("storage", onStoreChange);
     window.removeEventListener(SAVED_EVENTS_CHANGED, onStoreChange);
     window.removeEventListener(SAVED_RESTAURANTS_CHANGED, onStoreChange);
+    window.removeEventListener(SAVED_ENTERTAINMENT_CHANGED, onStoreChange);
     window.removeEventListener(SAVED_LISTS_CHANGED, onStoreChange);
   };
 }
@@ -106,6 +134,10 @@ function getSavedEventsSnapshot() {
 
 function getSavedRestaurantsSnapshot() {
   return readStorage(SAVED_RESTAURANTS_KEY, EMPTY_ARRAY_SNAPSHOT);
+}
+
+function getSavedEntertainmentSnapshot() {
+  return readStorage(SAVED_ENTERTAINMENT_KEY, EMPTY_SAVED_ENTERTAINMENT);
 }
 
 function getSavedListsSnapshot() {
@@ -247,9 +279,9 @@ function createListId() {
 }
 
 function itemTitle(savedItem: SavedPocketItem) {
-  return savedItem.kind === "culture"
-    ? savedItem.item.title
-    : savedItem.item.name;
+  return savedItem.kind === "restaurant"
+    ? savedItem.item.name
+    : savedItem.item.title;
 }
 
 export function SavedPocket({
@@ -269,6 +301,7 @@ export function SavedPocket({
   const [editingListName, setEditingListName] = useState("");
   const [renameError, setRenameError] = useState("");
   const [pendingDeleteListId, setPendingDeleteListId] = useState<string | null>(null);
+  const [kindFilter, setKindFilter] = useState<SavedKindFilter>("all");
   const savedEventsSnapshot = useSyncExternalStore(
     subscribeToSavedPocket,
     getSavedEventsSnapshot,
@@ -277,6 +310,11 @@ export function SavedPocket({
   const savedRestaurantsSnapshot = useSyncExternalStore(
     subscribeToSavedPocket,
     getSavedRestaurantsSnapshot,
+    getEmptyArraySnapshot,
+  );
+  const savedEntertainmentSnapshot = useSyncExternalStore(
+    subscribeToSavedPocket,
+    getSavedEntertainmentSnapshot,
     getEmptyArraySnapshot,
   );
   const savedListsSnapshot = useSyncExternalStore(
@@ -293,6 +331,10 @@ export function SavedPocket({
     () =>
       parseSavedIds(savedRestaurantsSnapshot, validRestaurantIds),
     [savedRestaurantsSnapshot],
+  );
+  const savedEntertainmentIds = useMemo(
+    () => parseSavedEntertainmentIds(savedEntertainmentSnapshot),
+    [savedEntertainmentSnapshot],
   );
   const pocketState = useMemo(
     () => parsePocketState(savedListsSnapshot),
@@ -324,10 +366,24 @@ export function SavedPocket({
         ? [{ itemKey: `restaurant:${id}`, kind: "restaurant", item }]
         : [];
     });
+    const entertainment: SavedPocketItem[] = savedEntertainmentIds.flatMap(
+      (id) => {
+        const item = entertainmentById.get(id);
+        return item
+          ? [
+              {
+                itemKey: `entertainment:${id}`,
+                kind: "entertainment" as const,
+                item,
+              },
+            ]
+          : [];
+      },
+    );
 
-    return [...events, ...food];
-  }, [savedEventIds, savedRestaurantIds]);
-  const visibleItems = useMemo(
+    return [...events, ...entertainment, ...food];
+  }, [savedEntertainmentIds, savedEventIds, savedRestaurantIds]);
+  const listItems = useMemo(
     () =>
       selectedListId === null
         ? savedItems
@@ -336,6 +392,23 @@ export function SavedPocket({
               assignmentByItemKey.get(savedItem.itemKey) === selectedListId,
           ),
     [assignmentByItemKey, savedItems, selectedListId],
+  );
+  const visibleItems = useMemo(
+    () =>
+      kindFilter === "all"
+        ? listItems
+        : listItems.filter((savedItem) => savedItem.kind === kindFilter),
+    [kindFilter, listItems],
+  );
+  const kindCounts = useMemo(
+    () => ({
+      all: listItems.length,
+      culture: listItems.filter((item) => item.kind === "culture").length,
+      entertainment: listItems.filter((item) => item.kind === "entertainment")
+        .length,
+      restaurant: listItems.filter((item) => item.kind === "restaurant").length,
+    }),
+    [listItems],
   );
 
   useEffect(() => {
@@ -521,11 +594,17 @@ export function SavedPocket({
         savedEventIds.filter((id) => id !== savedItem.item.id),
         SAVED_EVENTS_CHANGED,
       );
-    } else {
+    } else if (savedItem.kind === "restaurant") {
       writeStorage(
         SAVED_RESTAURANTS_KEY,
         savedRestaurantIds.filter((id) => id !== savedItem.item.id),
         SAVED_RESTAURANTS_CHANGED,
+      );
+    } else {
+      writeStorage(
+        SAVED_ENTERTAINMENT_KEY,
+        savedEntertainmentIds.filter((id) => id !== savedItem.item.id),
+        SAVED_ENTERTAINMENT_CHANGED,
       );
     }
 
@@ -695,7 +774,7 @@ export function SavedPocket({
               <p>{selectedList ? "Aktiv lista" : "Översikt"}</p>
               <h4>{selectedList?.name ?? "Alla sparade"}</h4>
               <span>
-                {visibleItems.length} {visibleItems.length === 1 ? "sparat objekt" : "sparade objekt"}
+                {listItems.length} {listItems.length === 1 ? "sparat objekt" : "sparade objekt"}
               </span>
             </div>
 
@@ -768,39 +847,86 @@ export function SavedPocket({
             <BookmarkSimple aria-hidden="true" size={20} />
             <div>
               <h3 id="saved-items-title">
-                Platser och händelser
+                Utforska sparat
               </h3>
               <p aria-live="polite">
-                {selectedList ? `${visibleItems.length} i ${selectedList.name}` : `${visibleItems.length} totalt`}
+                {selectedList ? `${listItems.length} i ${selectedList.name}` : `${listItems.length} totalt`}
               </p>
             </div>
+          </div>
+
+          <div className="saved-pocket-kind-filter" aria-label="Filtrera sparat efter typ">
+            {([
+              ["all", "Alla"],
+              ["culture", "Kultur"],
+              ["entertainment", "Nöje"],
+              ["restaurant", "Mat"],
+            ] as const).map(([kind, label]) => (
+              <button
+                type="button"
+                className={kindFilter === kind ? "is-active" : ""}
+                aria-pressed={kindFilter === kind}
+                onClick={() => setKindFilter(kind)}
+                key={kind}
+              >
+                <span>{label}</span>
+                <b>{kindCounts[kind]}</b>
+              </button>
+            ))}
           </div>
 
           {visibleItems.length ? (
             <ul className="saved-pocket-items">
               {visibleItems.map((savedItem) => {
                 const isCulture = savedItem.kind === "culture";
+                const isEntertainment = savedItem.kind === "entertainment";
                 const metadata = isCulture
                   ? savedItem.item.dateLabel
-                  : savedItem.item.cuisine;
+                  : isEntertainment
+                    ? `${savedItem.item.duration} · ${savedItem.item.price}`
+                    : savedItem.item.cuisine;
                 const mapQuery = isCulture
                   ? [savedItem.item.venue, savedItem.item.area, "Göteborg"].join(", ")
-                  : [savedItem.item.address, savedItem.item.area, "Göteborg"]
-                      .filter(Boolean)
-                      .join(", ");
+                  : isEntertainment
+                    ? [savedItem.item.title, savedItem.item.area, "Göteborg"].join(", ")
+                    : [savedItem.item.address, savedItem.item.area, "Göteborg"]
+                        .filter(Boolean)
+                        .join(", ");
                 const mapText = isCulture
                   ? `${savedItem.item.venue} · ${savedItem.item.area}`
-                  : savedItem.item.address;
-                const typeLabel = isCulture ? "Kultur" : "Mat";
+                  : isEntertainment
+                    ? savedItem.item.area
+                    : savedItem.item.address;
+                const typeLabel = isCulture
+                  ? "Kultur"
+                  : isEntertainment
+                    ? "Nöje"
+                    : "Mat";
+                const itemUrl = isCulture
+                  ? savedItem.item.sourceUrl
+                  : isEntertainment
+                    ? savedItem.item.url
+                    : savedItem.item.websiteUrl ?? savedItem.item.sourceUrl;
 
                 return (
                   <li key={savedItem.itemKey}>
                     <div className="saved-pocket-item-icon" aria-hidden="true">
-                      {isCulture ? <Buildings size={21} /> : <ForkKnife size={21} />}
+                      {isCulture ? (
+                        <Buildings size={21} />
+                      ) : isEntertainment ? (
+                        <Confetti size={21} />
+                      ) : (
+                        <ForkKnife size={21} />
+                      )}
                     </div>
                     <div className="saved-pocket-item-copy">
                       <p>{typeLabel}</p>
-                      <h4>{itemTitle(savedItem)}</h4>
+                      <h4>
+                        <a href={itemUrl} target="_blank" rel="noopener noreferrer">
+                          {itemTitle(savedItem)}
+                          <ArrowUpRight aria-hidden="true" size={16} weight="bold" />
+                        </a>
+                      </h4>
                       <span>{metadata}</span>
                       <MapLink
                         className="saved-pocket-item-map"
@@ -811,33 +937,43 @@ export function SavedPocket({
                         <span>{mapText} · Karta</span>
                       </MapLink>
                     </div>
-                    <div className="saved-pocket-item-actions">
-                      <label htmlFor={`saved-list-${savedItem.itemKey}`}>
-                        Flytta till lista
-                      </label>
-                      <select
-                        id={`saved-list-${savedItem.itemKey}`}
-                        value={assignmentByItemKey.get(savedItem.itemKey) ?? ""}
-                        onChange={(event) =>
-                          assignItem(savedItem.itemKey, event.target.value)
-                        }
-                      >
-                        <option value="">Utan lista</option>
-                        {pocketState.lists.map((list) => (
-                          <option value={list.id} key={list.id}>
-                            {list.name}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        aria-label={`Ta bort ${itemTitle(savedItem)} från sparat`}
-                        onClick={() => removeSavedItem(savedItem)}
-                      >
-                        <Trash aria-hidden="true" size={17} />
-                        Ta bort
-                      </button>
-                    </div>
+                    <details className="saved-pocket-item-manage">
+                      <summary>
+                        Hantera
+                        <CaretDown aria-hidden="true" size={16} weight="bold" />
+                      </summary>
+                      <div className="saved-pocket-item-actions">
+                        {pocketState.lists.length ? (
+                          <>
+                            <label htmlFor={`saved-list-${savedItem.itemKey}`}>
+                              Lägg i lista
+                            </label>
+                            <select
+                              id={`saved-list-${savedItem.itemKey}`}
+                              value={assignmentByItemKey.get(savedItem.itemKey) ?? ""}
+                              onChange={(event) =>
+                                assignItem(savedItem.itemKey, event.target.value)
+                              }
+                            >
+                              <option value="">Utan lista</option>
+                              {pocketState.lists.map((list) => (
+                                <option value={list.id} key={list.id}>
+                                  {list.name}
+                                </option>
+                              ))}
+                            </select>
+                          </>
+                        ) : null}
+                        <button
+                          type="button"
+                          aria-label={`Ta bort ${itemTitle(savedItem)} från sparat`}
+                          onClick={() => removeSavedItem(savedItem)}
+                        >
+                          <Trash aria-hidden="true" size={17} />
+                          Ta bort
+                        </button>
+                      </div>
+                    </details>
                   </li>
                 );
               })}
@@ -845,11 +981,13 @@ export function SavedPocket({
           ) : (
             <div className="saved-pocket-empty">
               <BookmarkSimple aria-hidden="true" size={34} />
-              <h4>{savedItems.length ? "Listan väntar på sitt första val." : "Fickan är tom."}</h4>
+              <h4>{listItems.length ? "Inget i den här kategorin." : savedItems.length ? "Listan väntar på sitt första val." : "Fickan är tom."}</h4>
               <p>
-                {savedItems.length
-                  ? "Använd Flytta till lista på ett sparat objekt för att lägga det här."
-                  : "Spara kultur och restauranger så samlas de här."}
+                {listItems.length
+                  ? "Välj Alla eller en annan kategori för att fortsätta utforska."
+                  : savedItems.length
+                    ? "Öppna Hantera på ett sparat objekt för att lägga det i listan."
+                    : "Spara kultur, nöjen och restauranger så samlas de här."}
               </p>
             </div>
           )}
@@ -1228,11 +1366,11 @@ export function SavedPocket({
 
         .saved-pocket-list-tabs button {
           display: grid;
-          flex: 0 0 min(64vw, 230px);
+          flex: 0 0 min(46vw, 184px);
           grid-template-columns: minmax(0, 1fr) auto;
-          gap: 16px;
-          min-height: 94px;
-          padding: 14px;
+          gap: 10px;
+          min-height: 68px;
+          padding: 11px 12px;
           color: inherit;
           text-align: left;
           background: var(--paper-raised, #f4f1e9);
@@ -1250,13 +1388,13 @@ export function SavedPocket({
           display: grid;
           min-width: 0;
           align-content: space-between;
-          gap: 10px;
+          gap: 6px;
         }
 
         .saved-pocket-list-tab-copy strong {
           overflow-wrap: anywhere;
           font-family: var(--story-font), Georgia, serif;
-          font-size: 1.25rem;
+          font-size: 1rem;
           font-weight: 500;
           letter-spacing: var(--story-spacing, -0.035em);
           line-height: 0.95;
@@ -1277,7 +1415,7 @@ export function SavedPocket({
         .saved-pocket-list-tabs button > b {
           align-self: start;
           font-family: var(--font-condensed), sans-serif;
-          font-size: 2.5rem;
+          font-size: 1.8rem;
           font-weight: 680;
           letter-spacing: -0.07em;
           line-height: 0.8;
@@ -1337,6 +1475,50 @@ export function SavedPocket({
           border: 0;
         }
 
+        .saved-pocket-kind-filter {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          margin: 0 0 18px;
+          border: 1px solid var(--line, rgba(17, 17, 15, 0.25));
+        }
+
+        .saved-pocket-kind-filter button {
+          display: grid;
+          min-width: 0;
+          min-height: 52px;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 5px;
+          padding: 0 9px;
+          color: inherit;
+          text-align: left;
+          background: transparent;
+          border: 0;
+          border-right: 1px solid var(--line, rgba(17, 17, 15, 0.25));
+        }
+
+        .saved-pocket-kind-filter button:last-child {
+          border-right: 0;
+        }
+
+        .saved-pocket-kind-filter button.is-active {
+          color: var(--paper, #f4f1e9);
+          background: var(--ink, #11110f);
+        }
+
+        .saved-pocket-kind-filter span,
+        .saved-pocket-kind-filter b {
+          overflow: hidden;
+          font-family: var(--font-geist-mono), monospace;
+          font-size: 0.64rem;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .saved-pocket-kind-filter b {
+          font-size: 0.72rem;
+        }
+
         .saved-pocket-items {
           display: grid;
           gap: 0;
@@ -1375,6 +1557,19 @@ export function SavedPocket({
           line-height: 0.96;
         }
 
+        .saved-pocket-item-copy h4 a {
+          display: inline-flex;
+          align-items: flex-start;
+          gap: 8px;
+          color: inherit;
+          text-decoration: none;
+        }
+
+        .saved-pocket-item-copy h4 a svg {
+          flex: 0 0 auto;
+          margin-top: 3px;
+        }
+
         .saved-pocket-item-copy > span {
           display: block;
           margin-top: 9px;
@@ -1408,13 +1603,40 @@ export function SavedPocket({
           overflow-wrap: anywhere;
         }
 
-        .saved-pocket-item-actions {
+        .saved-pocket-item-manage {
           grid-column: 1 / -1;
+          margin-left: 47px;
+        }
+
+        .saved-pocket-item-manage > summary {
+          display: inline-flex;
+          min-height: 44px;
+          align-items: center;
+          gap: 7px;
+          color: var(--muted, #626057);
+          font-family: var(--font-geist-mono), monospace;
+          font-size: 0.68rem;
+          font-weight: 740;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          cursor: pointer;
+          list-style: none;
+        }
+
+        .saved-pocket-item-manage > summary::-webkit-details-marker {
+          display: none;
+        }
+
+        .saved-pocket-item-manage[open] > summary svg {
+          transform: rotate(180deg);
+        }
+
+        .saved-pocket-item-actions {
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
           align-items: end;
           gap: 8px;
-          margin-left: 47px;
+          padding: 10px 0 4px;
         }
 
         .saved-pocket-item-actions label {
@@ -1499,6 +1721,40 @@ export function SavedPocket({
           }
         }
 
+        @media (max-width: 759px) {
+          .saved-pocket-header--page {
+            min-height: 190px;
+            padding-top: 12px;
+            padding-bottom: 17px;
+          }
+
+          .saved-pocket-header--page h2 {
+            font-size: clamp(3.35rem, 15vw, 4.35rem);
+          }
+
+          .saved-pocket-header p:last-child {
+            margin-top: 12px;
+          }
+
+          .saved-pocket-lists,
+          .saved-pocket-content {
+            padding-top: 20px;
+            padding-bottom: 20px;
+          }
+
+          .saved-pocket-list-tabs {
+            margin-top: 16px;
+          }
+
+          .saved-pocket-section-heading {
+            margin-bottom: 13px;
+          }
+
+          .saved-pocket-kind-filter {
+            margin-bottom: 12px;
+          }
+        }
+
         @media (min-width: 760px) {
           .saved-pocket-page {
             padding: 86px 36px 110px;
@@ -1572,9 +1828,10 @@ export function SavedPocket({
             align-items: center;
           }
 
-          .saved-pocket-item-actions {
+          .saved-pocket-item-manage {
             grid-column: 3;
             margin-left: 0;
+            justify-self: stretch;
           }
         }
 
@@ -1609,7 +1866,7 @@ export function SavedPocket({
             border-bottom: 0;
           }
 
-          .saved-pocket-sheet--page .saved-pocket-item-actions {
+          .saved-pocket-sheet--page .saved-pocket-item-manage {
             grid-column: 1 / -1;
             margin: auto 0 0 49px;
           }

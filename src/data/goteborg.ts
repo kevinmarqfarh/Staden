@@ -334,8 +334,8 @@ export const OBJEKT: Objekt[] = [
     inomhus: false,
     tillfallen: [
       {
-        borjar: "2026-09-10T14:00:00+02:00",
-        slutar: "2026-09-12T23:59:00+02:00",
+        borjar: "2027-08-12T14:00:00+02:00",
+        slutar: "2027-08-14T23:59:00+02:00",
         datumBekraftat: true,
         tillstand: "planerad",
       },
@@ -392,53 +392,6 @@ export const OBJEKT: Objekt[] = [
         url: "https://nefertiti.se",
         vard: "nefertiti.se",
         mobilanpassad: true,
-      },
-    ],
-    harkomst: [
-      {
-        falt: "varfor",
-        kalla: "redaktion",
-        hamtad: `${IDAG}T06:40:00+02:00`,
-        licens: "redaktionell",
-        attribution: "STADEN",
-      },
-    ],
-  }),
-
-  objekt({
-    id: "obj-pustervik-fredag",
-    slag: "handelse",
-    sal: "nojen",
-    slug: "pustervik-fredagsklubb",
-    accession: "N-0044",
-    titel: "Fredagsklubben på Pustervik",
-    varfor:
-      "Två våningar, två sorters kväll: konsert nere, klubb uppe, och du kan byta mitt i utan att betala om. Baren på övervåningen har fönster mot kanalen, vilket är den enda platsen att stå om det blir varmt.",
-    kvarter: "haga",
-    platsNamn: "Pustervik",
-    adress: "Järntorgsgatan 12, 413 01 Göteborg",
-    gangminuter: 8,
-    terrang: "platt",
-    prisSlag: "fast",
-    prisMinOre: 18000,
-    arAnslag: false,
-    passar: ["vanner", "tva"],
-    inomhus: true,
-    tillfallen: [
-      {
-        borjar: "2026-08-28T21:00:00+02:00",
-        slutar: "2026-08-29T03:00:00+02:00",
-        datumBekraftat: true,
-        tillstand: "planerad",
-      },
-    ],
-    oppettider: [],
-    lankar: [
-      {
-        slag: "biljett",
-        url: "https://pustervik.nu",
-        vard: "pustervik.nu",
-        mobilanpassad: false,
       },
     ],
     harkomst: [

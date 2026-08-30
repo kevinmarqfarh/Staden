@@ -42,6 +42,12 @@ import {
   formatDistance,
   resolveGothenburgPoint,
 } from "@/lib/geo";
+import {
+  getSavedEntertainmentSnapshot,
+  getServerSavedEntertainmentSnapshot,
+  parseSavedEntertainmentIds,
+  subscribeToSavedEntertainment,
+} from "@/lib/saved-entertainment";
 
 const SAVED_EVENTS_KEY = "staden:saved-cultural-events";
 const SAVED_EVENTS_CHANGED = "staden:saved-cultural-events-changed";
@@ -197,6 +203,15 @@ function festivalPulse(event: CulturalEvent) {
 
   const days = Math.max(1, Math.ceil((start - snapshot) / 86_400_000));
   return `OM ${days} ${days === 1 ? "DAG" : "DAGAR"}`;
+}
+
+function isCultureNowOrSoon(event: CulturalEvent) {
+  const snapshot = Date.parse(`${culturalCatalogVerifiedAt}T00:00:00+02:00`);
+  const soonLimit = snapshot + 2 * 86_400_000;
+  const start = Date.parse(`${event.startDate}T00:00:00+02:00`);
+  const end = Date.parse(`${event.endDate ?? event.startDate}T23:59:59+02:00`);
+
+  return start <= soonLimit && end >= snapshot;
 }
 
 const themes: Array<{
@@ -542,7 +557,9 @@ export function StadenApp() {
   const [cultureCatalogOpen, setCultureCatalogOpen] = useState(false);
   const [showAllCultureResults, setShowAllCultureResults] = useState(false);
   const [cultureQuery, setCultureQuery] = useState("");
-  const [cultureScope, setCultureScope] = useState<"alla" | "kommande" | "permanenta">("alla");
+  const [cultureScope, setCultureScope] = useState<
+    "alla" | "snart" | "kommande" | "permanenta"
+  >("alla");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeView, setActiveView] = useState<AppView>("home");
   const nearby = useNearbyLocation();
@@ -568,6 +585,15 @@ export function StadenApp() {
   const savedRestaurantIds = useMemo(
     () => parseSavedRestaurantIds(savedRestaurantsSnapshot),
     [savedRestaurantsSnapshot],
+  );
+  const savedEntertainmentSnapshot = useSyncExternalStore(
+    subscribeToSavedEntertainment,
+    getSavedEntertainmentSnapshot,
+    getServerSavedEntertainmentSnapshot,
+  );
+  const savedEntertainmentIds = useMemo(
+    () => parseSavedEntertainmentIds(savedEntertainmentSnapshot),
+    [savedEntertainmentSnapshot],
   );
   const selectedTheme = useSyncExternalStore(
     subscribeToTheme,
@@ -680,6 +706,7 @@ export function StadenApp() {
           const isPermanent = event.dateLabel === "Permanent";
           const matchesScope =
             cultureScope === "alla" ||
+            (cultureScope === "snart" && isCultureNowOrSoon(event)) ||
             (cultureScope === "permanenta" && isPermanent) ||
             (cultureScope === "kommande" && !isPermanent);
           const haystack = [
@@ -759,6 +786,7 @@ export function StadenApp() {
     ? filteredCultureEvents
     : filteredCultureEvents.slice(0, 5);
   const visibleCount = filteredCultureEvents.length;
+  const cultureNowOrSoonCount = discoveryEvents.filter(isCultureNowOrSoon).length;
   const entertainmentEvents = discoveryEvents
     .filter(
       (event) =>
@@ -801,6 +829,12 @@ export function StadenApp() {
         block: "start",
       });
     });
+  }
+
+  function openCultureNowOrSoon() {
+    setCultureScope("snart");
+    setCultureQuery("");
+    openCultureCategory("Alla");
   }
 
   function showMusicInCulture() {
@@ -896,7 +930,7 @@ export function StadenApp() {
           <a
             className="saved-shortcut"
             href="#profil"
-            aria-label={`Öppna Profil, ${savedEventIds.length + savedRestaurantIds.length} sparade objekt`}
+            aria-label={`Öppna Profil, ${savedEventIds.length + savedRestaurantIds.length + savedEntertainmentIds.length} sparade objekt`}
             aria-current={activeView === "profile" ? "location" : undefined}
             onClick={(event) => {
               event.preventDefault();
@@ -905,7 +939,7 @@ export function StadenApp() {
           >
             <BookmarkSimple aria-hidden="true" size={18} weight="bold" />
             <span aria-live="polite">
-              {savedEventIds.length + savedRestaurantIds.length}
+              {savedEventIds.length + savedRestaurantIds.length + savedEntertainmentIds.length}
             </span>
           </a>
         </div>
@@ -1096,6 +1130,16 @@ export function StadenApp() {
             hela kulturkatalogen, sorterad som rum att gå vilse i.
           </p>
         </div>
+
+        <button
+          className="culture-now-soon"
+          type="button"
+          onClick={openCultureNowOrSoon}
+        >
+          <span>NU & SNART</span>
+          <strong>{cultureNowOrSoonCount} val för idag och imorgon</strong>
+          <ArrowDownRight aria-hidden="true" size={22} weight="bold" />
+        </button>
 
         <section
           className="city-festival-section"
@@ -1341,6 +1385,7 @@ export function StadenApp() {
               </label>
               <div className="culture-scope" aria-label="Visa efter tid">
                 {([
+                  ["snart", "Nu & snart"],
                   ["alla", "Allt"],
                   ["kommande", "Datum"],
                   ["permanenta", "Alltid"],
