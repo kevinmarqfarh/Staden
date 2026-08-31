@@ -3526,6 +3526,115 @@ const scannedCulturalEvents = [
       "https://goteborg.se/wps/portal/start/uppleva-och-gora/bibliotek/alla-arrangemang-pa-biblioteken?activityId=f4e49fff-040e-4a48-a280-97c1eadf3b34",
     isFree: true,
   },
+  {
+    id: "dolores-our-lady-of-sorrows-lunchteater-2026",
+    title: "Dolores Our Lady of Sorrows",
+    category: "Scenkonst",
+    dateLabel: "1–4 sep · fyra lunchföreställningar",
+    startDate: "2026-09-01",
+    endDate: "2026-09-04",
+    time: "12:00 · 1 timme",
+    venue: "Göteborgs Stadsteater, Foajébaren, Götaplatsen 4",
+    area: "Götaplatsen",
+    description:
+      "En musikalisk berättarföreställning om Dolores O’Riordans väg från ett strikt arbetarhem på Irland till sångare i The Cranberries.",
+    sourceLabel: "Göteborgs Stadsteater",
+    sourceUrl:
+      "https://stadsteatern.goteborg.se/pa-scen/2026-2027/lunchteater-ht-2026/doloresourladyofsorrows/",
+  },
+  {
+    id: "musikhang-frejaskolan-hosten-2026",
+    title: "Musikhäng på Frejaskolan",
+    category: "Skapande",
+    dateLabel: "8 sep–15 dec · 15 tisdagar",
+    startDate: "2026-09-08",
+    endDate: "2026-12-15",
+    time: "17:00–18:30",
+    venue: "Frejaskolans musiksal, Kråkbärsgatan 1",
+    area: "Frölunda",
+    description:
+      "En kostnadsfri ungdomsserie för den som vill spela i band, träffa andra musikintresserade och prova nya instrument. Föranmälan krävs.",
+    sourceLabel: "Göteborgs Stad · Skola som arena",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/motesplatser/motesplatser-for-unga/aktiviteter-i-skola-som-arena/skola-som-arena-aktiviteter-utanfor-skoltid/hitta-aktiviteter-i-skola-som-arena?activityId=ca092b02-782d-420a-a0b5-278a2a607a44",
+    isFree: true,
+  },
+  {
+    id: "askekarrsskeppet-foremalskvartar-hosten-2026",
+    title: "Äskekärrsskeppet – föremålskvartar",
+    category: "Museum",
+    dateLabel: "12 sep–7 nov · 13 visningar",
+    startDate: "2026-09-12",
+    endDate: "2026-11-07",
+    time: "Lördagar 11:30 · söndagar 15:00",
+    venue: "Göteborgs stadsmuseum, Norra Hamngatan 12",
+    area: "Inom Vallgraven",
+    description:
+      "Korta drop-in-visningar av Sveriges enda arkeologiskt utgrävda och utställda vikingaskepp, med berättelsen om fyndet och vad vrakveden avslöjar.",
+    sourceLabel: "Göteborgs stadsmuseum",
+    sourceUrl:
+      "https://goteborgsstadsmuseum.se/aktivitet/foremalskvart-askekarrsskeppet/",
+  },
+  {
+    id: "glanta-foajen-evigt-liv-2026",
+    title: "Glänta i Foajén: Evigt liv",
+    category: "Samtal",
+    dateLabel: "15 sep",
+    startDate: "2026-09-15",
+    time: "18:00",
+    venue: "Folkteatern, Foajén, Olof Palmes plats 5",
+    area: "Järntorget",
+    description:
+      "Tre mikroföreläsningar och ett gemensamt samtal om livslängd, död, transhumanism och drömmen om evigt liv.",
+    sourceLabel: "Folkteatern",
+    sourceUrl:
+      "https://www.folkteatern.se/events/glanta-i-foajen-15-sept-2026",
+    isFree: true,
+  },
+  {
+    id: "kaze-ito-mai-3e-vaningen-2026",
+    title: "KAZE ITO MAI",
+    category: "Scenkonst",
+    dateLabel: "18 sep",
+    startDate: "2026-09-18",
+    time: "19:00",
+    venue: "3:e Våningen, Sockerbruket 9",
+    area: "Klippan",
+    description:
+      "Traditionell japansk musik, improvisation och dans möter samtida uttryck genom koto, shamisen, shakuhachi och tvärflöjt.",
+    sourceLabel: "3:e Våningen",
+    sourceUrl: "https://3vaningen.se/kaze-ito-mai-2026/",
+  },
+  {
+    id: "i-wanna-talk-about-dance-3e-vaningen-2026",
+    title: "I Wanna Talk About Dance",
+    category: "Scenkonst",
+    dateLabel: "8–10 okt",
+    startDate: "2026-10-08",
+    endDate: "2026-10-10",
+    time: "Se aktuella speltider hos källan",
+    venue: "3:e Våningen, Sockerbruket 9",
+    area: "Klippan",
+    description:
+      "Tre dansare med rötter i flamenco, hiphop och modern dans möter två livemusiker i ett verk om identitet, närvaro och gemenskap.",
+    sourceLabel: "3:e Våningen",
+    sourceUrl:
+      "https://3vaningen.se/i-wanna-talk-about-dance-2026-2/",
+  },
+  {
+    id: "sockervandring-goteborgs-morklagda-historia-2026",
+    title: "Sockervandring genom Göteborgs mörklagda historia",
+    category: "Samtal",
+    dateLabel: "23 okt",
+    startDate: "2026-10-23",
+    time: "Se aktuell tid hos källan",
+    venue: "3:e Våningen, Sockerbruket 9",
+    area: "Klippan",
+    description:
+      "En vandring i mörkret genom Göteborgs koloniala historia med utgångspunkt i Klippans sockerbruk och forskningsprojektet Sockerspelen.",
+    sourceLabel: "3:e Våningen",
+    sourceUrl: "https://3vaningen.se/sockervandring-2026/",
+  },
 ] satisfies CulturalEvent[];
 
 const museumDirectoryEvents: CulturalEvent[] = OBJEKT.filter(
@@ -3769,4 +3878,4 @@ export const culturalEvents = appendOnlyNewCulturalEvents(
   ],
 );
 
-export const culturalCatalogVerifiedAt = "2026-08-30";
+export const culturalCatalogVerifiedAt = "2026-08-31";
