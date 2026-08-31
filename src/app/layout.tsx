@@ -6,6 +6,7 @@ import {
   Roboto_Condensed,
 } from "next/font/google";
 import "./globals.css";
+import "../styles/rorelse.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
