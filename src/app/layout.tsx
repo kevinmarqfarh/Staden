@@ -7,6 +7,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import "../styles/rorelse.css";
+import "../styles/upptackt.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

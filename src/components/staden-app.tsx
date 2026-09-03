@@ -46,12 +46,33 @@ import {
   resolveGothenburgPoint,
 } from "@/lib/geo";
 import {
+  buildDiscoveryOrder,
   discoveryIntents,
   discoveryModes,
-  getDiscoveryRecommendation,
+  pickDiscovery,
   recommendationReason,
   type DiscoveryMode,
-} from "@/lib/cultural-discovery";
+} from "@/lib/discovery-engine";
+import {
+  deriveJournalAffinities,
+  getJournalSnapshot,
+  getServerJournalSnapshot,
+  parseJournal,
+  subscribeToJournal,
+} from "@/lib/cultural-journal";
+import {
+  getLifeRhythmSnapshot,
+  getServerLifeRhythmSnapshot,
+  lifeRhythmOptions,
+  parseLifeRhythm,
+  subscribeToLifeRhythm,
+  writeLifeRhythm,
+} from "@/lib/life-rhythm";
+import {
+  JournalLog,
+  JournalPrompt,
+  type JournalSubject,
+} from "@/components/loggbok";
 import {
   addDaysToDateKey,
   dateKeyFromHighlightSnapshot,
@@ -66,6 +87,7 @@ import {
   getServerSavedEntertainmentSnapshot,
   parseSavedEntertainmentIds,
   subscribeToSavedEntertainment,
+  writeSavedEntertainmentIds,
 } from "@/lib/saved-entertainment";
 
 const SAVED_EVENTS_KEY = "staden:saved-cultural-events";
@@ -573,6 +595,9 @@ export function StadenApp() {
   const [skippedRecommendationIds, setSkippedRecommendationIds] = useState<
     string[]
   >([]);
+  const [journalSubject, setJournalSubject] = useState<JournalSubject | null>(
+    null,
+  );
   const nearby = useNearbyLocation();
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const lastSettingsTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -605,6 +630,28 @@ export function StadenApp() {
   const savedEntertainmentIds = useMemo(
     () => parseSavedEntertainmentIds(savedEntertainmentSnapshot),
     [savedEntertainmentSnapshot],
+  );
+  const lifeRhythmSnapshot = useSyncExternalStore(
+    subscribeToLifeRhythm,
+    getLifeRhythmSnapshot,
+    getServerLifeRhythmSnapshot,
+  );
+  const lifeRhythm = useMemo(
+    () => parseLifeRhythm(lifeRhythmSnapshot),
+    [lifeRhythmSnapshot],
+  );
+  const journalSnapshot = useSyncExternalStore(
+    subscribeToJournal,
+    getJournalSnapshot,
+    getServerJournalSnapshot,
+  );
+  const journalEntries = useMemo(
+    () => parseJournal(journalSnapshot),
+    [journalSnapshot],
+  );
+  const journalAffinities = useMemo(
+    () => deriveJournalAffinities(journalEntries),
+    [journalEntries],
   );
   const selectedTheme = useSyncExternalStore(
     subscribeToTheme,
@@ -683,53 +730,49 @@ export function StadenApp() {
     () => rotateHighlights(homeRestaurantPool, highlightClock, 1),
     [highlightClock, homeRestaurantPool],
   );
-  const discoveryRecommendation = useMemo(
+  const discoveryOrder = useMemo(
     () =>
       discoveryIntent || discoveryMode
-        ? getDiscoveryRecommendation({
-            events: activeDiscoveryEvents,
+        ? buildDiscoveryOrder({
+            cultureEvents: activeDiscoveryEvents,
+            entertainment: entertainmentExperiences,
             snapshot: highlightClock,
             intent: discoveryIntent,
             mode: discoveryMode,
-            skipIds: skippedRecommendationIds,
+            lifeRhythm,
+            affinities: journalAffinities,
           })
-        : null,
+        : [],
     [
       activeDiscoveryEvents,
       discoveryIntent,
       discoveryMode,
       highlightClock,
-      skippedRecommendationIds,
+      lifeRhythm,
+      journalAffinities,
     ],
+  );
+  const discoveryRecommendation = useMemo(
+    () => pickDiscovery(discoveryOrder, skippedRecommendationIds),
+    [discoveryOrder, skippedRecommendationIds],
   );
   const discoverySelectionLabel =
     discoveryMode === "overraska"
       ? "Överraska mig"
       : discoveryModes.find((mode) => mode.id === discoveryMode)?.label ??
         discoveryIntents.find((intent) => intent.id === discoveryIntent)?.label;
-  const hasAnotherDiscoveryRecommendation = useMemo(() => {
-    if (!discoveryRecommendation) return false;
-
-    return Boolean(
-      getDiscoveryRecommendation({
-        events: activeDiscoveryEvents,
-        snapshot: highlightClock,
-        intent: discoveryIntent,
-        mode: discoveryMode,
-        skipIds: [
-          ...skippedRecommendationIds,
-          discoveryRecommendation.id,
-        ],
-      }),
-    );
-  }, [
-    activeDiscoveryEvents,
-    discoveryIntent,
-    discoveryMode,
-    discoveryRecommendation,
-    highlightClock,
-    skippedRecommendationIds,
-  ]);
+  const hasAnotherDiscoveryRecommendation = useMemo(
+    () =>
+      discoveryRecommendation
+        ? Boolean(
+            pickDiscovery(discoveryOrder, [
+              ...skippedRecommendationIds,
+              discoveryRecommendation.key,
+            ]),
+          )
+        : false,
+    [discoveryOrder, discoveryRecommendation, skippedRecommendationIds],
+  );
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", selectedTheme);
@@ -999,7 +1042,7 @@ export function StadenApp() {
     setSkippedRecommendationIds((current) =>
       current.length >= 12
         ? []
-        : [...current, discoveryRecommendation.id],
+        : [...current, discoveryRecommendation.key],
     );
   }
 
@@ -1014,6 +1057,14 @@ export function StadenApp() {
     } catch {
       // The event guide still works when browser storage is unavailable.
     }
+  }
+
+  function toggleSavedEntertainment(id: string) {
+    writeSavedEntertainmentIds(
+      savedEntertainmentIds.includes(id)
+        ? savedEntertainmentIds.filter((savedId) => savedId !== id)
+        : [...savedEntertainmentIds, id],
+    );
   }
 
   function selectTheme(theme: ThemeId) {
@@ -1240,30 +1291,45 @@ export function StadenApp() {
             </button>
           </div>
 
+          <div className="discovery-liferytm">
+            <span className="discovery-liferytm__label">Din vecka</span>
+            <div
+              className="discovery-liferytm__options"
+              role="group"
+              aria-label="Livsrytm"
+            >
+              {lifeRhythmOptions.map((option) => (
+                <button
+                  type="button"
+                  key={option.id}
+                  aria-pressed={lifeRhythm === option.id}
+                  className={lifeRhythm === option.id ? "is-on" : ""}
+                  onClick={() =>
+                    writeLifeRhythm(lifeRhythm === option.id ? null : option.id)
+                  }
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {discoveryIntent || discoveryMode ? (
             discoveryRecommendation ? (
               <article
                 className="discovery-recommendation"
                 aria-live="polite"
-                key={discoveryRecommendation.id}
+                key={discoveryRecommendation.key}
               >
                 <div className="discovery-recommendation__topline">
-                  <span>STADEN VÄLJER · {discoverySelectionLabel}</span>
                   <span>
-                    {discoveryRecommendation.isFree
-                      ? "GRATIS"
-                      : discoveryRecommendation.priceMaxSek
-                        ? `MAX ${discoveryRecommendation.priceMaxSek} KR`
-                        : "KOLLA PRIS"}
+                    {discoveryRecommendation.kind === "noje" ? "NÖJE" : "KULTUR"}{" "}
+                    · {discoverySelectionLabel}
                   </span>
+                  <span>{discoveryRecommendation.priceLabel}</span>
                 </div>
                 <div className="discovery-recommendation__body">
-                  <p>
-                    {discoveryRecommendation.dateLabel}
-                    {discoveryRecommendation.time
-                      ? ` · ${discoveryRecommendation.time}`
-                      : ""}
-                  </p>
+                  <p>{discoveryRecommendation.timeLabel}</p>
                   <h4>{discoveryRecommendation.title}</h4>
                   <p className="discovery-recommendation__why">
                     <strong>Varför?</strong>{" "}
@@ -1271,29 +1337,92 @@ export function StadenApp() {
                       discoveryRecommendation,
                       discoveryIntent,
                       discoveryMode,
+                      lifeRhythm,
                     )}
                   </p>
+                  {discoveryRecommendation.bucket === "wildcard" ? (
+                    <p className="discovery-recommendation__bucket">
+                      <Sparkle aria-hidden="true" size={13} weight="fill" /> WILDCARD
+                    </p>
+                  ) : null}
                 </div>
                 <div className="discovery-recommendation__place">
                   <MapPin aria-hidden="true" size={17} weight="bold" />
                   <span>
-                    {discoveryRecommendation.venue} · {discoveryRecommendation.area}
+                    {discoveryRecommendation.venue &&
+                    discoveryRecommendation.venue !== discoveryRecommendation.area
+                      ? `${discoveryRecommendation.venue} · ${discoveryRecommendation.area}`
+                      : discoveryRecommendation.area}
                   </span>
                 </div>
                 <div className="discovery-recommendation__actions">
                   <MapLink
                     className="discovery-recommendation__go"
-                    query={eventMapQuery(discoveryRecommendation)}
-                    label={discoveryRecommendation.venue}
+                    query={discoveryRecommendation.mapQuery}
+                    label={discoveryRecommendation.venue ?? discoveryRecommendation.area}
                   >
                     Gå
                     <ArrowUpRight aria-hidden="true" size={18} weight="bold" />
                   </MapLink>
-                  <SaveButton
-                    event={discoveryRecommendation}
-                    isSaved={savedEventIds.includes(discoveryRecommendation.id)}
-                    onToggle={toggleSavedEvent}
-                  />
+                  {discoveryRecommendation.kind === "kultur"
+                    ? (() => {
+                        const recEvent = activeDiscoveryEvents.find(
+                          (event) => event.id === discoveryRecommendation.id,
+                        );
+                        return recEvent ? (
+                          <SaveButton
+                            event={recEvent}
+                            isSaved={savedEventIds.includes(recEvent.id)}
+                            onToggle={toggleSavedEvent}
+                          />
+                        ) : null;
+                      })()
+                    : (
+                      <button
+                        className={`save-button${
+                          savedEntertainmentIds.includes(discoveryRecommendation.id)
+                            ? " is-saved"
+                            : ""
+                        }`}
+                        type="button"
+                        aria-pressed={savedEntertainmentIds.includes(
+                          discoveryRecommendation.id,
+                        )}
+                        aria-label={`${
+                          savedEntertainmentIds.includes(discoveryRecommendation.id)
+                            ? "Ta bort"
+                            : "Spara"
+                        } ${discoveryRecommendation.title}`}
+                        onClick={() =>
+                          toggleSavedEntertainment(discoveryRecommendation.id)
+                        }
+                      >
+                        {savedEntertainmentIds.includes(discoveryRecommendation.id) ? (
+                          <Check aria-hidden="true" size={17} weight="bold" />
+                        ) : (
+                          <BookmarkSimple aria-hidden="true" size={17} weight="bold" />
+                        )}
+                        <span>
+                          {savedEntertainmentIds.includes(discoveryRecommendation.id)
+                            ? "Sparad"
+                            : "Spara"}
+                        </span>
+                      </button>
+                    )}
+                  <button
+                    type="button"
+                    className="discovery-recommendation__log"
+                    onClick={() =>
+                      setJournalSubject({
+                        id: discoveryRecommendation.id,
+                        kind: discoveryRecommendation.kind,
+                        title: discoveryRecommendation.title,
+                        category: discoveryRecommendation.categoryLabel,
+                      })
+                    }
+                  >
+                    Jag var där →
+                  </button>
                   {hasAnotherDiscoveryRecommendation ? (
                     <button
                       type="button"
@@ -1883,6 +2012,22 @@ export function StadenApp() {
             settingsButtonRef={settingsButtonRef}
             onOpenSettings={openSettings}
           />
+          <section
+            className="loggbok-section"
+            aria-labelledby="loggbok-section-title"
+          >
+            <div className="loggbok-section__intro">
+              <div>
+                <p className="kicker">LOGGBOK</p>
+                <h3 id="loggbok-section-title">Vad staden väckte</h3>
+                <p>
+                  Dina upplevelser och vad de gav — grunden för smartare
+                  förslag.
+                </p>
+              </div>
+            </div>
+            <JournalLog />
+          </section>
         </div>
       ) : null}
 
@@ -2029,6 +2174,18 @@ export function StadenApp() {
             </p>
           </section>
         </div>
+      ) : null}
+
+      {journalSubject ? (
+        <JournalPrompt
+          subject={journalSubject}
+          existing={journalEntries.find(
+            (entry) =>
+              entry.id === journalSubject.id &&
+              entry.kind === journalSubject.kind,
+          )}
+          onClose={() => setJournalSubject(null)}
+        />
       ) : null}
     </div>
   );
