@@ -12,6 +12,15 @@ export type CulturalEventCategory =
   | "Skapande"
   | "Kulturhus";
 
+export type CulturalDiscoveryIntent =
+  | "fortrollad"
+  | "inspirerad"
+  | "nyfiken"
+  | "social"
+  | "berord"
+  | "energi"
+  | "overraskad";
+
 export type CulturalEvent = {
   id: string;
   title: string;
@@ -28,55 +37,14 @@ export type CulturalEvent = {
   isFree?: boolean;
   isOngoing?: boolean;
   featured?: boolean;
+  priceMaxSek?: number;
+  durationMinutes?: number;
+  soloFriendly?: boolean;
+  socialIntensity?: "low" | "medium" | "high";
+  discoveryIntents?: CulturalDiscoveryIntent[];
 };
 
 const scannedCulturalEvents = [
-  {
-    id: "gdtf-2026",
-    title: "Göteborgs dans- och teaterfestival",
-    category: "Festival",
-    dateLabel: "21–30 aug",
-    startDate: "2026-08-21",
-    endDate: "2026-08-30",
-    venue: "Scener i Göteborg",
-    area: "Centrum + Västra Götaland",
-    description:
-      "Tio dagar med internationell dans, cirkus, performance och teater — plus ett stort utomhusprogram.",
-    sourceLabel: "Göteborgs dans- och teaterfestival",
-    sourceUrl: "https://www.gdtf.se/sv/",
-    isOngoing: true,
-  },
-  {
-    id: "goteborgskalaset-2026",
-    title: "Göteborgskalaset 2026",
-    category: "Festival",
-    dateLabel: "27–30 aug",
-    startDate: "2026-08-27",
-    endDate: "2026-08-30",
-    venue: "Götaplatsen med flera platser",
-    area: "Centrum",
-    description:
-      "Fyra kostnadsfria dagar med livemusik, dans, cirkus, lokala artister, mat och folkliv mitt i staden.",
-    sourceLabel: "Göteborgs Stad",
-    sourceUrl:
-      "https://goteborg.se/wps/portal?id=b9faaf1e-7c5a-4cf5-9dbc-6166a2d6b62c&uri=gbglnk%3Ase.goteborg.aktuelltarkiv",
-    isFree: true,
-  },
-  {
-    id: "haute-heure-goteborgskalaset-2026",
-    title: "Haute Heure med Compagnie Barolosolo",
-    category: "Scenkonst",
-    dateLabel: "30 aug",
-    startDate: "2026-08-30",
-    time: "14:10–15:00",
-    venue: "Kungsparken, Cirkusplatsen",
-    area: "Centrum",
-    description:
-      "Fransk cirkus där akrobatik, humor och livemusik förvandlar barndomens fantasi till en varm och lekfull föreställning.",
-    sourceLabel: "Göteborgskalaset",
-    sourceUrl: "https://goteborgskalaset.se/programmet/haute-heure",
-    isFree: true,
-  },
   {
     id: "nadim-stadsteatern-2026",
     title: "Nadim — min väg från flykting till hela Sveriges polis",
@@ -519,23 +487,6 @@ const scannedCulturalEvents = [
       "Sommarutställning med tidigare och nyproducerade verk av Hanna Vihriälä, där vardagliga material blir skulpturer och rumsliga installationer.",
     sourceLabel: "Göteborgs konstmuseum",
     sourceUrl: "https://goteborgskonstmuseum.se/utstallningar/hanna-vihriala/",
-    isOngoing: true,
-  },
-  {
-    id: "asplund-och-radhuset-2026",
-    title: "Asplund och rådhuset",
-    category: "Museum",
-    dateLabel: "Nu–30 aug",
-    startDate: "2025-09-27",
-    endDate: "2026-08-30",
-    time: "Tis–ons 11–18 · tors 11–20 · fre–sön 11–17",
-    venue: "Röhsska museet, Vasagatan 37–39",
-    area: "Vasastaden",
-    description:
-      "Ett urval av möbler, textilier, ritningar och reproduktioner som lyfter Gunnar Asplunds arbete med Göteborgs rådhus.",
-    sourceLabel: "Röhsska museet",
-    sourceUrl:
-      "https://rohsska.se/utstallningar/asplund-och-radhuset-en-dold-modern-klassiker-i-goteborg/",
     isOngoing: true,
   },
   {
@@ -2673,6 +2624,22 @@ const scannedCulturalEvents = [
     sourceUrl: "https://www.goteborg.com/evenemang/koami-megashow",
   },
   {
+    id: "koami-art-festival-2026",
+    title: "Koami Art Festival 2026",
+    category: "Festival",
+    dateLabel: "4–5 sep",
+    startDate: "2026-09-04",
+    endDate: "2026-09-05",
+    time: "Flera tider",
+    venue: "Koami / Ringön",
+    area: "Ringön",
+    description:
+      "En konstfestival där traditionell och digital konst möts i utställningar, föreläsningar, workshops och en unik megashow.",
+    sourceLabel: "Göteborg & Co",
+    sourceUrl:
+      "https://www.goteborg.com/guider/vad-hander-i-goteborg-i-september",
+  },
+  {
     id: "beethoven-ava-bahari-gso-2026",
     title: "Beethoven med Ava Bahari",
     category: "Musik",
@@ -3722,6 +3689,532 @@ const scannedCulturalEvents = [
     sourceLabel: "3:e Våningen",
     sourceUrl: "https://3vaningen.se/sockervandring-2026/",
   },
+  {
+    id: "kulturpilen-pilegarden-hosten-2026",
+    title: "KulturPilen på Pilegården",
+    category: "Skapande",
+    dateLabel: "2 sep–18 nov · utvalda onsdagar",
+    startDate: "2026-09-02",
+    endDate: "2026-11-18",
+    time: "14:00–19:00",
+    venue: "Pilegården, Askims Pilegårdsväg 25",
+    area: "Askim",
+    description:
+      "Öppen verksamhet för årskurs 5–6 med ateljéskapande, instrument, drama, bakning och spel. Åtta onsdagsträffar är publicerade.",
+    sourceLabel: "Göteborgs Stad · Kulturskolan",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/kultur/kulturskolan/oppen-verksamhet/kalender-for-oppen-verksamhet-i-kulturskolan?activityId=32aac98b-162d-4d25-b5be-72fed19e6c39",
+    isFree: true,
+  },
+  {
+    id: "sprakcafe-franska-frolunda-hosten-2026",
+    title: "Språkcafé på franska",
+    category: "Litteratur",
+    dateLabel: "2–30 sep · varannan onsdag",
+    startDate: "2026-09-02",
+    endDate: "2026-09-30",
+    time: "16:30–18:00",
+    venue: "Frölunda Kulturhus, Valthornsgatan 13",
+    area: "Frölunda",
+    description:
+      "Tre kostnadsfria drop-in-träffar för fransk konversation, öppna för alla nivåer från 15 år.",
+    sourceLabel: "Göteborgs Stad · Frölunda bibliotek",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/bibliotek/pa-biblioteket/sprakcafe?activityId=2a97b4d8-a4a6-4c50-8387-aa1bbca1b83e",
+    isFree: true,
+  },
+  {
+    id: "k-pop-liwan-creatives-flunsasparken-2026",
+    title: "K-pop med Liwan Creatives",
+    category: "Festival",
+    dateLabel: "5 sep",
+    startDate: "2026-09-05",
+    time: "12:00–17:00",
+    venue: "Flunsåsparken, Sockenvägen 24",
+    area: "Kvillebäcken",
+    description:
+      "Liwan Creatives återvänder med en K-pop-eftermiddag fylld av aktiviteter och Random Dance Play i parken.",
+    sourceLabel: "Göteborgs Stad · Flunsåsparken",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/enheter/flunsasparken/program?activityId=a743b4fd-42fc-45ee-a1c3-7bb0ecf0ff97",
+    isFree: true,
+  },
+  {
+    id: "silver-star-stadsteatern-2026",
+    title: "Silver Star",
+    category: "Scenkonst",
+    dateLabel: "Nypremiär 2 sep",
+    startDate: "2026-09-02",
+    time: "Se aktuella speltider hos källan",
+    venue: "Göteborgs Stadsteater, Lilla Scen",
+    area: "Götaplatsen",
+    description:
+      "Kristina Lugns ömsinta och humoristiska pjäs om två generationer, ensamhet och längtan i regi av Mattias Nordkvist.",
+    sourceLabel: "Göteborgs Stadsteater",
+    sourceUrl:
+      "https://stadsteatern.goteborg.se/pa-scen/2026-2027/silver-star/",
+  },
+  {
+    id: "hollandsk-apotekares-avfallsbinge-2026",
+    title: "En holländsk apotekares avfallsbinge",
+    category: "Samtal",
+    dateLabel: "2 sep",
+    startDate: "2026-09-02",
+    time: "18:00–19:00",
+    venue: "Göteborgs stadsmuseum, Companisalen, Norra Hamngatan 12",
+    area: "Inom Vallgraven",
+    description:
+      "Arkeologerna Johan Thörnqvist och Tom Wennberg berättar om fynd som belyser Göteborgs holländska befolkning och tidiga världshandel.",
+    sourceLabel: "Göteborgs stadsmuseum",
+    sourceUrl:
+      "https://goteborgsstadsmuseum.se/aktivitet/en-hollandares-avfallsbinge-fornminnesforeningen/",
+  },
+  {
+    id: "kvarteret-ananasen-foremalskvartar-hosten-2026",
+    title: "Kvarteret Ananasen – föremålskvartar",
+    category: "Museum",
+    dateLabel: "5 sep–17 okt · helger",
+    startDate: "2026-09-05",
+    endDate: "2026-10-17",
+    time: "Lördagar 15:00 · söndagar 11:30",
+    venue: "Göteborgs stadsmuseum, Norra Hamngatan 12",
+    area: "Inom Vallgraven",
+    description:
+      "Korta drop-in-visningar av modellen över Göteborgs första kvarter med landshövdingehus och berättelsen om husens uppkomst.",
+    sourceLabel: "Göteborgs stadsmuseum",
+    sourceUrl:
+      "https://goteborgsstadsmuseum.se/aktivitet/foremalskvart-kvarteret-ananasen/",
+  },
+  {
+    id: "upplev-sjomanstornet-hosten-2026",
+    title: "Upplev Sjömanstornet!",
+    category: "Museum",
+    dateLabel: "1 sep–6 okt · utvalda dagar",
+    startDate: "2026-09-01",
+    endDate: "2026-10-06",
+    time: "15:00–15:30",
+    venue: "Sjöfartsmuseet Akvariet, Karl Johansgatan 1–3",
+    area: "Majorna",
+    description:
+      "En guidad tur uppför Sjömanstornets 194 trappsteg med utsikt över hamnstaden och berättelsen om monumentets historia.",
+    sourceLabel: "Sjöfartsmuseet Akvariet",
+    sourceUrl:
+      "https://www.sjofartsmuseetakvariet.se/aktivitet/sjomanstornet/",
+  },
+  {
+    id: "ellen-halva-livet-till-sjoss-2026",
+    title: "Ellen – halva livet till sjöss",
+    category: "Samtal",
+    dateLabel: "30 sep",
+    startDate: "2026-09-30",
+    time: "18:00–19:00",
+    venue: "Sjöfartsmuseet Akvariet, Ostindiesalen, Karl Johansgatan 1–3",
+    area: "Majorna",
+    description:
+      "Etnologen Sara Sjöström berättar om Ellen Ahlgren, som levde över trettio år ombord på segelfartyget Isolda.",
+    sourceLabel: "Sjöfartsmuseet Akvariet",
+    sourceUrl:
+      "https://www.sjofartsmuseetakvariet.se/aktivitet/ellen-halva-livet-till-sjoss/",
+  },
+  {
+    id: "hooja-liseberg-2026",
+    title: "Hooja på Liseberg",
+    category: "Musik",
+    dateLabel: "4 sep",
+    startDate: "2026-09-04",
+    time: "20:00",
+    venue: "Liseberg, Stora Scenen",
+    area: "Korsvägen",
+    description:
+      "Hooja återvänder till Stora Scenen med sin energiska skogsdisco och en stor sensommarkonsert i parken.",
+    sourceLabel: "Liseberg",
+    sourceUrl: "https://www.liseberg.se/parken/evenemang/alla/hooja/",
+    featured: true,
+  },
+  {
+    id: "grease-rondo-2026-2027",
+    title: "Grease The Musical",
+    category: "Scenkonst",
+    dateLabel: "25 sep–31 jan",
+    startDate: "2026-09-25",
+    endDate: "2027-01-31",
+    time: "Tor–fre 19:30 · lör 14:30/19:30 · sön 14:30",
+    venue: "Rondo, Liseberg",
+    area: "Korsvägen",
+    description:
+      "En ny storskalig uppsättning av musikalklassikern med Anton Ewald, Lovisa Bengtsson, Boris René, Emil Henrohn och liveorkester.",
+    sourceLabel: "Liseberg",
+    sourceUrl:
+      "https://www.liseberg.se/parken/evenemang/alla/grease-the-musical/",
+    featured: true,
+  },
+  {
+    id: "jul-pa-liseberg-2026",
+    title: "Jul på Liseberg",
+    category: "Festival",
+    dateLabel: "14 nov–30 dec · utvalda dagar",
+    startDate: "2026-11-14",
+    endDate: "2026-12-30",
+    time: "Premiär 12:00–22:00 · övriga tider varierar",
+    venue: "Lisebergsparken",
+    area: "Korsvägen",
+    description:
+      "Vinteröppen nöjespark med juleljus, julmarknad, åkattraktioner, mat, Kaninlandet och program för både familjer och vuxna.",
+    sourceLabel: "Liseberg",
+    sourceUrl:
+      "https://www.liseberg.se/parken/jul-i-lisebergsparken/utstallarinformation-jul/",
+    featured: true,
+  },
+  {
+    id: "vara-liv-vara-musikaler-scandinavium-2026",
+    title: "Våra liv, våra musikaler",
+    category: "Scenkonst",
+    dateLabel: "2 okt",
+    startDate: "2026-10-02",
+    time: "19:30",
+    venue: "Scandinavium",
+    area: "Evenemangsstråket",
+    description:
+      "Viktor Norén och Linus Wahlgren förenar stora musikalnummer med humor och personliga berättelser.",
+    sourceLabel: "Got Event",
+    sourceUrl: "https://gotevent.se/evenemang/vara-liv-vara-musikaler/",
+  },
+  {
+    id: "bob-dylan-scandinavium-2026",
+    title: "Bob Dylan",
+    category: "Musik",
+    dateLabel: "19 okt",
+    startDate: "2026-10-19",
+    time: "20:00",
+    venue: "Scandinavium",
+    area: "Evenemangsstråket",
+    description:
+      "Bob Dylans enda Sverigespelning 2026 och hans första Göteborgskonsert sedan 2022.",
+    sourceLabel: "Got Event",
+    sourceUrl: "https://gotevent.se/evenemang/bob-dylan/",
+  },
+  {
+    id: "amon-amarth-scandinavium-2026",
+    title: "Amon Amarth",
+    category: "Musik",
+    dateLabel: "23 okt",
+    startDate: "2026-10-23",
+    time: "18:30",
+    venue: "Scandinavium",
+    area: "Evenemangsstråket",
+    description:
+      "Amon Amarth intar Scandinavium tillsammans med Orbit Culture och Soilwork.",
+    sourceLabel: "Got Event",
+    sourceUrl: "https://gotevent.se/evenemang/amon-amarth/",
+  },
+  {
+    id: "benjamin-ingrosso-scandinavium-2026",
+    title: "Benjamin Ingrosso – What Happens Next?",
+    category: "Musik",
+    dateLabel: "24–25 okt",
+    startDate: "2026-10-24",
+    endDate: "2026-10-25",
+    time: "19:30",
+    venue: "Scandinavium",
+    area: "Evenemangsstråket",
+    description:
+      "Två Göteborgskvällar på Benjamin Ingrossos första egna arenaturné.",
+    sourceLabel: "Got Event",
+    sourceUrl: "https://gotevent.se/evenemang/benjamin-ingrosso/",
+  },
+  {
+    id: "deep-purple-scandinavium-2026",
+    title: "Deep Purple",
+    category: "Musik",
+    dateLabel: "29 okt",
+    startDate: "2026-10-29",
+    time: "19:30",
+    venue: "Scandinavium",
+    area: "Evenemangsstråket",
+    description:
+      "Rockpionjärerna återvänder till Scandinavium med JAYLER som support.",
+    sourceLabel: "Got Event",
+    sourceUrl: "https://gotevent.se/evenemang/deep-purple/",
+  },
+  {
+    id: "lars-winnerback-scandinavium-2026",
+    title: "Lars Winnerbäck",
+    category: "Musik",
+    dateLabel: "6 nov",
+    startDate: "2026-11-06",
+    time: "19:30",
+    venue: "Scandinavium",
+    area: "Evenemangsstråket",
+    description:
+      "Lars Winnerbäck återvänder med sitt liveband och albumet Längtan till våren.",
+    sourceLabel: "Got Event",
+    sourceUrl: "https://gotevent.se/evenemang/lars-winnerback/",
+  },
+  {
+    id: "miss-li-scandinavium-2026",
+    title: "Miss Li – Nu som då för evigt",
+    category: "Musik",
+    dateLabel: "14 nov",
+    startDate: "2026-11-14",
+    time: "19:30",
+    venue: "Scandinavium",
+    area: "Evenemangsstråket",
+    description:
+      "Miss Li firar tjugo år som artist med en stor jubileumskonsert.",
+    sourceLabel: "Got Event",
+    sourceUrl: "https://gotevent.se/evenemang/miss-li/",
+  },
+  {
+    id: "tomten-ar-far-scandinavium-2026",
+    title: "Tomten är far till alla barnen",
+    category: "Scenkonst",
+    dateLabel: "18–20 dec",
+    startDate: "2026-12-18",
+    endDate: "2026-12-20",
+    time: "18–19 dec 19:30 · 20 dec 15:00",
+    venue: "Scandinavium",
+    area: "Evenemangsstråket",
+    description:
+      "Den folkkära julkomedin avslutar sin turné med tre stora finalföreställningar.",
+    sourceLabel: "Got Event",
+    sourceUrl:
+      "https://gotevent.se/evenemang/tomten-ar-far-till-alla-barnen/",
+  },
+  {
+    id: "disney-on-ice-scandinavium-2027",
+    title: "Disney On Ice – Discover the Magic",
+    category: "Scenkonst",
+    dateLabel: "15–17 jan 2027",
+    startDate: "2027-01-15",
+    endDate: "2027-01-17",
+    time: "Flera dag- och kvällstider",
+    venue: "Scandinavium",
+    area: "Evenemangsstråket",
+    description:
+      "Familjeshow på is med Coco, Vaiana, Frost, Aladdin, Toy Story, Stitch och fler Disneyvärldar.",
+    sourceLabel: "Got Event",
+    sourceUrl: "https://gotevent.se/evenemang/disney-on-ice/",
+  },
+  {
+    id: "world-of-hans-zimmer-scandinavium-2027",
+    title: "The World of Hans Zimmer – A New Dimension",
+    category: "Musik",
+    dateLabel: "23 apr 2027",
+    startDate: "2027-04-23",
+    time: "19:30",
+    venue: "Scandinavium",
+    area: "Evenemangsstråket",
+    description:
+      "Hans Zimmers filmmusik framförs av stor ensemble, solister och kör i en filmisk arenaproduktion.",
+    sourceLabel: "Got Event",
+    sourceUrl: "https://gotevent.se/evenemang/hans-zimmer/",
+  },
+  {
+    id: "familjedans-goteborgsoperan-hosten-2026",
+    title: "Familjedans",
+    category: "Scenkonst",
+    dateLabel: "6 sep–15 nov",
+    startDate: "2026-09-06",
+    endDate: "2026-11-15",
+    time: "14:45 · se aktuella datum hos källan",
+    venue: "GöteborgsOperan, Christina Nilssons gata",
+    area: "Lilla Bommen",
+    description:
+      "Lekfulla dansstunder där barn 5–10 år och en vuxen utforskar rörelse, fantasi och kroppens möjligheter tillsammans.",
+    sourceLabel: "GöteborgsOperan",
+    sourceUrl:
+      "https://www.opera.se/forestallningar/sasong-2026-2027/familjedans/",
+  },
+  {
+    id: "dansa-med-bebis-goteborgsoperan-hosten-2026",
+    title: "Dansa med bebis",
+    category: "Scenkonst",
+    dateLabel: "8 sep–10 nov",
+    startDate: "2026-09-08",
+    endDate: "2026-11-10",
+    time: "10:15 · se aktuella datum hos källan",
+    venue: "GöteborgsOperan, Dansstudion, Christina Nilssons gata",
+    area: "Lilla Bommen",
+    description:
+      "En timmes dansklass för föräldrar med bebisar 3–8 månader, med rörelse och en inblick i Operans danskompani.",
+    sourceLabel: "GöteborgsOperan",
+    sourceUrl:
+      "https://www.opera.se/forestallningar/sasong-2026-2027/dansa-med-bebis/",
+  },
+  {
+    id: "konst-kropp-motstand-stina-wollter-2026",
+    title: "Konst, kropp och motstånd – Stina Wollter",
+    category: "Samtal",
+    dateLabel: "23 sep",
+    startDate: "2026-09-23",
+    time: "18:00–19:00",
+    venue: "Göteborgs konstmuseum, Hörsalen, Götaplatsen 6",
+    area: "Götaplatsen",
+    description:
+      "Stina Wollter föreläser om skapande, kroppsideal och strategier för motstånd och överlevnad.",
+    sourceLabel: "Göteborgs konstmuseum",
+    sourceUrl:
+      "https://goteborgskonstmuseum.se/aktiviteter/forelasning/?2026-09-23_18%3A00=",
+  },
+  {
+    id: "grandi-voci-joachim-backstrom-2026",
+    title: "Grandi voci: Joachim Bäckström",
+    category: "Musik",
+    dateLabel: "27 sep",
+    startDate: "2026-09-27",
+    time: "16:00",
+    venue: "GöteborgsOperan, Stora scenen, Christina Nilssons gata",
+    area: "Lilla Bommen",
+    description:
+      "Tenoren Joachim Bäckström och pianisten Karin Holm framför sånger och operaarior där natur och känsloliv speglar varandra.",
+    sourceLabel: "GöteborgsOperan",
+    sourceUrl:
+      "https://www.opera.se/forestallningar/sasong-2026-2027/grandi-voci-joachim-backstrom/",
+  },
+  {
+    id: "the-seducer-galleri-54-2026",
+    title: "the Seducer – Charlie Jakobsson",
+    category: "Konst",
+    dateLabel: "Nu–20 sep",
+    startDate: "2026-08-28",
+    endDate: "2026-09-20",
+    time: "Tis–ons/fre 13–17 · tors 17–20 · lör–sön 12–16",
+    venue: "Galleri 54, Kastellgatan 7",
+    area: "Linné",
+    description:
+      "Nya målningar där Charlie Jakobsson omförhandlar vardagliga former, mönster och strukturer genom förskjutning och upprepning.",
+    sourceLabel: "Galleri 54",
+    sourceUrl: "https://www.galleri54.com/charlie-vince-jakobsson",
+    isFree: true,
+    isOngoing: true,
+  },
+  {
+    id: "haxan-hillary-goteborgsoperan-2026",
+    title: "Häxan Hillary går på Operan",
+    category: "Scenkonst",
+    dateLabel: "31 okt–1 nov",
+    startDate: "2026-10-31",
+    endDate: "2026-11-01",
+    time: "31 okt 13:00/15:00 · 1 nov 15:00",
+    venue: "GöteborgsOperan, Lilla scenen, Christina Nilssons gata",
+    area: "Lilla Bommen",
+    description:
+      "En lekfull introduktion till opera för barn 5–10 år, med Häxan Hillary, Maria Bellacanta och musen Mus-iker.",
+    sourceLabel: "GöteborgsOperan",
+    sourceUrl:
+      "https://www.opera.se/forestallningar/sasong-2026-2027/haxan-hillary-gar-pa-operan/",
+  },
+  {
+    id: "sprakcafe-workshop-sanaz-hakimi-2026",
+    title: "Träna svenska: Språkkafé med workshop",
+    category: "Skapande",
+    dateLabel: "4 nov",
+    startDate: "2026-11-04",
+    time: "15:30–17:30",
+    venue: "Gamlestadens bibliotek, Gamlestads Torg 11",
+    area: "Gamlestaden",
+    description:
+      "Sanaz Hakimi leder ett språkkafé där deltagarna skapar bilder av betydelsefulla ord, meningar och korta berättelser.",
+    sourceLabel: "Göteborgs Stad · Gamlestadens bibliotek",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/bibliotek/alla-arrangemang-pa-biblioteken?activityId=e435b61b-c980-45c5-8207-f79876eb9ad7",
+    isFree: true,
+  },
+  {
+    id: "kulturarvsdagar-slottsskogen-2026",
+    title: "Kulturarvsdagar i Slottsskogen",
+    category: "Festival",
+    dateLabel: "11–13 sep",
+    startDate: "2026-09-11",
+    endDate: "2026-09-13",
+    time: "11 sep 14:00/17:00 · 12 sep 11:00–15:00 · 13 sep 11:00–16:15",
+    venue: "Slottsskogen, flera kulturhistoriska platser",
+    area: "Slottsskogen",
+    description:
+      "Tre kostnadsfria dagar med parkvandringar, öppna historiska byggnader, berättande, folkmusik, dans, hantverk och solvisningar.",
+    sourceLabel: "Göteborgs Stad · Kulturarvsdagarna",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/aktuelltarkiv?id=ea4bd612-c635-4dea-a8b2-6612b9d5039a",
+    isFree: true,
+  },
+  {
+    id: "ortagardens-dag-rohsskas-lusthus-2026",
+    title: "Örtagårdens dag i Röhsskas lusthus",
+    category: "Museum",
+    dateLabel: "6 sep",
+    startDate: "2026-09-06",
+    time: "11:00–15:00 · introduktion 11:00",
+    venue: "Örtagården, Botaniska trädgården, Carl Skottsbergs gata 22A",
+    area: "Änggården",
+    description:
+      "Röhsskas historiska lusthus öppnar för drop-in med originalmålningar av parker, hamnar, palats och kanaler.",
+    sourceLabel: "Röhsska museet",
+    sourceUrl:
+      "https://rohsska.se/aktivitet/ortagardens-dag-i-rohsskas-lusthus/?date=202609061100",
+    isFree: true,
+  },
+  {
+    id: "fronesis-staten-litteraturhuset-2026",
+    title: "Tidskriftsrelease: Fronesis nya nummer om staten",
+    category: "Samtal",
+    dateLabel: "4 sep",
+    startDate: "2026-09-04",
+    time: "17:30",
+    venue: "Göteborgs Litteraturhus, Lagerhuset, Heurlins plats 1B",
+    area: "Masthugget",
+    description:
+      "Ett öppet panelsamtal om statens förändrade roller, relationen till kapitalismen och utvecklingen efter höstens riksdagsval.",
+    sourceLabel: "Göteborgs Litteraturhus · Fronesis",
+    sourceUrl:
+      "https://www.goteborgslitteraturhus.se/event/tidskriftsrelease-fronesis-nya-nummer-om-staten/",
+    isFree: true,
+  },
+  {
+    id: "lordagsstudion-knopar-knutar-rohsska-2026",
+    title: "Lördagsstudion: Knopar och knutar",
+    category: "Skapande",
+    dateLabel: "26 sep",
+    startDate: "2026-09-26",
+    time: "13:00–15:30",
+    venue: "Röhsska museet, Studio 1, Vasagatan 37–39",
+    area: "Vasastaden",
+    description:
+      "Barn från 6 år och vuxna utforskar flätning, makramé, knutar och knopar i en handledd familjeworkshop.",
+    sourceLabel: "Röhsska museet",
+    sourceUrl:
+      "https://rohsska.se/aktivitet/lordagsstudion-knopar-och-knutar/?date=202609261300",
+  },
+  {
+    id: "bokcirkel-ingenbarnsland-stadsmuseum-2026",
+    title: "Bokcirkel: Ingenbarnsland",
+    category: "Litteratur",
+    dateLabel: "30 sep & 14 okt",
+    startDate: "2026-09-30",
+    endDate: "2026-10-14",
+    time: "18:00–19:00",
+    venue: "Göteborgs stadsmuseum, Norra Hamngatan 12",
+    area: "Inom Vallgraven",
+    description:
+      "Två bokcirkelträffar om Eija Hetekivi Olssons Göteborg läser-roman, med fokus på Miiras uppväxt och stadens historia.",
+    sourceLabel: "Göteborgs stadsmuseum · Göteborg läser",
+    sourceUrl:
+      "https://goteborgsstadsmuseum.se/aktivitet/bokcirkel-ingenbarnsland/?date=202609301800",
+  },
+  {
+    id: "art-after-dark-konstmuseum-2026",
+    title: "Art After Dark",
+    category: "Konst",
+    dateLabel: "2 okt",
+    startDate: "2026-10-02",
+    time: "18:00–22:00",
+    venue: "Göteborgs konstmuseum, Götaplatsen 6",
+    area: "Götaplatsen",
+    description:
+      "En kväll med konstvisningar, meditativt betraktande, musik och mingel, avslutad med Venus Anon live i Skulpturhallen.",
+    sourceLabel: "Göteborgs konstmuseum",
+    sourceUrl:
+      "https://goteborgskonstmuseum.se/aktiviteter/program/?2026-10-02_18%3A00=",
+  },
 ] satisfies CulturalEvent[];
 
 const museumDirectoryEvents: CulturalEvent[] = OBJEKT.filter(
@@ -3795,6 +4288,7 @@ const trustedSourceHosts = new Set([
   "goteborgslitteraturfestival.se",
   "goteborgslitteraturhus.se",
   "gdtf.se",
+  "gotevent.se",
   "gso.se",
   "gu.se",
   "houseofpossibilitas.se",
@@ -3833,6 +4327,7 @@ const trustedSourceHosts = new Set([
   "aeroseum.se",
   "akvarellmuseet.org",
   "fiskemuseet.se",
+  "galleri54.com",
   "gallerithomassen.se",
   "goteborgenergi.se",
   "gnm.se",
@@ -3863,14 +4358,18 @@ const trustedSourceHosts = new Set([
   "www.angeredsteater.se",
   "www.akvarellmuseet.org",
   "www.fiskemuseet.se",
+  "www.galleri54.com",
   "www.gallerithomassen.se",
   "www.goteborgenergi.se",
   "www.gnm.se",
   "www.goteborgskonsthall.se",
   "www.goteborgslitteraturfestival.se",
   "www.goteborgslitteraturhus.se",
+  "www.gotevent.se",
   "www.gotheborg.se",
   "www.maritiman.se",
+  "www.nevvengallery.com",
+  "elvisannexet.se",
   "www.musikenshus.se",
   "www.nefertiti.se",
   "www.molndal.se",
@@ -3965,4 +4464,4 @@ export const culturalEvents = appendOnlyNewCulturalEvents(
   ],
 );
 
-export const culturalCatalogVerifiedAt = "2026-08-31";
+export const culturalCatalogVerifiedAt = "2026-09-03";

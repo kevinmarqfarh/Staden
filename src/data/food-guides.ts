@@ -3,6 +3,8 @@ export type FoodGuideTag = "Takbar" | "Barnfamilj" | "Första dejten";
 export type FoodGuide = {
   id: string;
   tag: FoodGuideTag;
+  highlightFrom?: string;
+  highlightUntil?: string;
   eyebrow: string;
   title: string;
   description: string;

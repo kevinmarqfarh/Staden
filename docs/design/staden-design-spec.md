@@ -1,5 +1,10 @@
 # STADEN — LOCKED DESIGN SPEC
 
+> Produktens aktuella north star finns i
+> [produktdefinitionen](../product/product-definition.md). Nyfikenheten ska
+> fortfarande kännas lugn, men framgång betyder nu att användaren hittar ett
+> genomförbart val och lämnar appen för att uppleva staden.
+
 # PART 1 — IDENTITY
 ## Soul
 

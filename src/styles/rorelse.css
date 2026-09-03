@@ -17,6 +17,87 @@
   --rr-stig: 10px;          /* hur långt ett kort reser sig in */
 }
 
+/* ── STADENS UTSTÄLLNINGSLJUS ───────────────────────────────────────────
+   Ett mjukt, temafärgat fokusfält ligger bakom den aktiva huvudvyn. På
+   dator följer det pekaren med en kort eftersläpning; på touch och vid
+   tangentbordsaktivering svarar det där handlingen sker. Själva lyssnandet
+   bor i AmbientCityField och använder refs så pekarrörelser aldrig orsakar
+   React-renderingar. */
+.view-main {
+  position: relative;
+  isolation: isolate;
+}
+
+.view-main > .content-view {
+  position: relative;
+  z-index: 1;
+}
+
+.ambient-city-field {
+  --ambient-x: 58vw;
+  --ambient-y: 42vh;
+  position: fixed;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  width: clamp(25rem, 54vw, 48rem);
+  aspect-ratio: 1;
+  pointer-events: none;
+  contain: strict;
+  border-radius: 50%;
+  opacity: 0.26;
+  filter: blur(18px);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--signal) 24%, transparent) 0%,
+    color-mix(in srgb, var(--signal) 13%, transparent) 27%,
+    color-mix(in srgb, var(--paper-raised) 8%, transparent) 48%,
+    transparent 72%
+  );
+  transform: translate3d(
+    calc(var(--ambient-x) - 50%),
+    calc(var(--ambient-y) - 50%),
+    0
+  );
+  transition: opacity 220ms var(--rr-ease);
+  will-change: transform, opacity, filter;
+  mix-blend-mode: multiply;
+}
+
+.ambient-city-field[data-active="true"] { opacity: 0.5; }
+
+:root[data-theme="after-rain"] .ambient-city-field {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--signal) 32%, transparent) 0%,
+    color-mix(in srgb, var(--night-action) 12%, transparent) 24%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .ambient-city-field {
+    width: clamp(22rem, 112vw, 34rem);
+    opacity: 0.16;
+  }
+
+  .ambient-city-field[data-active="true"] { opacity: 0.46; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="atelier"] .ambient-city-field,
+  :root[data-theme="staden"] .ambient-city-field,
+  :root[data-theme="blue-hour"] .ambient-city-field {
+    mix-blend-mode: screen;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ambient-city-field { opacity: 0.12; }
+  .ambient-city-field[data-active="true"] { opacity: 0.22; }
+}
+
 /* ── Stegvis kort-reveal ────────────────────────────────────────────────
    Korten i ett rutnät stiger in i läsordning efter att vyn tonat in. En
    utgåva som veckas ut, inte en lista som poppar. Taket på nth-child gör
@@ -121,6 +202,7 @@
    Under reducerad rörelse tystnar hela lagret: inga reveals, ingen
    translation. Vyerna står stilla i sitt slutläge. */
 @media (prefers-reduced-motion: reduce) {
+  .ambient-city-field { display: none; }
   .event-grid > *,
   .home-overview-grid > *,
   .city-festival-grid > * { animation: none; }

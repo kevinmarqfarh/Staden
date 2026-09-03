@@ -23,12 +23,17 @@ import {
 } from "@/data/entertainment";
 import { MapLink } from "@/components/map-link";
 import { NearbyControl } from "@/components/nearby-control";
+import { useHighlightClock } from "@/hooks/use-highlight-clock";
 import { useNearbyLocation } from "@/hooks/use-nearby-location";
 import {
   distanceInMeters,
   formatDistance,
   resolveGothenburgPoint,
 } from "@/lib/geo";
+import {
+  dateKeyFromHighlightSnapshot,
+  isHighlightWindowActive,
+} from "@/lib/highlights";
 import {
   getSavedEntertainmentSnapshot,
   getServerSavedEntertainmentSnapshot,
@@ -92,6 +97,15 @@ export function EntertainmentExplorer() {
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
   const nearby = useNearbyLocation();
+  const highlightClock = useHighlightClock(entertainmentVerifiedAt);
+  const today = dateKeyFromHighlightSnapshot(highlightClock);
+  const activeJourneys = useMemo(
+    () =>
+      entertainmentJourneys.filter((journey) =>
+        isHighlightWindowActive(journey, today),
+      ),
+    [today],
+  );
   const savedEntertainmentSnapshot = useSyncExternalStore(
     subscribeToSavedEntertainment,
     getSavedEntertainmentSnapshot,
@@ -235,7 +249,7 @@ export function EntertainmentExplorer() {
         </div>
 
         <div className="entertainment-journey-list">
-          {entertainmentJourneys.map((journey) => (
+          {activeJourneys.map((journey) => (
             <button
               type="button"
               key={journey.id}

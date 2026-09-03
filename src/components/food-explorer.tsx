@@ -32,12 +32,18 @@ import {
 import { foodGuides, type FoodGuideTag } from "@/data/food-guides";
 import { MapLink } from "@/components/map-link";
 import { NearbyControl } from "@/components/nearby-control";
+import { useHighlightClock } from "@/hooks/use-highlight-clock";
 import { useNearbyLocation } from "@/hooks/use-nearby-location";
 import {
   distanceInMeters,
   formatDistance,
   resolveGothenburgPoint,
 } from "@/lib/geo";
+import {
+  dateKeyFromHighlightSnapshot,
+  isHighlightWindowActive,
+  rotateHighlights,
+} from "@/lib/highlights";
 
 const SAVED_RESTAURANTS_KEY = "staden:saved-restaurants";
 const SAVED_RESTAURANTS_CHANGED = "staden:saved-restaurants-changed";
@@ -343,6 +349,16 @@ export function FoodExplorer({
   );
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_VISIBLE_RESTAURANTS);
   const nearby = useNearbyLocation();
+  const highlightClock = useHighlightClock(RESTAURANT_SCAN_DATE);
+  const today = dateKeyFromHighlightSnapshot(highlightClock);
+  const activeFoodGuides = useMemo(
+    () =>
+      rotateHighlights(
+        foodGuides.filter((guide) => isHighlightWindowActive(guide, today)),
+        highlightClock,
+      ),
+    [highlightClock, today],
+  );
   const savedRestaurantsSnapshot = useSyncExternalStore(
     subscribeToSavedRestaurants,
     getSavedRestaurantsSnapshot,
@@ -637,7 +653,7 @@ export function FoodExplorer({
         </div>
 
         <div className="food-guide-feed">
-          {foodGuides.map((guide, index) => {
+          {activeFoodGuides.map((guide, index) => {
             const guideCount = restaurants.filter((restaurant) =>
               restaurant.editorialTags?.includes(guide.tag),
             ).length;

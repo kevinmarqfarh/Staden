@@ -45,13 +45,13 @@ export const metadata: Metadata = {
     template: "%s — STADEN",
   },
   description:
-    "Upptäck kultur, mat, nöjen och platser i Göteborg — kurerat för livet du lever.",
+    "Få ett aktuellt, genomförbart och lite oväntat förslag på vad du kan uppleva i Göteborg.",
   applicationName: "STADEN",
   metadataBase: new URL(siteUrl),
   openGraph: {
     title: "STADEN — Göteborg i din ficka",
     description:
-      "Upptäck kultur, mat, nöjen och platser i Göteborg — kurerat för livet du lever.",
+      "Få ett aktuellt, genomförbart och lite oväntat förslag på vad du kan uppleva i Göteborg.",
     locale: "sv_SE",
     type: "website",
   },
