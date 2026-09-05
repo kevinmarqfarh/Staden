@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowLeft,
   ArrowUpRight,
   BookmarkSimple,
   Buildings,
@@ -11,9 +12,11 @@ import {
   FolderSimplePlus,
   GearSix,
   MapPin,
+  MagnifyingGlass,
   PencilSimple,
   Plus,
   Trash,
+  ArrowCounterClockwise,
   X,
 } from "@phosphor-icons/react";
 import type React from "react";
@@ -284,6 +287,16 @@ function itemTitle(savedItem: SavedPocketItem) {
     : savedItem.item.title;
 }
 
+function searchableItemText(savedItem: SavedPocketItem) {
+  const category = savedItem.kind === "restaurant"
+    ? savedItem.item.cuisine
+    : savedItem.item.category;
+  const venue = savedItem.kind === "culture" ? savedItem.item.venue : "";
+  return [itemTitle(savedItem), savedItem.item.area, category, venue]
+    .join(" ")
+    .toLocaleLowerCase("sv-SE");
+}
+
 export function SavedPocket({
   open = false,
   onClose,
@@ -302,6 +315,15 @@ export function SavedPocket({
   const [renameError, setRenameError] = useState("");
   const [pendingDeleteListId, setPendingDeleteListId] = useState<string | null>(null);
   const [kindFilter, setKindFilter] = useState<SavedKindFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAllLists, setShowAllLists] = useState(false);
+  const [isAddingToList, setIsAddingToList] = useState(false);
+  const [storageError, setStorageError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [removedItem, setRemovedItem] = useState<{
+    savedItem: SavedPocketItem;
+    listId: string | undefined;
+  } | null>(null);
   const savedEventsSnapshot = useSyncExternalStore(
     subscribeToSavedPocket,
     getSavedEventsSnapshot,
@@ -393,23 +415,43 @@ export function SavedPocket({
           ),
     [assignmentByItemKey, savedItems, selectedListId],
   );
+  const isAdding = isAddingToList && selectedListId !== null;
+  const candidateItems = useMemo(
+    () => savedItems.filter((item) => assignmentByItemKey.get(item.itemKey) !== selectedListId),
+    [assignmentByItemKey, savedItems, selectedListId],
+  );
+  const searchedItems = useMemo(() => {
+    const items = isAdding ? candidateItems : listItems;
+    const query = searchQuery.trim().toLocaleLowerCase("sv-SE");
+    return query ? items.filter((item) => searchableItemText(item).includes(query)) : items;
+  }, [candidateItems, isAdding, listItems, searchQuery]);
   const visibleItems = useMemo(
-    () =>
-      kindFilter === "all"
-        ? listItems
-        : listItems.filter((savedItem) => savedItem.kind === kindFilter),
-    [kindFilter, listItems],
+    () => kindFilter === "all"
+      ? searchedItems
+      : searchedItems.filter((savedItem) => savedItem.kind === kindFilter),
+    [kindFilter, searchedItems],
   );
   const kindCounts = useMemo(
     () => ({
-      all: listItems.length,
-      culture: listItems.filter((item) => item.kind === "culture").length,
-      entertainment: listItems.filter((item) => item.kind === "entertainment")
+      all: searchedItems.length,
+      culture: searchedItems.filter((item) => item.kind === "culture").length,
+      entertainment: searchedItems.filter((item) => item.kind === "entertainment")
         .length,
-      restaurant: listItems.filter((item) => item.kind === "restaurant").length,
+      restaurant: searchedItems.filter((item) => item.kind === "restaurant").length,
     }),
-    [listItems],
+    [searchedItems],
   );
+  const listPreviews = useMemo(() => {
+    const previews = new Map<string, SavedPocketItem[]>();
+    for (const item of savedItems) {
+      const listId = assignmentByItemKey.get(item.itemKey);
+      if (!listId) continue;
+      const items = previews.get(listId) ?? [];
+      items.push(item);
+      previews.set(listId, items);
+    }
+    return previews;
+  }, [assignmentByItemKey, savedItems]);
 
   useEffect(() => {
     if (embedded || !open) return;
@@ -500,13 +542,15 @@ export function SavedPocket({
       setNewListName("");
       setListError("");
       setIsCreateOpen(false);
-      setActiveListId(list.id);
+      selectList(list.id);
+      setStatusMessage(`Listan ${name} är skapad.`);
     } else {
       setListError("Listan kunde inte sparas i den här webbläsaren.");
     }
   }
 
   function assignItem(itemKey: string, listId: string) {
+    setStorageError("");
     const assignments = pocketState.assignments.filter(
       (assignment) => assignment.itemKey !== itemKey,
     );
@@ -515,7 +559,12 @@ export function SavedPocket({
       assignments.push({ itemKey, listId });
     }
 
-    savePocketState({ ...pocketState, assignments });
+    if (savePocketState({ ...pocketState, assignments })) {
+      const name = pocketState.lists.find((list) => list.id === listId)?.name;
+      setStatusMessage(name ? `Sparat i ${name}.` : "Borttaget från listan. Finns kvar i Alla sparade.");
+    } else {
+      setStorageError("Ändringen kunde inte sparas. Försök igen.");
+    }
   }
 
   function selectList(listId: string | null) {
@@ -524,22 +573,34 @@ export function SavedPocket({
     setEditingListName("");
     setRenameError("");
     setPendingDeleteListId(null);
+    setKindFilter("all");
+    setSearchQuery("");
+    setIsAddingToList(false);
+    setStatusMessage("");
+    setStorageError("");
+  }
+
+  function toggleAddingToList() {
+    setIsAddingToList((value) => !value);
+    setKindFilter("all");
+    setSearchQuery("");
+    setStatusMessage("");
   }
 
   function deleteSelectedList() {
     if (!selectedListId) return;
 
-    savePocketState({
+    if (!savePocketState({
       lists: pocketState.lists.filter((list) => list.id !== selectedListId),
       assignments: pocketState.assignments.filter(
         (assignment) => assignment.listId !== selectedListId,
       ),
-    });
-    setActiveListId(null);
-    setEditingListId(null);
-    setEditingListName("");
-    setRenameError("");
-    setPendingDeleteListId(null);
+    })) {
+      setStorageError("Listan kunde inte tas bort. Försök igen.");
+      return;
+    }
+    selectList(null);
+    setStatusMessage("Listan är borttagen. Alla favoriter finns kvar i Alla sparade.");
   }
 
   function beginRenameSelectedList() {
@@ -582,38 +643,52 @@ export function SavedPocket({
       setEditingListId(null);
       setEditingListName("");
       setRenameError("");
+      setStatusMessage(`Listan heter nu ${name}.`);
     } else {
       setRenameError("Namnet kunde inte sparas i den här webbläsaren.");
     }
   }
 
   function removeSavedItem(savedItem: SavedPocketItem) {
-    if (savedItem.kind === "culture") {
-      writeStorage(
-        SAVED_EVENTS_KEY,
-        savedEventIds.filter((id) => id !== savedItem.item.id),
-        SAVED_EVENTS_CHANGED,
-      );
-    } else if (savedItem.kind === "restaurant") {
-      writeStorage(
-        SAVED_RESTAURANTS_KEY,
-        savedRestaurantIds.filter((id) => id !== savedItem.item.id),
-        SAVED_RESTAURANTS_CHANGED,
-      );
-    } else {
-      writeStorage(
-        SAVED_ENTERTAINMENT_KEY,
-        savedEntertainmentIds.filter((id) => id !== savedItem.item.id),
-        SAVED_ENTERTAINMENT_CHANGED,
-      );
+    setStorageError("");
+    const key = savedItem.kind === "culture" ? SAVED_EVENTS_KEY
+      : savedItem.kind === "restaurant" ? SAVED_RESTAURANTS_KEY : SAVED_ENTERTAINMENT_KEY;
+    const changedEvent = savedItem.kind === "culture" ? SAVED_EVENTS_CHANGED
+      : savedItem.kind === "restaurant" ? SAVED_RESTAURANTS_CHANGED : SAVED_ENTERTAINMENT_CHANGED;
+    const ids = savedItem.kind === "culture" ? savedEventIds
+      : savedItem.kind === "restaurant" ? savedRestaurantIds : savedEntertainmentIds;
+    if (!writeStorage(key, ids.filter((id) => id !== savedItem.item.id), changedEvent)) {
+      setStorageError("Favoriten kunde inte tas bort. Försök igen.");
+      return;
     }
+    // Keep its list assignment so undo and a later re-save retain the user's organization.
+    setRemovedItem({ savedItem, listId: assignmentByItemKey.get(savedItem.itemKey) });
+    setStatusMessage(`${itemTitle(savedItem)} är borttagen från sparat.`);
+  }
 
-    savePocketState({
-      ...pocketState,
-      assignments: pocketState.assignments.filter(
-        (assignment) => assignment.itemKey !== savedItem.itemKey,
-      ),
-    });
+  function undoRemoveSavedItem() {
+    if (!removedItem) return;
+    const { savedItem } = removedItem;
+    const key = savedItem.kind === "culture" ? SAVED_EVENTS_KEY
+      : savedItem.kind === "restaurant" ? SAVED_RESTAURANTS_KEY : SAVED_ENTERTAINMENT_KEY;
+    const changedEvent = savedItem.kind === "culture" ? SAVED_EVENTS_CHANGED
+      : savedItem.kind === "restaurant" ? SAVED_RESTAURANTS_CHANGED : SAVED_ENTERTAINMENT_CHANGED;
+    const latestIds = savedItem.kind === "culture"
+      ? parseSavedIds(getSavedEventsSnapshot(), validEventIds)
+      : savedItem.kind === "restaurant"
+        ? parseSavedIds(getSavedRestaurantsSnapshot(), validRestaurantIds)
+        : parseSavedEntertainmentIds(getSavedEntertainmentSnapshot());
+    if (!latestIds.includes(savedItem.item.id) && latestIds.length >= MAX_SAVED_ITEMS_PER_KIND) {
+      setStorageError("Fickan är full. Ta bort en annan favorit för att återställa den här.");
+      return;
+    }
+    if (!writeStorage(key, [...new Set([...latestIds, savedItem.item.id])], changedEvent)) {
+      setStorageError("Favoriten kunde inte återställas. Försök igen.");
+      return;
+    }
+    setRemovedItem(null);
+    setStorageError("");
+    setStatusMessage(`${itemTitle(savedItem)} är sparad igen.`);
   }
 
   if (!embedded && !open) return null;
@@ -677,13 +752,18 @@ export function SavedPocket({
 
         <section className="saved-pocket-lists" aria-labelledby="list-title">
           <div className="saved-pocket-lists-head">
-            <div className="saved-pocket-section-heading">
+            {selectedList ? (
+              <button className="pocket-back" type="button" onClick={() => selectList(null)}>
+                <ArrowLeft size={18} aria-hidden="true" />
+                <span id="list-title">Alla listor</span>
+              </button>
+            ) : <div className="saved-pocket-section-heading">
               <FolderSimplePlus aria-hidden="true" size={20} />
               <div>
                 <h3 id="list-title">Mina listor</h3>
-                <p>Samla favoriter för en kväll, helg eller utflykt.</p>
+                <p>En kväll, en helg eller bara en bra idé.</p>
               </div>
-            </div>
+            </div>}
             <button
               className="saved-pocket-create-trigger"
               type="button"
@@ -733,7 +813,7 @@ export function SavedPocket({
             </form>
           ) : null}
 
-          <div className="saved-pocket-list-tabs" role="group" aria-label="Filtrera sparat på lista">
+          {!selectedList ? <div className="saved-pocket-list-tabs pocket-list-overview" role="group" aria-label="Välj lista">
             <button
               type="button"
               aria-pressed={selectedListId === null}
@@ -741,15 +821,12 @@ export function SavedPocket({
             >
               <span className="saved-pocket-list-tab-copy">
                 <strong>Alla sparade</strong>
-                <small>Översikt</small>
+                <small>Kultur, nöje & mat</small>
               </span>
               <b>{savedItems.length}</b>
             </button>
-            {pocketState.lists.map((list) => {
-              const count = savedItems.filter(
-                (savedItem) =>
-                  assignmentByItemKey.get(savedItem.itemKey) === list.id,
-              ).length;
+            {(showAllLists ? pocketState.lists : pocketState.lists.slice(0, 5)).map((list) => {
+              const items = listPreviews.get(list.id) ?? [];
 
               return (
                 <button
@@ -760,18 +837,24 @@ export function SavedPocket({
                 >
                   <span className="saved-pocket-list-tab-copy">
                     <strong>{list.name}</strong>
-                    <small>Egen lista</small>
+                    <small>{items.length ? items.slice(0, 2).map(itemTitle).join(" · ") : "Redo för dina favoriter"}</small>
                   </span>
-                  <b>{count}</b>
+                  <b>{items.length}</b>
                 </button>
               );
             })}
-          </div>
+          </div> : null}
+          {!selectedList && pocketState.lists.length > 5 ? (
+            <button className="pocket-show-lists" type="button" aria-expanded={showAllLists} onClick={() => setShowAllLists((value) => !value)}>
+              {showAllLists ? "Visa färre listor" : `Visa alla ${pocketState.lists.length} listor`}
+              <CaretDown aria-hidden="true" size={16} />
+            </button>
+          ) : null}
 
           {selectedListId ? (
           <div className="saved-pocket-list-manager" aria-live="polite">
             <div className="saved-pocket-list-manager__copy">
-              <p>{selectedList ? "Aktiv lista" : "Översikt"}</p>
+              <p>Din lista</p>
               <h4>{selectedList?.name ?? "Alla sparade"}</h4>
               <span>
                 {listItems.length} {listItems.length === 1 ? "sparat objekt" : "sparade objekt"}
@@ -828,6 +911,10 @@ export function SavedPocket({
               </div>
             ) : selectedListId ? (
               <div className="saved-pocket-list-actions">
+                <button className="pocket-add-to-list" type="button" onClick={toggleAddingToList} aria-pressed={isAdding}>
+                  {isAdding ? <Check aria-hidden="true" size={16} /> : <Plus aria-hidden="true" size={16} />}
+                  {isAdding ? "Klar" : "Lägg till"}
+                </button>
                 <button type="button" onClick={beginRenameSelectedList}>
                   <PencilSimple aria-hidden="true" size={16} />
                   Byt namn
@@ -847,15 +934,45 @@ export function SavedPocket({
             <BookmarkSimple aria-hidden="true" size={20} />
             <div>
               <h3 id="saved-items-title">
-                Utforska sparat
+                {isAdding ? "Lägg till från sparat" : selectedList ? "I den här listan" : "Utforska sparat"}
               </h3>
               <p aria-live="polite">
-                {selectedList ? `${listItems.length} i ${selectedList.name}` : `${listItems.length} totalt`}
+                {isAdding ? `Välj favoriter till ${selectedList?.name}.` : `${visibleItems.length} ${visibleItems.length === 1 ? "favorit" : "favoriter"}${searchQuery || kindFilter !== "all" ? ` av ${listItems.length}` : ""}`}
               </p>
             </div>
           </div>
 
-          <div className="saved-pocket-kind-filter" aria-label="Filtrera sparat efter typ">
+          <div className="pocket-feedback" aria-live="polite" aria-atomic="true">
+            {statusMessage ? (
+              <p><Check aria-hidden="true" size={17} /><span>{statusMessage}</span></p>
+            ) : null}
+            {removedItem ? (
+              <button type="button" onClick={undoRemoveSavedItem}>
+                <ArrowCounterClockwise aria-hidden="true" size={17} />
+                Ångra borttagning
+              </button>
+            ) : null}
+          </div>
+          {storageError ? <p className="saved-pocket-error" role="alert">{storageError}</p> : null}
+
+          {savedItems.length > 0 ? (
+            <div className="pocket-search">
+              <MagnifyingGlass aria-hidden="true" size={20} />
+              <label className="sr-only" htmlFor="pocket-search-input">Sök bland sparade favoriter</label>
+              <input
+                id="pocket-search-input"
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder={selectedList && !isAdding ? "Sök i listan…" : "Sök på namn, stadsdel eller kategori…"}
+                autoComplete="off"
+                maxLength={120}
+              />
+              {searchQuery ? <button type="button" aria-label="Rensa sökning" onClick={() => setSearchQuery("")}><X size={18} aria-hidden="true" /></button> : null}
+            </div>
+          ) : null}
+
+          {savedItems.length > 0 ? <div className="saved-pocket-kind-filter" role="group" aria-label="Filtrera sparat efter typ">
             {([
               ["all", "Alla"],
               ["culture", "Kultur"],
@@ -873,7 +990,7 @@ export function SavedPocket({
                 <b>{kindCounts[kind]}</b>
               </button>
             ))}
-          </div>
+          </div> : null}
 
           {visibleItems.length ? (
             <ul className="saved-pocket-items">
@@ -907,6 +1024,9 @@ export function SavedPocket({
                   : isEntertainment
                     ? savedItem.item.url
                     : savedItem.item.websiteUrl ?? savedItem.item.sourceUrl;
+                const assignedList = pocketState.lists.find(
+                  (list) => list.id === assignmentByItemKey.get(savedItem.itemKey),
+                );
 
                 return (
                   <li key={savedItem.itemKey}>
@@ -920,11 +1040,12 @@ export function SavedPocket({
                       )}
                     </div>
                     <div className="saved-pocket-item-copy">
-                      <p>{typeLabel}</p>
+                      <p>{typeLabel}{assignedList && !selectedList ? <span className="pocket-item-list-label"> · {assignedList.name}</span> : null}</p>
                       <h4>
                         <a href={itemUrl} target="_blank" rel="noopener noreferrer">
                           {itemTitle(savedItem)}
                           <ArrowUpRight aria-hidden="true" size={16} weight="bold" />
+                          <span className="sr-only"> (öppnas i ny flik)</span>
                         </a>
                       </h4>
                       <span>{metadata}</span>
@@ -937,16 +1058,24 @@ export function SavedPocket({
                         <span>{mapText} · Karta</span>
                       </MapLink>
                     </div>
-                    <details className="saved-pocket-item-manage">
+                    {isAdding && selectedListId ? (
+                      <div className="pocket-item-add">
+                        {assignedList ? <span>I {assignedList.name}</span> : null}
+                        <button type="button" onClick={() => assignItem(savedItem.itemKey, selectedListId)} aria-label={`${assignedList ? "Flytta" : "Lägg till"} ${itemTitle(savedItem)} i ${selectedList?.name}`}>
+                          <Plus aria-hidden="true" size={17} />
+                          {assignedList ? "Flytta hit" : "Lägg till"}
+                        </button>
+                      </div>
+                    ) : <details className="saved-pocket-item-manage">
                       <summary>
-                        Hantera
+                        Organisera
                         <CaretDown aria-hidden="true" size={16} weight="bold" />
                       </summary>
                       <div className="saved-pocket-item-actions">
                         {pocketState.lists.length ? (
                           <>
                             <label htmlFor={`saved-list-${savedItem.itemKey}`}>
-                              Lägg i lista
+                              {assignedList ? "Flytta till lista" : "Lägg i lista"}
                             </label>
                             <select
                               id={`saved-list-${savedItem.itemKey}`}
@@ -963,17 +1092,20 @@ export function SavedPocket({
                               ))}
                             </select>
                           </>
-                        ) : null}
+                        ) : <button type="button" onClick={() => setIsCreateOpen(true)}>
+                          <FolderSimplePlus aria-hidden="true" size={17} />
+                          Skapa en lista
+                        </button>}
                         <button
                           type="button"
-                          aria-label={`Ta bort ${itemTitle(savedItem)} från sparat`}
-                          onClick={() => removeSavedItem(savedItem)}
+                          aria-label={`Ta bort ${itemTitle(savedItem)} från ${selectedList ? selectedList.name : "sparat"}`}
+                          onClick={() => selectedList ? assignItem(savedItem.itemKey, "") : removeSavedItem(savedItem)}
                         >
                           <Trash aria-hidden="true" size={17} />
-                          Ta bort
+                          {selectedList ? "Ta ur listan" : "Ta bort"}
                         </button>
                       </div>
-                    </details>
+                    </details>}
                   </li>
                 );
               })}
@@ -981,14 +1113,29 @@ export function SavedPocket({
           ) : (
             <div className="saved-pocket-empty">
               <BookmarkSimple aria-hidden="true" size={34} />
-              <h4>{listItems.length ? "Inget i den här kategorin." : savedItems.length ? "Listan väntar på sitt första val." : "Fickan är tom."}</h4>
+              <h4>{searchQuery || kindFilter !== "all" ? "Inga favoriter matchar." : isAdding ? "Alla favoriter är med." : selectedList ? "Början på en bra plan." : "Din nästa upptäckt börjar här."}</h4>
               <p>
-                {listItems.length
-                  ? "Välj Alla eller en annan kategori för att fortsätta utforska."
-                  : savedItems.length
-                    ? "Öppna Hantera på ett sparat objekt för att lägga det i listan."
-                    : "Spara kultur, nöjen och restauranger så samlas de här."}
+                {searchQuery || kindFilter !== "all"
+                  ? "Prova ett annat namn eller visa alla favoriter."
+                  : isAdding
+                    ? "Upptäck något nytt i staden och spara det för att fylla på listan."
+                    : selectedList
+                      ? "Fyll listan med platser och upplevelser att se fram emot."
+                      : "Tryck på bokmärket när något fångar dig. Kultur, nöjen och mat samlas här, redo när du är."}
               </p>
+              <div className="pocket-empty-actions">
+                {searchQuery || kindFilter !== "all" ? (
+                  <button type="button" onClick={() => { setSearchQuery(""); setKindFilter("all"); }}>Visa alla favoriter</button>
+                ) : selectedList && !isAdding && candidateItems.length > 0 ? (
+                  <button type="button" onClick={toggleAddingToList}><Plus aria-hidden="true" size={18} />Lägg till från sparat</button>
+                ) : (
+                  <>
+                    <a href="#kultur" onClick={onClose}><Buildings size={18} aria-hidden="true" />Kultur</a>
+                    <a href="#noje" onClick={onClose}><Confetti size={18} aria-hidden="true" />Nöje</a>
+                    <a href="#mat" onClick={onClose}><ForkKnife size={18} aria-hidden="true" />Mat</a>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </section>

@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   BookOpenText,
   BookmarkSimple,
+  CaretDown,
   CaretRight,
   Check,
   Clock,
@@ -14,6 +15,7 @@ import {
   Phone,
   SlidersHorizontal,
   Sparkle,
+  X,
 } from "@phosphor-icons/react";
 import {
   useEffect,
@@ -33,7 +35,7 @@ import { foodGuides, type FoodGuideTag } from "@/data/food-guides";
 import { MapLink } from "@/components/map-link";
 import { NearbyControl } from "@/components/nearby-control";
 import { useHighlightClock } from "@/hooks/use-highlight-clock";
-import { useNearbyLocation } from "@/hooks/use-nearby-location";
+import { clearNearbyLocation, useNearbyLocation } from "@/hooks/use-nearby-location";
 import {
   distanceInMeters,
   formatDistance,
@@ -57,7 +59,7 @@ type RestaurantResult = {
 };
 
 const INITIAL_VISIBLE_RESTAURANTS = 5;
-const RESTAURANT_LOAD_MORE_BATCH = 10;
+const RESTAURANT_LOAD_MORE_BATCH = 5;
 
 const restaurantPoints = new Map(
   restaurants.map((restaurant) => [
@@ -82,10 +84,10 @@ const priceFilters: Array<{
   label: string;
 }> = [
   { value: 0, label: "Alla priser" },
-  { value: 1, label: "Budget <180" },
-  { value: 2, label: "Mellan 180–350" },
-  { value: 3, label: "Hög 350–700" },
-  { value: 4, label: "Premium 700+" },
+  { value: 1, label: "Under 180 kr" },
+  { value: 2, label: "180–350 kr" },
+  { value: 3, label: "350–700 kr" },
+  { value: 4, label: "Över 700 kr" },
 ];
 
 const priceLabels: Record<RestaurantPriceTier, string> = {
@@ -96,14 +98,23 @@ const priceLabels: Record<RestaurantPriceTier, string> = {
 };
 
 function scrollToResults() {
+  scrollToFoodSection("mat-resultat");
+}
+
+function scrollToFoodSection(id: string) {
   const reduceMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
 
-  document.getElementById("mat-resultat")?.scrollIntoView({
+  const target = document.getElementById(id);
+  target?.scrollIntoView({
     behavior: reduceMotion ? "auto" : "smooth",
     block: "start",
   });
+  if (target) {
+    target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+  }
 }
 
 function subscribeToSavedRestaurants(onStoreChange: () => void) {
@@ -246,6 +257,14 @@ function RestaurantCard({
             {restaurant.opened ? <small>Öppnade {restaurant.opened}</small> : null}
           </span>
         </p>
+      </div>
+
+      {restaurant.hours || restaurant.phone || restaurant.email ? (
+        <details className="restaurant-practical">
+          <summary>
+            Öppettider & kontakt
+            <CaretDown aria-hidden="true" size={17} weight="bold" />
+          </summary>
         {restaurant.hours ? (
           <p className="restaurant-card__hours">
             <Clock aria-hidden="true" size={17} weight="bold" />
@@ -258,8 +277,6 @@ function RestaurantCard({
             </span>
           </p>
         ) : null}
-      </div>
-
       {restaurant.phone || restaurant.email ? (
         <div className="restaurant-card__contact" aria-label="Kontakt">
           {restaurant.phone ? (
@@ -275,6 +292,8 @@ function RestaurantCard({
             </a>
           ) : null}
         </div>
+      ) : null}
+        </details>
       ) : null}
 
       <div className="restaurant-card__best-for" aria-label="Passar bäst för">
@@ -348,6 +367,7 @@ export function FoodExplorer({
     null,
   );
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_VISIBLE_RESTAURANTS);
+  const [saveMessage, setSaveMessage] = useState("");
   const nearby = useNearbyLocation();
   const highlightClock = useHighlightClock(RESTAURANT_SCAN_DATE);
   const today = dateKeyFromHighlightSnapshot(highlightClock);
@@ -368,6 +388,10 @@ export function FoodExplorer({
     () => parseSavedRestaurantIds(savedRestaurantsSnapshot),
     [savedRestaurantsSnapshot],
   );
+  const activeFilterCount =
+    Number(Boolean(query.trim())) + Number(cuisine !== "Alla") +
+    Number(priceTier !== 0) + Number(activeCollection !== "all") +
+    Number(activeGuideTag !== null) + Number(Boolean(nearby.point));
 
   useEffect(() => {
     onSavedCountChange?.(savedRestaurantIds.length);
@@ -527,7 +551,12 @@ export function FoodExplorer({
   }, [filteredRestaurants, nearby.point, visibleLimit]);
 
   function toggleSavedRestaurant(id: string) {
-    const next = savedRestaurantIds.includes(id)
+    const isSaved = savedRestaurantIds.includes(id);
+    if (!isSaved && savedRestaurantIds.length >= MAX_SAVED_RESTAURANTS) {
+      setSaveMessage("Fickan är full. Ta bort ett sparat matställe i Profil och försök igen.");
+      return;
+    }
+    const next = isSaved
       ? savedRestaurantIds.filter((savedId) => savedId !== id)
       : [...savedRestaurantIds, id];
 
@@ -537,8 +566,10 @@ export function FoodExplorer({
         JSON.stringify(next),
       );
       window.dispatchEvent(new Event(SAVED_RESTAURANTS_CHANGED));
+      const name = restaurants.find((restaurant) => restaurant.id === id)?.name;
+      setSaveMessage(isSaved ? `${name} har tagits bort från Fickan.` : `${name} finns nu i Fickan under Profil.`);
     } catch {
-      // Discovery remains usable when browser storage is unavailable.
+      setSaveMessage("Det gick inte att spara. Kontrollera att webbläsaren tillåter lokal lagring och försök igen.");
     }
   }
 
@@ -549,6 +580,7 @@ export function FoodExplorer({
     setPriceTier(0);
     setActiveCollection("all");
     setActiveGuideTag(null);
+    clearNearbyLocation();
   }
 
   function selectCuisine(option: string) {
@@ -565,20 +597,22 @@ export function FoodExplorer({
     setCuisine("Alla");
     setActiveCollection("all");
     setActiveGuideTag(tag);
+    setPriceTier(0);
+    clearNearbyLocation();
 
     window.requestAnimationFrame(scrollToResults);
   }
 
   return (
-    <section className="food-section" id="mat">
+    <section className="food-section explorer-refined" id="mat">
       <div className="section-heading">
         <p className="kicker">
           MATKATALOGEN · UPPDATERAD <span className="date-token">{RESTAURANT_SCAN_DATE}</span>
         </p>
         <h2>Göteborg på tallrik.</h2>
         <p>
-          En växande restaurangbank som bryter ner staden efter kök, pris och
-          kvarter — från nyöppnade luckor till institutioner och avsmakning.
+          Hitta ditt nästa favoritställe. Välj ett kök, följ en guide eller
+          sök efter något nära dig.
         </p>
         <details className="food-confidence-note">
           <summary>
@@ -592,6 +626,12 @@ export function FoodExplorer({
           </p>
         </details>
       </div>
+
+      <nav className="explorer-jump-links" aria-label="Hitta i matguiden">
+        <button type="button" onClick={() => scrollToFoodSection("mat-filter")}><MagnifyingGlass aria-hidden="true" size={18} />Sök matställe</button>
+        <button type="button" onClick={() => scrollToFoodSection("mat-kok")}>Välj kök<CaretRight aria-hidden="true" size={17} /></button>
+        <button type="button" onClick={() => scrollToFoodSection("mat-guider")}>Läs guider<CaretRight aria-hidden="true" size={17} /></button>
+      </nav>
 
       <div className="food-stats" aria-label="Restaurangbankens täckning">
         <div>
@@ -612,15 +652,14 @@ export function FoodExplorer({
         </div>
       </div>
 
-      <div className="cuisine-browser">
+      <div className="cuisine-browser" id="mat-kok">
         <div className="food-subheading">
           <div>
             <p className="kicker">BÖRJA MED KÖKET</p>
             <h3>Vad är du sugen på?</h3>
           </div>
           <p>
-            Alla adresser är sorterade efter cuisine från start. Välj ett kök
-            eller fortsätt till hela listan.
+            Italienskt, japanskt eller något nytt? Välj ett kök för att se adresserna.
           </p>
         </div>
         <div className="cuisine-rail" role="group" aria-label="Välj typ av kök">
@@ -640,15 +679,15 @@ export function FoodExplorer({
         </div>
       </div>
 
-      <section className="editorial-food" aria-labelledby="editorial-food-title">
+      <section className="editorial-food" id="mat-guider" aria-labelledby="editorial-food-title">
         <div className="food-subheading">
           <div>
             <p className="kicker">STADEN VÄLJER</p>
             <h3 id="editorial-food-title">Ät efter livet du lever.</h3>
           </div>
           <p>
-            Redaktionella guider som börjar i ett humör, ett sällskap eller en
-            kväll — och slutar i ett konkret urval att spara.
+            Takbarer, familjemiddagar och första dejter. Handplockade adresser
+            för stunden du har framför dig.
           </p>
         </div>
 
@@ -718,10 +757,32 @@ export function FoodExplorer({
         <div className="food-filter-panel__heading">
           <SlidersHorizontal aria-hidden="true" size={20} weight="bold" />
           <div>
-            <h3>Filtrera restaurangbanken</h3>
-            <p>Kombinera fritext, urval och ungefärlig kostnad.</p>
+            <h3>Hitta ett matställe</h3>
+            <p>Sök fritt. Lägg till filter om du vill.</p>
           </div>
         </div>
+
+        <div className="food-search" role="search">
+          <label className="sr-only" htmlFor="food-query">Sök matställe</label>
+          <MagnifyingGlass aria-hidden="true" size={19} weight="bold" />
+          <input
+            id="food-query"
+            type="search"
+            value={query}
+            onChange={(event) => {
+              setVisibleLimit(INITIAL_VISIBLE_RESTAURANTS);
+              setQuery(event.target.value);
+            }}
+            placeholder="Restaurang, kök eller område"
+          />
+          {query ? <button type="button" aria-label="Rensa matsökning" onClick={() => { setQuery(""); setVisibleLimit(INITIAL_VISIBLE_RESTAURANTS); }}><X aria-hidden="true" size={18} weight="bold" /></button> : null}
+        </div>
+
+        <details className="explorer-filter-disclosure">
+          <summary>
+            <span><SlidersHorizontal aria-hidden="true" size={18} />Pris & urval</span>
+            <span>{Number(priceTier !== 0) + Number(activeCollection !== "all") > 0 ? `${Number(priceTier !== 0) + Number(activeCollection !== "all")} valda` : "Valfritt"}<CaretDown aria-hidden="true" size={17} /></span>
+          </summary>
 
         <div
           className="food-collections"
@@ -756,21 +817,8 @@ export function FoodExplorer({
         </div>
 
       <div className="food-controls">
-        <label className="food-search">
-          <span className="sr-only">Sök i restaurangbanken</span>
-          <MagnifyingGlass aria-hidden="true" size={19} weight="bold" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => {
-              setVisibleLimit(INITIAL_VISIBLE_RESTAURANTS);
-              setQuery(event.target.value);
-            }}
-            placeholder="Sök kök, område eller restaurang"
-          />
-        </label>
-
-        <div className="price-filters" aria-label="Filtrera efter prisnivå">
+        <p className="explorer-filter-label">Ungefärligt pris per person, utan dryck</p>
+        <div className="price-filters" role="group" aria-label="Filtrera efter prisnivå">
           {priceFilters.map((filter) => (
             <button
               type="button"
@@ -786,10 +834,19 @@ export function FoodExplorer({
             </button>
           ))}
         </div>
-        <p className="price-scroll-hint" aria-hidden="true">
-          Svep för fler prisnivåer →
-        </p>
       </div>
+        </details>
+        {activeFilterCount > 0 ? (
+          <div className="explorer-active-filters" aria-label="Valda matfilter">
+            {query.trim() ? <button type="button" onClick={() => setQuery("")} aria-label="Ta bort söktext">{query.trim()}<X aria-hidden="true" size={14} /></button> : null}
+            {cuisine !== "Alla" ? <button type="button" onClick={() => setCuisine("Alla")} aria-label={`Ta bort köket ${cuisine}`}>{cuisine}<X aria-hidden="true" size={14} /></button> : null}
+            {priceTier !== 0 ? <button type="button" onClick={() => setPriceTier(0)} aria-label="Ta bort prisfilter">{priceFilters.find((filter) => filter.value === priceTier)?.label}<X aria-hidden="true" size={14} /></button> : null}
+            {activeCollection !== "all" ? <button type="button" onClick={() => setActiveCollection("all")} aria-label="Ta bort restaurangurval">{collections.find((collection) => collection.value === activeCollection)?.label}<X aria-hidden="true" size={14} /></button> : null}
+            {activeGuideTag ? <button type="button" onClick={() => setActiveGuideTag(null)} aria-label={`Ta bort guiden ${activeGuideTag}`}>{activeGuideTag}<X aria-hidden="true" size={14} /></button> : null}
+            {nearby.point ? <button type="button" onClick={clearNearbyLocation} aria-label="Sök i hela Göteborg">Nära {nearby.label}<X aria-hidden="true" size={14} /></button> : null}
+            <button className="explorer-reset" type="button" onClick={resetFilters}>Rensa alla ({activeFilterCount})</button>
+          </div>
+        ) : null}
       </div>
 
       <div className="food-results-heading" id="mat-resultat">
@@ -799,7 +856,7 @@ export function FoodExplorer({
           {activeGuideTag ? ` · ${activeGuideTag}` : ""}
           {!activeGuideTag && cuisine !== "Alla" ? ` · ${cuisine}` : ""}
         </p>
-        <p>Pris per person, ungefärligt och utan dryck</p>
+        <button type="button" onClick={() => scrollToFoodSection("mat-kok")}>Byt kök<CaretRight aria-hidden="true" size={16} /></button>
       </div>
 
       {filteredRestaurants.length > 0 ? (
@@ -843,7 +900,7 @@ export function FoodExplorer({
                 setVisibleLimit((current) => current + RESTAURANT_LOAD_MORE_BATCH)
               }
             >
-              Visa fler
+              Visa {Math.min(RESTAURANT_LOAD_MORE_BATCH, filteredRestaurants.length - visibleLimit)} till
               <CaretRight aria-hidden="true" size={17} weight="bold" />
             </button>
           </div>
@@ -851,12 +908,15 @@ export function FoodExplorer({
         </>
       ) : (
         <div className="food-empty-state">
-          <p>Inga restauranger matchar den kombinationen ännu.</p>
+          <h3>Lite för smalt urval.</h3>
+          <p>{nearby.point ? "Inga matställen matchar här. Prova hela Göteborg eller ta bort ett filter ovan." : "Inga matställen matchar just nu. Ta bort ett filter eller prova ett annat kök."}</p>
           <button type="button" onClick={resetFilters}>
-            Rensa filter
+            Visa alla matställen
           </button>
         </div>
       )}
+
+      {saveMessage ? <p className="explorer-save-feedback" role="status">{saveMessage}<button type="button" onClick={() => setSaveMessage("")} aria-label="Stäng sparmeddelande"><X aria-hidden="true" size={17} /></button></p> : null}
 
       <p className="food-data-note">
         <strong>Källnivå:</strong> Redaktionella poster är handplockade från

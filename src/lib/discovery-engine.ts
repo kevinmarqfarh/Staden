@@ -10,8 +10,13 @@ import type {
 import {
   addDaysToDateKey,
   dateKeyFromHighlightSnapshot,
+  getEventDurationMinutes,
+  getEventTimeWindow,
   hasEventNotEnded,
   isEventActiveOnDate,
+  isHighlightWindowActive,
+  minuteFromHighlightSnapshot,
+  parseDurationMinutes,
 } from "@/lib/highlights";
 import type { IntentAffinities } from "@/lib/cultural-journal";
 import type { LifeRhythm } from "@/lib/life-rhythm";
@@ -131,6 +136,7 @@ export type DiscoveryPick = {
   familyFriendly: boolean;
   socialIntensity: "low" | "medium" | "high";
   durationMinutes: number | null;
+  availabilityLabel: string;
   bucket: "trolig" | "angransande" | "wildcard";
 };
 
@@ -138,31 +144,8 @@ type Candidate = {
   pick: DiscoveryPick;
   active: boolean;
   startDate: string | null;
+  experience?: EntertainmentExperience;
 };
-
-const EVENT_TIME_PATTERN = /\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/g;
-
-function hasEveningTime(event: CulturalEvent) {
-  const matches = event.time?.matchAll(EVENT_TIME_PATTERN);
-  if (!matches) return false;
-  return Array.from(matches).some((match) => Number(match[1]) >= 16);
-}
-
-function cultureDurationMinutes(event: CulturalEvent) {
-  if (event.durationMinutes) return event.durationMinutes;
-  const range = event.time?.match(
-    /(\d{1,2}):([0-5]\d)\s*[–-]\s*(\d{1,2}):([0-5]\d)/,
-  );
-  if (range) {
-    const [, sh, sm, eh, em] = range;
-    const start = Number(sh) * 60 + Number(sm);
-    let end = Number(eh) * 60 + Number(em);
-    if (end < start) end += 24 * 60;
-    return end - start;
-  }
-  if (["Samtal", "Litteratur", "Film"].includes(event.category)) return 120;
-  return null;
-}
 
 function cultureSocialIntensity(
   event: CulturalEvent,
@@ -171,14 +154,6 @@ function cultureSocialIntensity(
   if (["Festival", "Skapande"].includes(event.category)) return "high";
   if (["Musik", "Kulturhus", "Samtal"].includes(event.category)) return "medium";
   return "low";
-}
-
-function parseDurationLabel(label: string): number | null {
-  const hours = label.match(/(\d+(?:[.,]\d+)?)\s*(?:tim|h\b|timmar)/i);
-  if (hours) return Math.round(Number(hours[1].replace(",", ".")) * 60);
-  const minutes = label.match(/(\d+)\s*min/i);
-  if (minutes) return Number(minutes[1]);
-  return null;
 }
 
 function weekendRange(today: string) {
@@ -196,15 +171,20 @@ function eventOverlapsRange(event: CulturalEvent, from: string, until: string) {
 
 function cultureCandidate(
   event: CulturalEvent,
-  today: string,
+  snapshot: string,
 ): Candidate | null {
+  const today = dateKeyFromHighlightSnapshot(snapshot);
   const horizon = addDaysToDateKey(today, 30);
-  if (!hasEventNotEnded(event, today)) return null;
+  if (!hasEventNotEnded(event, snapshot)) return null;
   if (event.startDate > horizon) return null;
   if (event.dateLabel === "Permanent") return null;
   if (event.isOngoing && !event.endDate) return null;
+  const timeWindow = getEventTimeWindow(event);
+  const now = minuteFromHighlightSnapshot(snapshot);
+  if (event.startDate === today && timeWindow && timeWindow.endMinutes === null && now !== null && timeWindow.startMinutes < now) return null;
 
-  const priceLabel = event.isFree
+  const isFree = Boolean(event.isFree || event.priceMaxSek === 0);
+  const priceLabel = isFree
     ? "GRATIS"
     : event.priceMaxSek
       ? `MAX ${event.priceMaxSek} KR`
@@ -225,7 +205,7 @@ function cultureCandidate(
         ? `${event.dateLabel} · ${event.time}`
         : event.dateLabel,
       priceLabel,
-      isFree: Boolean(event.isFree),
+      isFree,
       mapQuery: `${event.venue}, ${event.area}, Göteborg`,
       sourceUrl: event.sourceUrl,
       intents:
@@ -236,7 +216,10 @@ function cultureCandidate(
         event.category === "Museum" ||
         (event.category === "Festival" && Boolean(event.isFree)),
       socialIntensity: cultureSocialIntensity(event),
-      durationMinutes: cultureDurationMinutes(event),
+      durationMinutes: getEventDurationMinutes(event),
+      availabilityLabel: getEventTimeWindow(event)
+        ? "Kontrollera plats och biljett hos arrangören"
+        : "Kontrollera dagens tider hos arrangören",
       bucket: "wildcard",
     },
   };
@@ -254,6 +237,7 @@ function entertainmentCandidate(
   return {
     active: true,
     startDate: null,
+    experience,
     pick: {
       key: `noje:${experience.id}`,
       kind: "noje",
@@ -262,7 +246,7 @@ function entertainmentCandidate(
       categoryLabel: experience.category,
       area: experience.area,
       venue: experience.area,
-      timeLabel: experience.duration ? experience.duration : "När du vill",
+      timeLabel: experience.duration || "Besökstid varierar",
       priceLabel,
       isFree: Boolean(experience.free),
       mapQuery: `${experience.title}, ${experience.area}, Göteborg`,
@@ -270,8 +254,13 @@ function entertainmentCandidate(
       intents: entertainmentCategoryIntents[experience.category] ?? ["nyfiken"],
       soloFriendly: audiences.includes("singel"),
       familyFriendly: audiences.includes("barnfamilj"),
-      socialIntensity: audiences.includes("barnfamilj") ? "medium" : "low",
-      durationMinutes: parseDurationLabel(experience.duration ?? ""),
+      socialIntensity: ["Spel & utmaning", "Scen & kväll", "Barn & lek"].includes(experience.category)
+        ? "medium"
+        : "low",
+      durationMinutes: parseDurationMinutes(experience.duration ?? ""),
+      availabilityLabel: experience.booking === "BOKA"
+        ? "Bokning krävs · kontrollera lediga tider"
+        : "Kontrollera öppettider före besöket",
       bucket: "wildcard",
     },
   };
@@ -281,28 +270,30 @@ function matchesMode(
   candidate: Candidate,
   event: CulturalEvent | null,
   mode: DiscoveryMode | null,
-  today: string,
+  snapshot: string,
 ) {
   if (!mode || mode === "overraska") return true;
+  const today = dateKeyFromHighlightSnapshot(snapshot);
+  const now = minuteFromHighlightSnapshot(snapshot);
   const { pick } = candidate;
 
   if (mode === "gratis-ikvall") {
     if (!pick.isFree) return false;
-    if (pick.kind === "noje") return true; // evergreen, alltid tillgängligt
     if (!event) return false;
-    return (
-      isEventActiveOnDate(event, today) &&
-      hasEveningTime(event) &&
-      (event.startDate === today ||
-        event.endDate === today ||
-        event.category === "Festival")
-    );
+    const window = getEventTimeWindow(event);
+    if (!window || now === null || event.startDate !== today) return false;
+    // A venue being free does not establish that it is open tonight. For a
+    // dated event, only promise tonight when a future evening start is known.
+    return window.startMinutes >= 16 * 60 && window.startMinutes >= now;
   }
 
   if (mode === "under-150") {
     if (pick.isFree) return true;
-    if (event) return Boolean(event.priceMaxSek && event.priceMaxSek <= 150);
-    return /\b(0|[1-9]\d?|1[0-4]\d)\s*kr/i.test(pick.priceLabel);
+    if (event) return event.priceMaxSek !== undefined && event.priceMaxSek >= 0 && event.priceMaxSek < 150;
+    // "Från 99 kr", an unknown ticket price or a range up to 300 kr is not
+    // proof that the chosen experience fits a hard spending limit.
+    const price = pick.priceLabel.match(/^(?:MAX\s+)?(\d+)(?:\s*[–-]\s*(\d+))?\s*KR(?:\s*\/\s*(?:PERSON|PERS))?$/i);
+    return Boolean(price && Number(price[2] ?? price[1]) < 150);
   }
 
   if (mode === "i-helgen") {
@@ -313,7 +304,11 @@ function matchesMode(
   }
 
   if (mode === "tva-timmar") {
-    return pick.durationMinutes !== null && pick.durationMinutes <= 120;
+    if (pick.durationMinutes === null || pick.durationMinutes > 120) return false;
+    if (!event) return candidate.experience?.booking === "SPONTANT";
+    const window = getEventTimeWindow(event);
+    if (!window || now === null || event.startDate !== today) return false;
+    return window.startMinutes >= now && window.startMinutes - now + pick.durationMinutes <= 120;
   }
 
   if (mode === "ga-sjalv") return pick.soloFriendly;
@@ -388,13 +383,13 @@ function classifyBucket(
   return "wildcard";
 }
 
-function sortBucket(picks: DiscoveryPick[], scores: Map<string, number>) {
+function sortBucket(picks: DiscoveryPick[], scores: Map<string, number>, seed: string) {
   return [...picks].sort((left, right) => {
     const scoreDiff = (scores.get(right.key) ?? 0) - (scores.get(left.key) ?? 0);
     if (scoreDiff !== 0) return scoreDiff;
     const freeDiff = Number(right.isFree) - Number(left.isFree);
     if (freeDiff !== 0) return freeDiff;
-    return left.title.localeCompare(right.title, "sv-SE");
+    return hashSnapshot(`${seed}|${left.key}`) - hashSnapshot(`${seed}|${right.key}`) || left.key.localeCompare(right.key);
   });
 }
 
@@ -421,11 +416,12 @@ export function buildDiscoveryOrder({
   affinities?: IntentAffinities;
 }): DiscoveryPick[] {
   const today = dateKeyFromHighlightSnapshot(snapshot);
+  const rotationSeed = snapshot.split("|").slice(0, 2).join("|");
   const cultureByKey = new Map<string, CulturalEvent>();
 
   const candidates: Candidate[] = [];
   for (const event of cultureEvents) {
-    const candidate = cultureCandidate(event, today);
+    const candidate = cultureCandidate(event, snapshot);
     if (candidate) {
       cultureByKey.set(candidate.pick.key, event);
       candidates.push(candidate);
@@ -433,11 +429,14 @@ export function buildDiscoveryOrder({
   }
   // Nöje ingår när ett läge inte är rent tidsbundet till kultur.
   for (const experience of entertainment) {
-    candidates.push(entertainmentCandidate(experience));
+    if (isHighlightWindowActive(experience, today)) {
+      candidates.push(entertainmentCandidate(experience));
+    }
   }
 
-  const matched = candidates.filter((candidate) =>
-    matchesMode(candidate, cultureByKey.get(candidate.pick.key) ?? null, mode, today),
+  const uniqueCandidates = [...new Map(candidates.map((candidate) => [candidate.pick.key, candidate])).values()];
+  const matched = uniqueCandidates.filter((candidate) =>
+    matchesMode(candidate, cultureByKey.get(candidate.pick.key) ?? null, mode, snapshot),
   );
   if (matched.length === 0) return [];
 
@@ -458,11 +457,11 @@ export function buildDiscoveryOrder({
     buckets[bucket].push(candidate.pick);
   }
 
-  const trolig = sortBucket(buckets.trolig, scores);
-  const angransande = sortBucket(buckets.angransande, scores);
-  const wildcard = sortBucket(buckets.wildcard, scores);
+  const trolig = sortBucket(buckets.trolig, scores, rotationSeed);
+  const angransande = sortBucket(buckets.angransande, scores, rotationSeed);
+  const wildcard = sortBucket(buckets.wildcard, scores, rotationSeed);
 
-  const random = mulberry32(hashSnapshot(snapshot));
+  const random = mulberry32(hashSnapshot(rotationSeed));
   const cursors = { trolig: 0, angransande: 0, wildcard: 0 };
   const order: DiscoveryPick[] = [];
   const total = matched.length;
@@ -479,7 +478,9 @@ export function buildDiscoveryOrder({
   while (order.length < total) {
     const roll = random();
     const primary =
-      roll < 0.6 ? "trolig" : roll < 0.85 ? "angransande" : "wildcard";
+      mode === "overraska"
+        ? roll < 0.6 ? "wildcard" : roll < 0.85 ? "angransande" : "trolig"
+        : roll < 0.6 ? "trolig" : roll < 0.85 ? "angransande" : "wildcard";
     const fallbacks: Array<"trolig" | "angransande" | "wildcard"> =
       primary === "trolig"
         ? ["trolig", "angransande", "wildcard"]
@@ -506,24 +507,26 @@ export function recommendationReason(
   mode: DiscoveryMode | null,
   lifeRhythm: LifeRhythm | null = null,
 ) {
-  if (lifeRhythm === "barnvecka" && pick.familyFriendly) {
-    return "Funkar med barnen — nära, hanterbart och utan tung planering.";
-  }
   if (mode === "gratis-ikvall") {
-    return "Det händer nu, kostar inget och kräver nästan ingen planering.";
+    return "Ett gratis evenemang med start ikväll. Kontrollera om du behöver boka plats.";
   }
   if (mode === "under-150") {
     return pick.isFree
       ? "Gratis är tryggt under budget — resten av kvällen får vara spontan."
-      : "Det håller sig inom din budget och går att bestämma nära inpå.";
+      : "Det angivna priset är under 150 kr. Kontrollera aktuellt pris och eventuella bokningsavgifter.";
   }
   if (mode === "i-helgen") return "Ett konkret helgval, utan en lång lista att sålla.";
-  if (mode === "tva-timmar") return "Tillräckligt kort för att faktiskt bli av idag.";
+  if (mode === "tva-timmar") return pick.kind === "kultur"
+    ? "Start och angiven längd ryms inom de närmaste två timmarna. Räkna även med restid."
+    : "Angiven besökstid är högst två timmar. Kontrollera öppettider och räkna även med restid.";
   if (mode === "ga-sjalv") {
     return "Ett format där det känns naturligt att komma själv och gå rakt in i upplevelsen.";
   }
   if (mode === "socialt") {
     return "Här finns naturliga öppningar för samtal, deltagande eller gemensam energi.";
+  }
+  if (lifeRhythm === "barnvecka" && pick.familyFriendly) {
+    return "Ett förslag för barnveckan. Kontrollera rekommenderad ålder och praktiska detaljer före besöket.";
   }
 
   if (pick.bucket === "wildcard") {
@@ -540,4 +543,56 @@ export function recommendationReason(
   return `Du hade kanske inte sökt efter ${pick.categoryLabel.toLocaleLowerCase(
     "sv-SE",
   )} själv. Just därför väljer STADEN det här åt dig.`;
+}
+
+/**
+ * PREFERENSER FRÅN SPARAT
+ *
+ * Som matbutiken som lär av dina köp: här lär STADEN av det du sparat. Varje
+ * sparat objekt drar upp de intents dess etiketter representerar. Signalen är
+ * implicit (intresse) och väger därför lättare än loggboken (upplevd känsla),
+ * men båda knuffar samma rekommendationsmotor.
+ */
+export function deriveSavedAffinities({
+  cultureEvents,
+  entertainment,
+}: {
+  cultureEvents: readonly CulturalEvent[];
+  entertainment: readonly EntertainmentExperience[];
+}): IntentAffinities {
+  const scores: IntentAffinities = {};
+  const add = (intent: CulturalDiscoveryIntent) => {
+    scores[intent] = (scores[intent] ?? 0) + 1;
+  };
+
+  for (const event of cultureEvents) {
+    const intents =
+      event.discoveryIntents ?? cultureCategoryIntents[event.category] ?? [];
+    for (const intent of intents) add(intent);
+  }
+  for (const experience of entertainment) {
+    const intents =
+      entertainmentCategoryIntents[experience.category] ?? ["nyfiken"];
+    for (const intent of intents) add(intent);
+  }
+
+  return scores;
+}
+
+/** Väg samman flera affinitetskällor (t.ex. loggbok tyngre än sparat). */
+export function combineAffinities(
+  ...parts: Array<{ affinities: IntentAffinities; weight: number }>
+): IntentAffinities {
+  const combined: IntentAffinities = {};
+  for (const { affinities, weight } of parts) {
+    for (const key of Object.keys(affinities) as CulturalDiscoveryIntent[]) {
+      combined[key] = (combined[key] ?? 0) + (affinities[key] ?? 0) * weight;
+    }
+  }
+  return combined;
+}
+
+/** True om någon intent har ett positivt värde — dvs vi har en signal alls. */
+export function hasAffinitySignal(affinities: IntentAffinities): boolean {
+  return Object.values(affinities).some((value) => (value ?? 0) > 0);
 }

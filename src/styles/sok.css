@@ -1,0 +1,302 @@
+/* ────────────────────────────────────────────────────────────────────────
+   SÖK — full-screen search overlay for STADEN.
+
+   Tokens only, so every theme (including dark "After rain") follows along.
+   Mirrors conventions from upptackt.css: square corners, mono uppercase
+   kickers, --signal accents, --paper-raised surfaces, a top 3px --signal
+   accent on the card, and safe-area padding. Parent loads this after
+   globals.css.
+   ──────────────────────────────────────────────────────────────────────── */
+
+.sok-overlay {
+  background: color-mix(in srgb, var(--ink) 52%, transparent);
+  backdrop-filter: blur(6px);
+  z-index: 80;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0;
+  display: flex;
+  position: fixed;
+  inset: 0;
+}
+
+.sok-card {
+  background: var(--paper-raised);
+  border-top: 3px solid var(--signal);
+  flex-direction: column;
+  width: min(100%, 640px);
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 0;
+  display: flex;
+}
+
+/* Header: field + close */
+.sok-head {
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  gap: 12px;
+  padding: calc(16px + var(--safe-top, 0px)) var(--mobile-gutter, 22px) 16px;
+  display: flex;
+}
+
+.sok-field {
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  display: flex;
+}
+
+.sok-input {
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0;
+  font: inherit;
+  font-size: 1rem;
+}
+
+.sok-input::placeholder {
+  color: var(--muted);
+}
+
+.sok-input:focus {
+  outline: none;
+}
+
+.sok-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.sok-close {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  justify-content: center;
+  align-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: inline-flex;
+}
+
+/* Scroll region */
+.sok-scroll {
+  flex: 1 1 auto;
+  padding: 18px var(--mobile-gutter, 22px) calc(28px + var(--safe-bottom, 0px));
+  overflow-y: auto;
+}
+
+.sok-section {
+  flex-direction: column;
+  display: flex;
+}
+
+.sok-kicker {
+  color: var(--signal);
+  font-family: var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+  font-size: 0.62rem;
+  font-weight: 650;
+}
+
+.sok-explainer {
+  color: var(--muted);
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.sok-count {
+  color: var(--muted);
+  font-family: var(--font-geist-mono), monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 14px;
+  font-size: 0.62rem;
+}
+
+.sok-group {
+  margin-bottom: 8px;
+}
+
+.sok-group__head {
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  font-family: var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+  padding-top: 14px;
+  font-size: 0.58rem;
+  font-weight: 650;
+}
+
+/* List + rows */
+.sok-list {
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+}
+
+.sok-result {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  flex-direction: column;
+  gap: 12px;
+  padding: 15px 16px;
+  display: flex;
+}
+
+.sok-result__body {
+  flex-direction: column;
+  gap: 6px;
+  display: flex;
+}
+
+.sok-result__title {
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.sok-result__meta {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.sok-result__free {
+  color: var(--signal);
+  font-weight: 600;
+}
+
+/* Kind badge */
+.sok-badge {
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-family: var(--font-geist-mono), monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  align-self: flex-start;
+  padding: 3px 8px;
+  font-size: 0.54rem;
+  font-weight: 650;
+}
+
+.sok-badge--kultur {
+  color: var(--signal);
+  border-color: color-mix(in srgb, var(--signal) 55%, var(--line));
+}
+
+.sok-badge--noje {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 45%, var(--line));
+}
+
+.sok-badge--mat {
+  color: var(--muted);
+}
+
+/* Row actions */
+.sok-result__actions {
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding-top: 12px;
+  display: flex;
+}
+
+.sok-action {
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  font-family: var(--font-geist-mono), monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-underline-offset: 4px;
+  text-decoration: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  display: inline-flex;
+}
+
+.sok-action:hover {
+  color: var(--signal);
+}
+
+/* Empty + start states */
+.sok-empty {
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 24px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+  display: flex;
+}
+
+.sok-empty--start {
+  color: var(--muted);
+}
+
+.sok-empty__lead {
+  color: var(--ink);
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 550;
+}
+
+.sok-empty__hint {
+  color: var(--muted);
+  font-family: var(--font-geist-mono), monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+  font-size: 0.6rem;
+}
+
+@media (min-width: 760px) {
+  .sok-overlay {
+    align-items: center;
+    padding: 40px 24px;
+  }
+  .sok-card {
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--signal);
+    height: min(88vh, 820px);
+    max-height: min(88vh, 820px);
+  }
+  .sok-head {
+    padding: 18px 24px;
+  }
+}

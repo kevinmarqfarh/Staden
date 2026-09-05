@@ -11,6 +11,7 @@ import {
   Check,
   Confetti,
   ForkKnife,
+  MagnifyingGlass,
   MapPin,
   Palette,
   Sparkle,
@@ -39,7 +40,10 @@ import { MapLink } from "@/components/map-link";
 import { NearbyControl } from "@/components/nearby-control";
 import { SavedPocket } from "@/components/saved-pocket";
 import { useHighlightClock } from "@/hooks/use-highlight-clock";
-import { useNearbyLocation } from "@/hooks/use-nearby-location";
+import {
+  clearNearbyLocation,
+  useNearbyLocation,
+} from "@/hooks/use-nearby-location";
 import {
   distanceInMeters,
   formatDistance,
@@ -47,8 +51,11 @@ import {
 } from "@/lib/geo";
 import {
   buildDiscoveryOrder,
+  combineAffinities,
+  deriveSavedAffinities,
   discoveryIntents,
   discoveryModes,
+  hasAffinitySignal,
   pickDiscovery,
   recommendationReason,
   type DiscoveryMode,
@@ -73,6 +80,8 @@ import {
   JournalPrompt,
   type JournalSubject,
 } from "@/components/loggbok";
+import { SokOverlay } from "@/components/sok";
+import type { SearchResult } from "@/lib/search";
 import {
   addDaysToDateKey,
   dateKeyFromHighlightSnapshot,
@@ -587,6 +596,8 @@ export function StadenApp() {
     "alla" | "museum" | "kulturhus"
   >("alla");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [discoveryForYou, setDiscoveryForYou] = useState(false);
   const [activeView, setActiveView] = useState<AppView>("home");
   const [discoveryIntent, setDiscoveryIntent] =
     useState<CulturalDiscoveryIntent | null>(null);
@@ -653,6 +664,26 @@ export function StadenApp() {
     () => deriveJournalAffinities(journalEntries),
     [journalEntries],
   );
+  const savedAffinities = useMemo(
+    () =>
+      deriveSavedAffinities({
+        cultureEvents: culturalEvents.filter((event) =>
+          savedEventIds.includes(event.id),
+        ),
+        entertainment: entertainmentExperiences.filter((experience) =>
+          savedEntertainmentIds.includes(experience.id),
+        ),
+      }),
+    [savedEventIds, savedEntertainmentIds],
+  );
+  const combinedAffinities = useMemo(
+    () =>
+      combineAffinities(
+        { affinities: journalAffinities, weight: 2 },
+        { affinities: savedAffinities, weight: 1 },
+      ),
+    [journalAffinities, savedAffinities],
+  );
   const selectedTheme = useSyncExternalStore(
     subscribeToTheme,
     getThemeSnapshot,
@@ -662,8 +693,11 @@ export function StadenApp() {
   const highlightClock = useHighlightClock(culturalCatalogVerifiedAt);
   const today = dateKeyFromHighlightSnapshot(highlightClock);
   const activeDiscoveryEvents = useMemo(
-    () => discoveryEvents.filter((event) => hasEventNotEnded(event, today)),
-    [today],
+    () =>
+      discoveryEvents.filter((event) =>
+        hasEventNotEnded(event, highlightClock),
+      ),
+    [highlightClock],
   );
   const festivalPool = useMemo(() => {
     const activeFestivals = activeDiscoveryEvents.filter(
@@ -740,7 +774,7 @@ export function StadenApp() {
             intent: discoveryIntent,
             mode: discoveryMode,
             lifeRhythm,
-            affinities: journalAffinities,
+            affinities: combinedAffinities,
           })
         : [],
     [
@@ -749,18 +783,48 @@ export function StadenApp() {
       discoveryMode,
       highlightClock,
       lifeRhythm,
-      journalAffinities,
+      combinedAffinities,
     ],
   );
   const discoveryRecommendation = useMemo(
     () => pickDiscovery(discoveryOrder, skippedRecommendationIds),
     [discoveryOrder, skippedRecommendationIds],
   );
-  const discoverySelectionLabel =
-    discoveryMode === "overraska"
+  const discoverySelectionLabel = discoveryForYou
+    ? "För dig"
+    : discoveryMode === "overraska"
       ? "Överraska mig"
       : discoveryModes.find((mode) => mode.id === discoveryMode)?.label ??
         discoveryIntents.find((intent) => intent.id === discoveryIntent)?.label;
+  const discoveryFeed = useMemo<SearchResult[]>(
+    () =>
+      buildDiscoveryOrder({
+        cultureEvents: activeDiscoveryEvents,
+        entertainment: entertainmentExperiences,
+        snapshot: highlightClock,
+        intent: null,
+        mode: "overraska",
+        lifeRhythm,
+        affinities: combinedAffinities,
+      })
+        .slice(0, 6)
+        .map((pick) => ({
+          key: pick.key,
+          kind: pick.kind,
+          id: pick.id,
+          title: pick.title,
+          subtitle:
+            pick.venue && pick.venue !== pick.area
+              ? `${pick.venue} · ${pick.area}`
+              : pick.area,
+          categoryLabel: pick.categoryLabel,
+          area: pick.area,
+          mapQuery: pick.mapQuery,
+          sourceUrl: pick.sourceUrl,
+          isFree: pick.isFree,
+        })),
+    [activeDiscoveryEvents, highlightClock, lifeRhythm, combinedAffinities],
+  );
   const hasAnotherDiscoveryRecommendation = useMemo(
     () =>
       discoveryRecommendation
@@ -1016,6 +1080,15 @@ export function StadenApp() {
     openCultureCategory("Alla");
   }
 
+  function resetCultureFilters() {
+    setActiveCategory("Alla");
+    setCultureQuery("");
+    setCultureScope("alla");
+    setCultureVenueScope("alla");
+    setShowAllCultureResults(false);
+    clearNearbyLocation();
+  }
+
   function showMusicInCulture() {
     navigateToView("kultur");
     openCultureCategory("Musik");
@@ -1024,12 +1097,21 @@ export function StadenApp() {
   function chooseDiscoveryIntent(intent: CulturalDiscoveryIntent) {
     setDiscoveryIntent(intent);
     setDiscoveryMode(null);
+    setDiscoveryForYou(false);
     setSkippedRecommendationIds([]);
   }
 
   function chooseDiscoveryMode(mode: DiscoveryMode) {
     setDiscoveryMode(mode);
     setDiscoveryIntent(null);
+    setDiscoveryForYou(false);
+    setSkippedRecommendationIds([]);
+  }
+
+  function chooseForYou() {
+    setDiscoveryMode("overraska");
+    setDiscoveryIntent(null);
+    setDiscoveryForYou(true);
     setSkippedRecommendationIds([]);
   }
 
@@ -1083,6 +1165,9 @@ export function StadenApp() {
         aria-hidden={overlayOpen ? "true" : undefined}
         inert={overlayOpen ? true : undefined}
       >
+      <a className="skip-link" href="#huvudinnehall">
+        Hoppa till innehållet
+      </a>
       <header className="site-header">
         <nav className="desktop-main-nav" aria-label="Sektioner">
           <a
@@ -1139,6 +1224,14 @@ export function StadenApp() {
           STADEN
         </a>
         <div className="header-actions">
+          <button
+            type="button"
+            className="search-trigger"
+            aria-label="Sök i staden"
+            onClick={() => setSearchOpen(true)}
+          >
+            <MagnifyingGlass aria-hidden="true" size={18} weight="bold" />
+          </button>
           <a
             className="saved-shortcut"
             href="#profil"
@@ -1157,7 +1250,7 @@ export function StadenApp() {
         </div>
       </header>
 
-      <main className="view-main">
+      <main className="view-main" id="huvudinnehall">
       <AmbientCityField />
 
       {activeView === "home" ? (
@@ -1220,7 +1313,9 @@ export function StadenApp() {
           <div className="hero-art__shade" />
           <div className="hero-art__stamp">
             <Sparkle aria-hidden="true" size={18} weight="fill" />
-            <span>{String(culturalEvents.length).padStart(2, "0")} NYA</span>
+            <span>
+              {String(culturalEvents.length).padStart(2, "0")} KULTURVAL
+            </span>
           </div>
           <div className="event-caption">
             <span>GÖTEBORG I SEPTEMBER</span>
@@ -1289,6 +1384,18 @@ export function StadenApp() {
               <Sparkle aria-hidden="true" size={17} weight="fill" />
               Överraska mig
             </button>
+            {hasAffinitySignal(combinedAffinities) ? (
+              <button
+                type="button"
+                className={`discovery-foryou${
+                  discoveryForYou ? " is-active" : ""
+                }`}
+                aria-pressed={discoveryForYou}
+                onClick={chooseForYou}
+              >
+                För dig
+              </button>
+            ) : null}
           </div>
 
           <div className="discovery-liferytm">
@@ -1567,7 +1674,7 @@ export function StadenApp() {
           onClick={openCultureNowOrSoon}
         >
           <span>NU & SNART</span>
-          <strong>{cultureNowOrSoonCount} val för idag och imorgon</strong>
+          <strong>{cultureNowOrSoonCount} val de närmaste tre dagarna</strong>
           <ArrowDownRight aria-hidden="true" size={22} weight="bold" />
         </button>
 
@@ -1867,29 +1974,43 @@ export function StadenApp() {
               Visar {visibleCultureEvents.length} av {visibleCount} träffar
             </p>
 
-            <div className="event-grid">
-              {visibleCultureEvents.map((event, index) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                number={index + 1}
-                distanceMeters={
-                  nearby.point && culturePoints.get(event.id)
-                    ? distanceInMeters(
-                        nearby.point,
-                        culturePoints.get(event.id)!,
-                      )
-                    : null
-                }
-                approximateDistance={
-                  nearby.source === "manual" ||
-                  culturePoints.get(event.id)?.precision === "area"
-                }
-                isSaved={savedEventIds.includes(event.id)}
-                onToggleSave={toggleSavedEvent}
-              />
-              ))}
-            </div>
+            {visibleCount === 0 ? (
+              <div className="culture-empty-state" role="status">
+                <p className="kicker">INGEN TRÄFF ÄN</p>
+                <h4>Prova en öppnare väg in.</h4>
+                <p>
+                  Sökningen och filtren gav ingen träff. Rensa dem för att se
+                  hela den aktuella kulturkatalogen igen.
+                </p>
+                <button type="button" onClick={resetCultureFilters}>
+                  Rensa alla filter
+                </button>
+              </div>
+            ) : (
+              <div className="event-grid">
+                {visibleCultureEvents.map((event, index) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    number={index + 1}
+                    distanceMeters={
+                      nearby.point && culturePoints.get(event.id)
+                        ? distanceInMeters(
+                            nearby.point,
+                            culturePoints.get(event.id)!,
+                          )
+                        : null
+                    }
+                    approximateDistance={
+                      nearby.source === "manual" ||
+                      culturePoints.get(event.id)?.precision === "area"
+                    }
+                    isSaved={savedEventIds.includes(event.id)}
+                    onToggleSave={toggleSavedEvent}
+                  />
+                ))}
+              </div>
+            )}
 
             {filteredCultureEvents.length > 5 ? (
               <button
@@ -2175,6 +2296,12 @@ export function StadenApp() {
           </section>
         </div>
       ) : null}
+
+      <SokOverlay
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        discoveries={discoveryFeed}
+      />
 
       {journalSubject ? (
         <JournalPrompt

@@ -18,6 +18,10 @@ html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body { background: var(--paper); color: var(--ink); font-family: var(--font-geist-sans), Arial, sans-serif; margin: 0px; }
 
+.skip-link { background: var(--ink); color: var(--paper); font-family: var(--font-geist-mono), monospace; letter-spacing: .08em; text-transform: uppercase; z-index: 100; min-height: 44px; padding: 13px 16px; font-size: .65rem; font-weight: 750; text-decoration: none; position: fixed; top: 12px; left: 12px; transform: translateY(calc(-100% - 24px)); transition: transform 160ms ease-out; }
+
+.skip-link:focus { transform: translateY(0); }
+
 .content-view h1[tabindex="-1"]:focus,
 .content-view h2[tabindex="-1"]:focus {
   outline: none;
@@ -998,6 +1002,16 @@ h1 em { color: var(--signal); font-family: var(--font-editorial-serif), Georgia,
 .culture-scope button.is-active { color: var(--paper); background: var(--ink); }
 
 .results-count { color: var(--muted); font-family: var(--font-geist-mono), monospace; letter-spacing: 0.1em; text-transform: uppercase; margin: 24px 0px 14px; font-size: 0.6rem; }
+
+.culture-empty-state { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); justify-items: start; gap: 12px; padding: 46px 0; display: grid; }
+
+.culture-empty-state .kicker { margin-bottom: 8px; }
+
+.culture-empty-state h4 { font-family: var(--story-font); letter-spacing: var(--story-spacing); max-width: 12ch; margin: 0; font-size: clamp(2.2rem, 9vw, 4.4rem); font-weight: 560; line-height: .9; }
+
+.culture-empty-state > p:last-of-type { color: var(--muted); max-width: 34rem; margin-bottom: 8px; line-height: 1.55; }
+
+.culture-empty-state button { background: var(--ink); color: var(--paper); font-family: var(--font-geist-mono), monospace; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--ink); min-height: 46px; padding: 0 16px; font-size: .64rem; font-weight: 750; }
 
 .featured-event { background: var(--signal); color: var(--on-signal); gap: 34px; min-height: 470px; margin-bottom: 14px; padding: 22px; display: grid; }
 

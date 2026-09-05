@@ -1,0 +1,243 @@
+/* Calm controls and compact, inspectable results for Mat and Nöje. */
+.explorer-refined :is(#mat-kok, #mat-guider, #noje-teman, #noje-filter, #noje-resultat) {
+  scroll-margin-top: 110px;
+}
+
+.explorer-jump-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 26px;
+}
+
+.explorer-jump-links button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 14px;
+  color: inherit;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  font-size: .8rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.explorer-jump-links button:first-child {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--on-signal);
+}
+
+.explorer-refined .food-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 28px;
+}
+
+.explorer-refined .food-stats > div,
+.explorer-refined .food-stats > div:nth-child(-n+2) {
+  min-height: 88px;
+  padding: 14px 8px;
+  border-bottom: 0;
+  border-right: 1px solid var(--line);
+}
+
+.explorer-refined .food-stats > div:first-child { padding-left: 0; }
+.explorer-refined .food-stats > div:last-child { border-right: 0; }
+.explorer-refined .food-stats strong { font-size: 2.25rem; }
+.explorer-refined .food-stats span { margin-top: 10px; font-size: .6rem; overflow-wrap: anywhere; }
+
+.explorer-refined .food-filter-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.explorer-refined .entertainment-filter-panel {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.explorer-refined :is(.food-search, .entertainment-search) {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  grid-row: auto;
+  min-width: 0;
+  min-height: 56px;
+  gap: 10px;
+  padding: 0 12px;
+}
+
+.explorer-refined :is(.food-search, .entertainment-search) input {
+  min-height: 48px;
+  font-size: 1rem;
+}
+
+.explorer-refined :is(.food-search, .entertainment-search) input::-webkit-search-cancel-button { display: none; }
+
+.explorer-refined :is(.food-search, .entertainment-search) > button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -8px;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+}
+
+.explorer-filter-disclosure { min-width: 0; border-top: 1px solid var(--line); }
+
+.explorer-filter-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  min-height: 52px;
+  padding-block: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+  font-size: .8rem;
+  font-weight: 650;
+}
+
+.explorer-filter-disclosure > summary::-webkit-details-marker,
+.restaurant-practical > summary::-webkit-details-marker { display: none; }
+
+.explorer-filter-disclosure > summary > span { display: inline-flex; align-items: center; gap: 10px; }
+.explorer-filter-disclosure > summary > span:last-child { color: var(--muted); font-size: .72rem; }
+.explorer-filter-disclosure[open] > summary > span:last-child > svg { transform: rotate(180deg); }
+.explorer-filter-disclosure[open] > summary { margin-bottom: 6px; }
+
+.explorer-refined .food-collections { margin-top: 0; }
+.explorer-refined .food-collections button { min-height: 82px; gap: 10px; padding: 12px; }
+.explorer-refined .food-collection__topline strong { font-family: inherit; font-size: .85rem; line-height: 1.2; letter-spacing: -.02em; }
+.explorer-refined .food-collections button > span:last-child { font-family: inherit; font-size: .7rem; letter-spacing: 0; text-transform: none; }
+.explorer-refined .food-controls { gap: 10px; margin-top: 22px; }
+.explorer-filter-label { color: var(--muted); margin: 0; font-size: .76rem; line-height: 1.5; }
+.explorer-refined .price-filters { flex-wrap: wrap; overflow: visible; }
+.explorer-refined :is(.price-filters button, .entertainment-filter-group button) { border-radius: 0; font-size: .75rem; }
+.explorer-refined .entertainment-filter-group { margin-top: 20px; }
+.explorer-refined .entertainment-filter-group > p { font-size: .64rem; }
+.explorer-refined .entertainment-filter-group > div { flex-wrap: wrap; margin: 0; padding: 0; overflow: visible; }
+
+.explorer-active-filters { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+
+.explorer-active-filters button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 11px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  text-align: left;
+  font-size: .73rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.explorer-active-filters button > svg { flex: 0 0 auto; }
+.explorer-active-filters .explorer-reset { border-color: transparent; background: transparent; text-decoration: underline; text-underline-offset: 4px; }
+
+.explorer-refined :is(.food-results-heading, .entertainment-results-heading) {
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 64px;
+}
+
+.explorer-refined :is(.food-results-heading, .entertainment-results-heading) > p { font-size: .7rem; line-height: 1.5; }
+
+.explorer-refined :is(.food-results-heading, .entertainment-results-heading) > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ink);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: 650 .76rem var(--font-geist-sans), sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.explorer-more-categories {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  width: 100%;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: .78rem;
+  font-weight: 650;
+}
+
+.explorer-more-categories[aria-expanded="true"] > svg { transform: rotate(180deg); }
+.explorer-refined .restaurant-card { min-height: 0; padding: 20px; }
+.explorer-refined .restaurant-card__body { margin: 26px 0 20px; }
+.explorer-refined .restaurant-card__body h3 { font-size: clamp(2rem, 7.5vw, 3.1rem); line-height: 1; margin-bottom: 14px; }
+.explorer-refined .restaurant-card__body > p:last-child { margin-bottom: 0; font-size: .86rem; line-height: 1.6; }
+.explorer-refined .restaurant-card__actions { margin-top: auto; padding-top: 18px; }
+.explorer-refined .restaurant-card__best-for { margin-block: 16px; }
+.restaurant-practical { border-block: 1px solid var(--line); margin-top: 18px; }
+.restaurant-practical > summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; cursor: pointer; list-style: none; font-size: .78rem; font-weight: 650; }
+.restaurant-practical[open] > summary svg { transform: rotate(180deg); }
+.restaurant-practical .restaurant-card__hours { display: flex; align-items: flex-start; gap: 10px; margin: 6px 0 16px; font-size: .8rem; line-height: 1.5; }
+.restaurant-practical .restaurant-card__hours > svg { flex-shrink: 0; margin-top: 3px; }
+.restaurant-practical .restaurant-card__hours small { display: block; color: var(--muted); font-size: .7rem; }
+.restaurant-practical .restaurant-card__contact { border-top: 0; margin-top: 0; padding-top: 0; margin-bottom: 8px; }
+
+.explorer-pagination { margin-top: 22px; }
+.explorer-pagination > p { color: var(--muted); font: .72rem var(--font-geist-mono), monospace; }
+.explorer-refined .food-empty-state { align-items: flex-start; gap: 14px; flex-direction: column; }
+.explorer-refined .food-empty-state h3 { font-family: var(--story-font); font-size: 2rem; font-weight: 550; line-height: 1.1; margin: 0; }
+.explorer-refined .food-empty-state p { max-width: 48ch; margin: 0; line-height: 1.6; }
+
+.explorer-save-feedback {
+  position: fixed;
+  z-index: 120;
+  right: 16px;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(400px, calc(100% - 32px));
+  margin: 0;
+  padding: 12px 12px 12px 16px;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: 1px solid var(--ink);
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--ink) 15%, transparent);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+.explorer-save-feedback button { display: grid; place-items: center; flex: 0 0 44px; height: 44px; color: inherit; border: 0; background: transparent; padding: 0; }
+
+@media (min-width: 760px) {
+  .explorer-refined .food-stats > div { min-height: 104px; padding: 18px; }
+  .explorer-refined .food-stats strong { font-size: 2.8rem; }
+  .explorer-save-feedback { bottom: 24px; right: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explorer-refined details > summary svg,
+  .explorer-more-categories > svg { transition: none; }
+}
