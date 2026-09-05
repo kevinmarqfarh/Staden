@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MagnifyingGlass, X, ArrowUpRight, MapPin } from "@phosphor-icons/react";
-import { MapLink } from "@/components/map-link";
+import { MagnifyingGlass, X, ArrowUpRight, ArrowRight } from "@phosphor-icons/react";
 import { searchAll, searchableCount, type SearchResult, type SearchKind } from "@/lib/search";
 
 type SokOverlayProps = {
   open: boolean;
   onClose: () => void;
+  onSelect: (result: SearchResult) => void;
   discoveries?: SearchResult[];
 };
 
@@ -19,41 +19,55 @@ const KIND_LABEL: Record<SearchKind, string> = {
 
 const KIND_ORDER: SearchKind[] = ["kultur", "noje", "mat"];
 
-function ResultRow({ result }: { result: SearchResult }) {
+function ResultRow({
+  result,
+  onSelect,
+}: {
+  result: SearchResult;
+  onSelect: (result: SearchResult) => void;
+}) {
   return (
-    <li className="sok-result">
-      <div className="sok-result__body">
-        <span className={`sok-badge sok-badge--${result.kind}`}>
-          {KIND_LABEL[result.kind]}
+    <li className="sok-result-row">
+      <button
+        type="button"
+        className="sok-result"
+        onClick={() => {
+          onSelect(result);
+        }}
+      >
+        <span className="sok-result__body">
+          <span className={`sok-badge sok-badge--${result.kind}`}>
+            {KIND_LABEL[result.kind]}
+          </span>
+          <span className="sok-result__title">{result.title}</span>
+          <span className="sok-result__meta">
+            {result.subtitle}
+            {result.isFree ? <span className="sok-result__free"> · Gratis</span> : null}
+          </span>
         </span>
-        <h4 className="sok-result__title">{result.title}</h4>
-        <p className="sok-result__meta">
-          {result.subtitle}
-          {result.isFree ? <span className="sok-result__free"> · Gratis</span> : null}
-        </p>
-      </div>
-      <div className="sok-result__actions">
-        <MapLink query={result.mapQuery} label={result.title} className="sok-action">
-          <MapPin size={15} weight="bold" aria-hidden="true" />
-          <span>Karta</span>
-        </MapLink>
-        {result.sourceUrl ? (
-          <a
-            className="sok-action"
-            href={result.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span>Källa</span>
-            <ArrowUpRight size={15} weight="bold" aria-hidden="true" />
-          </a>
-        ) : null}
-      </div>
+        <ArrowRight
+          className="sok-result__go"
+          size={18}
+          weight="bold"
+          aria-hidden="true"
+        />
+      </button>
+      {result.sourceUrl ? (
+        <a
+          className="sok-result__source"
+          href={result.sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>Källa</span>
+          <ArrowUpRight size={13} weight="bold" aria-hidden="true" />
+        </a>
+      ) : null}
     </li>
   );
 }
 
-export function SokOverlay({ open, onClose, discoveries }: SokOverlayProps) {
+export function SokOverlay({ open, onClose, onSelect, discoveries }: SokOverlayProps) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -141,7 +155,7 @@ export function SokOverlay({ open, onClose, discoveries }: SokOverlayProps) {
                 </p>
                 <ul className="sok-list">
                   {discoveries.map((result) => (
-                    <ResultRow key={result.key} result={result} />
+                    <ResultRow key={result.key} result={result} onSelect={onSelect} />
                   ))}
                 </ul>
               </section>
@@ -172,7 +186,7 @@ export function SokOverlay({ open, onClose, discoveries }: SokOverlayProps) {
                   </p>
                   <ul className="sok-list">
                     {group.items.map((result) => (
-                      <ResultRow key={result.key} result={result} />
+                      <ResultRow key={result.key} result={result} onSelect={onSelect} />
                     ))}
                   </ul>
                 </div>

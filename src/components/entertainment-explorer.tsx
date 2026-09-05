@@ -440,7 +440,11 @@ export function EntertainmentExplorer() {
                 const isSaved = savedEntertainmentIds.includes(item.id);
 
                 return (
-                <div className="experience-row-wrap" key={item.id}>
+                <div
+                  className="experience-row-wrap"
+                  key={item.id}
+                  data-object-id={`noje:${item.id}`}
+                >
                 <details className="experience-row">
                   <summary>
                     <span className="experience-row__number">

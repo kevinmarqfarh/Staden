@@ -486,7 +486,10 @@ function EventCard({
   onToggleSave: (id: string) => void;
 }) {
   return (
-    <article className={`event-card event-card--${event.category.toLowerCase()}`}>
+    <article
+      className={`event-card event-card--${event.category.toLowerCase()}`}
+      data-object-id={`kultur:${event.id}`}
+    >
       <div className="event-card__topline">
         <span>{String(number).padStart(2, "0")}</span>
         <div className="event-card__badges">
@@ -598,6 +601,10 @@ export function StadenApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [discoveryForYou, setDiscoveryForYou] = useState(false);
+  const [locateTarget, setLocateTarget] = useState<{
+    kind: string;
+    id: string;
+  } | null>(null);
   const [activeView, setActiveView] = useState<AppView>("home");
   const [discoveryIntent, setDiscoveryIntent] =
     useState<CulturalDiscoveryIntent | null>(null);
@@ -1114,6 +1121,58 @@ export function StadenApp() {
     setDiscoveryForYou(true);
     setSkippedRecommendationIds([]);
   }
+
+  function locateFromSearch(result: SearchResult) {
+    setSearchOpen(false);
+    if (result.kind === "kultur") {
+      setCultureCatalogOpen(true);
+      setShowAllCultureResults(true);
+      setCultureQuery(result.title);
+    }
+    setLocateTarget({ kind: result.kind, id: result.id });
+    navigateToView(
+      result.kind === "kultur"
+        ? "kultur"
+        : result.kind === "noje"
+          ? "noje"
+          : "mat",
+    );
+  }
+
+  useEffect(() => {
+    if (!locateTarget) return;
+    const expectedView =
+      locateTarget.kind === "kultur"
+        ? "kultur"
+        : locateTarget.kind === "noje"
+          ? "noje"
+          : "mat";
+    if (activeView !== expectedView) return;
+
+    let cancelled = false;
+    const selector = `[data-object-id="${locateTarget.kind}:${locateTarget.id}"]`;
+
+    function tryLocate(attempt: number) {
+      if (cancelled) return;
+      const element = document.querySelector<HTMLElement>(selector);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.classList.add("is-located");
+        window.setTimeout(() => element.classList.remove("is-located"), 2400);
+        setLocateTarget(null);
+      } else if (attempt < 10) {
+        window.setTimeout(() => tryLocate(attempt + 1), 220);
+      } else {
+        setLocateTarget(null);
+      }
+    }
+
+    const timer = window.setTimeout(() => tryLocate(0), 280);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [locateTarget, activeView]);
 
   function showAnotherRecommendation() {
     if (!discoveryRecommendation) {
@@ -2300,6 +2359,7 @@ export function StadenApp() {
       <SokOverlay
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
+        onSelect={locateFromSearch}
         discoveries={discoveryFeed}
       />
 
