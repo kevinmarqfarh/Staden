@@ -405,3 +405,22 @@
   background: var(--signal);
   color: var(--on-signal);
 }
+
+/* Hittat-från-sök — kort highlight på objektet man klickade fram */
+.is-located {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+  border-radius: 2px;
+  animation: staden-locate 2.4s ease-out both;
+}
+
+@keyframes staden-locate {
+  0% { outline-color: transparent; }
+  12% { outline-color: var(--signal); }
+  70% { outline-color: var(--signal); }
+  100% { outline-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-located { animation: none; }
+}
