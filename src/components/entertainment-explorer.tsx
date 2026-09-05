@@ -8,6 +8,7 @@ import {
   Check,
   MagnifyingGlass,
   MapPin,
+  SlidersHorizontal,
   X,
 } from "@phosphor-icons/react";
 import { useMemo, useState, useSyncExternalStore } from "react";
@@ -23,12 +24,17 @@ import {
 } from "@/data/entertainment";
 import { MapLink } from "@/components/map-link";
 import { NearbyControl } from "@/components/nearby-control";
-import { useNearbyLocation } from "@/hooks/use-nearby-location";
+import { useHighlightClock } from "@/hooks/use-highlight-clock";
+import { clearNearbyLocation, useNearbyLocation } from "@/hooks/use-nearby-location";
 import {
   distanceInMeters,
   formatDistance,
   resolveGothenburgPoint,
 } from "@/lib/geo";
+import {
+  dateKeyFromHighlightSnapshot,
+  isHighlightWindowActive,
+} from "@/lib/highlights";
 import {
   getSavedEntertainmentSnapshot,
   getServerSavedEntertainmentSnapshot,
@@ -72,16 +78,21 @@ function normalize(value: string) {
     .toLocaleLowerCase("sv-SE");
 }
 
-function scrollToCatalogue() {
+function scrollToCatalogue(id = "noje-resultat") {
   const reduceMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
 
   window.requestAnimationFrame(() => {
-    document.getElementById("noje-katalog")?.scrollIntoView({
+    const target = document.getElementById(id);
+    target?.scrollIntoView({
       behavior: reduceMotion ? "auto" : "smooth",
       block: "start",
     });
+    if (target) {
+      target.tabIndex = -1;
+      target.focus({ preventScroll: true });
+    }
   });
 }
 
@@ -90,8 +101,19 @@ export function EntertainmentExplorer() {
   const [category, setCategory] = useState<CategoryFilter>("Alla");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("alla");
   const [query, setQuery] = useState("");
-  const [showAll, setShowAll] = useState(false);
+  const [visibleLimit, setVisibleLimit] = useState(INITIAL_RESULT_COUNT);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const nearby = useNearbyLocation();
+  const highlightClock = useHighlightClock(entertainmentVerifiedAt);
+  const today = dateKeyFromHighlightSnapshot(highlightClock);
+  const activeJourneys = useMemo(
+    () =>
+      entertainmentJourneys.filter((journey) =>
+        isHighlightWindowActive(journey, today),
+      ),
+    [today],
+  );
   const savedEntertainmentSnapshot = useSyncExternalStore(
     subscribeToSavedEntertainment,
     getSavedEntertainmentSnapshot,
@@ -145,15 +167,13 @@ export function EntertainmentExplorer() {
       });
   }, [audience, category, nearby.point, nearby.radiusMeters, query, quickFilter]);
 
-  const visibleExperiences = showAll
-    ? filteredExperiences
-    : filteredExperiences.slice(0, INITIAL_RESULT_COUNT);
+  const visibleExperiences = filteredExperiences.slice(0, visibleLimit);
   const freeCount = entertainmentExperiences.filter((item) => item.free).length;
   const indoorCount = entertainmentExperiences.filter(
     (item) => item.setting !== "UTE",
   ).length;
-  const isFiltered =
-    audience !== "alla" || category !== "Alla" || quickFilter !== "alla" || Boolean(query);
+  const activeFilterCount = Number(audience !== "alla") + Number(category !== "Alla") +
+    Number(quickFilter !== "alla") + Number(Boolean(query.trim())) + Number(Boolean(nearby.point));
   const verifiedDate = new Intl.DateTimeFormat("sv-SE", {
     day: "numeric",
     month: "short",
@@ -165,12 +185,13 @@ export function EntertainmentExplorer() {
     .toLocaleUpperCase("sv-SE");
 
   function resetResultLimit() {
-    setShowAll(false);
+    setVisibleLimit(INITIAL_RESULT_COUNT);
   }
 
   function chooseCategory(nextCategory: CategoryFilter) {
     setCategory(nextCategory);
     resetResultLimit();
+    scrollToCatalogue();
   }
 
   function applyJourney(
@@ -181,7 +202,7 @@ export function EntertainmentExplorer() {
     setCategory(categoryFilter);
     setQuickFilter("alla");
     setQuery("");
-    setShowAll(false);
+    resetResultLimit();
     scrollToCatalogue();
   }
 
@@ -190,7 +211,8 @@ export function EntertainmentExplorer() {
     setCategory("Alla");
     setQuickFilter("alla");
     setQuery("");
-    setShowAll(false);
+    resetResultLimit();
+    clearNearbyLocation();
   }
 
   function toggleSavedExperience(id: string) {
@@ -198,11 +220,21 @@ export function EntertainmentExplorer() {
       ? savedEntertainmentIds.filter((savedId) => savedId !== id)
       : [...savedEntertainmentIds, id];
 
-    writeSavedEntertainmentIds(next);
+    const didSave = writeSavedEntertainmentIds(next);
+    const name = entertainmentExperiences.find((item) => item.id === id)?.title;
+    setSaveMessage(didSave
+      ? savedEntertainmentIds.includes(id)
+        ? `${name} har tagits bort från Fickan.`
+        : `${name} finns nu i Fickan under Profil.`
+      : "Det gick inte att spara. Kontrollera att webbläsaren tillåter lokal lagring och försök igen.");
   }
 
   return (
-    <div className="entertainment-discovery">
+    <div className="entertainment-discovery explorer-refined">
+      <nav className="explorer-jump-links" aria-label="Hitta i nöjesguiden">
+        <button type="button" onClick={() => scrollToCatalogue("noje-filter")}><MagnifyingGlass aria-hidden="true" size={18} />Sök upplevelse</button>
+        <button type="button" onClick={() => scrollToCatalogue("noje-teman")}>Välj tema<ArrowDown aria-hidden="true" size={17} /></button>
+      </nav>
       <dl className="entertainment-stats" aria-label="Nöjesguidens omfattning">
         <div>
           <dt>UPPLEVELSER</dt>
@@ -225,17 +257,17 @@ export function EntertainmentExplorer() {
       <section className="entertainment-journeys" aria-labelledby="noje-start-title">
         <div className="entertainment-subheading">
           <div>
-            <p className="kicker">FYRA ENKLA STARTER</p>
+            <p className="kicker">STADEN VÄLJER</p>
             <h3 id="noje-start-title">Börja med en riktning.</h3>
           </div>
           <p>
-            Färdiga spår för den som inte vill börja med hundra val. Ett tryck
-            öppnar rätt del av katalogen, där du kan finjustera vidare.
+            En timme för dig själv eller en hel dag tillsammans? Välj en
+            riktning så hittar vi upplevelserna.
           </p>
         </div>
 
         <div className="entertainment-journey-list">
-          {entertainmentJourneys.map((journey) => (
+          {activeJourneys.map((journey) => (
             <button
               type="button"
               key={journey.id}
@@ -275,8 +307,8 @@ export function EntertainmentExplorer() {
             </p>
           </div>
 
-          <div className="entertainment-category-index" role="group" aria-label="Välj tema">
-            {entertainmentCategoryInfo.map((item, index) => {
+          <div className="entertainment-category-index" id="noje-teman" role="group" aria-label="Välj tema">
+            {entertainmentCategoryInfo.slice(0, showAllCategories ? undefined : 5).map((item, index) => {
               const count = entertainmentExperiences.filter(
                 (experience) => experience.category === item.id,
               ).length;
@@ -300,11 +332,14 @@ export function EntertainmentExplorer() {
             })}
           </div>
 
-          <div className="entertainment-filter-panel">
-            <label className="entertainment-search">
-              <span className="sr-only">Sök bland nöjen</span>
+          {entertainmentCategoryInfo.length > 5 ? <button className="explorer-more-categories" type="button" aria-expanded={showAllCategories} aria-controls="noje-teman" onClick={() => setShowAllCategories((current) => !current)}>{showAllCategories ? "Visa färre teman" : `Visa alla ${entertainmentCategoryInfo.length} teman`}<CaretDown aria-hidden="true" size={17} /></button> : null}
+
+          <div className="entertainment-filter-panel" id="noje-filter">
+            <div className="entertainment-search" role="search">
+              <label className="sr-only" htmlFor="entertainment-query">Sök bland nöjen</label>
               <MagnifyingGlass aria-hidden="true" size={20} />
               <input
+                id="entertainment-query"
                 type="search"
                 value={query}
                 placeholder="Sök aktivitet, område eller känsla"
@@ -314,23 +349,22 @@ export function EntertainmentExplorer() {
                 }}
               />
               {query ? (
-                <button type="button" aria-label="Rensa sökning" onClick={() => setQuery("")}>
+                <button type="button" aria-label="Rensa nöjessökning" onClick={() => { setQuery(""); resetResultLimit(); }}>
                   <X aria-hidden="true" size={18} weight="bold" />
                 </button>
               ) : null}
-            </label>
+            </div>
+
+            <details className="explorer-filter-disclosure">
+              <summary>
+                <span><SlidersHorizontal aria-hidden="true" size={18} />Sällskap & känsla</span>
+                <span>{Number(audience !== "alla") + Number(quickFilter !== "alla") > 0 ? `${Number(audience !== "alla") + Number(quickFilter !== "alla")} valda` : "Valfritt"}<CaretDown aria-hidden="true" size={17} /></span>
+              </summary>
 
             <div className="entertainment-filter-group">
               <p>SÄLLSKAP</p>
-              <div>
+              <div role="group" aria-label="Välj sällskap">
                 {entertainmentAudienceOptions.map((option) => {
-                  const count =
-                    option.id === "alla"
-                      ? entertainmentExperiences.length
-                      : entertainmentExperiences.filter((item) =>
-                          item.audiences.includes(option.id as EntertainmentAudience),
-                        ).length;
-
                   return (
                     <button
                       type="button"
@@ -345,7 +379,6 @@ export function EntertainmentExplorer() {
                     >
                       {audience === option.id ? <Check aria-hidden="true" size={14} weight="bold" /> : null}
                       {option.label}
-                      <span>{count}</span>
                     </button>
                   );
                 })}
@@ -353,8 +386,8 @@ export function EntertainmentExplorer() {
             </div>
 
             <div className="entertainment-filter-group">
-              <p>LÄGE</p>
-              <div>
+              <p>VAD PASSAR IDAG?</p>
+              <div role="group" aria-label="Välj känsla">
                 {quickFilters.map((option) => (
                   <button
                     type="button"
@@ -372,18 +405,27 @@ export function EntertainmentExplorer() {
                 ))}
               </div>
             </div>
+            </details>
+            {activeFilterCount > 0 ? (
+              <div className="explorer-active-filters" aria-label="Valda nöjesfilter">
+                {query.trim() ? <button type="button" onClick={() => { setQuery(""); resetResultLimit(); }} aria-label="Ta bort söktext">{query.trim()}<X aria-hidden="true" size={14} /></button> : null}
+                {category !== "Alla" ? <button type="button" onClick={() => { setCategory("Alla"); resetResultLimit(); }} aria-label={`Ta bort temat ${category}`}>{category}<X aria-hidden="true" size={14} /></button> : null}
+                {audience !== "alla" ? <button type="button" onClick={() => { setAudience("alla"); resetResultLimit(); }} aria-label="Ta bort sällskap">{audienceLabels.get(audience)}<X aria-hidden="true" size={14} /></button> : null}
+                {quickFilter !== "alla" ? <button type="button" onClick={() => { setQuickFilter("alla"); resetResultLimit(); }} aria-label="Ta bort känsla">{quickFilters.find((option) => option.id === quickFilter)?.label}<X aria-hidden="true" size={14} /></button> : null}
+                {nearby.point ? <button type="button" onClick={() => { clearNearbyLocation(); resetResultLimit(); }} aria-label="Sök i hela Göteborg">Nära {nearby.label}<X aria-hidden="true" size={14} /></button> : null}
+                <button className="explorer-reset" type="button" onClick={resetFilters}>Rensa alla ({activeFilterCount})</button>
+              </div>
+            ) : null}
           </div>
 
-          <div className="entertainment-results-heading">
+          <div className="entertainment-results-heading" id="noje-resultat">
             <p aria-live="polite">
               {filteredExperiences.length} {filteredExperiences.length === 1 ? "TRÄFF" : "TRÄFFAR"}
               {nearby.point ? ` · NÄRMAST ${nearby.label?.toLocaleUpperCase("sv-SE")}` : ""}
               {category !== "Alla" ? ` · ${category.toLocaleUpperCase("sv-SE")}` : ""}
               {audience !== "alla" ? ` · ${audienceLabels.get(audience)?.toLocaleUpperCase("sv-SE")}` : ""}
             </p>
-            <button type="button" onClick={resetFilters} disabled={!isFiltered}>
-              Nollställ filter
-            </button>
+            <button type="button" onClick={() => scrollToCatalogue("noje-filter")}>Ändra filter<SlidersHorizontal aria-hidden="true" size={16} /></button>
           </div>
 
           {visibleExperiences.length ? (
@@ -483,27 +525,26 @@ export function EntertainmentExplorer() {
               <p className="kicker">INGA TRÄFFAR</p>
               <h4>Prova en större del av staden.</h4>
               <p>
-                Ta bort ett filter eller sök på ett område, till exempel Haga,
-                Hisingen eller skärgård.
+                {nearby.point ? "Inget matchar i närheten just nu. Prova hela Göteborg eller ta bort ett filter ovan." : "Ta bort ett filter eller prova Haga, Hisingen eller skärgården."}
               </p>
               <button type="button" onClick={resetFilters}>Visa alla nöjen</button>
             </div>
           )}
 
-          {filteredExperiences.length > INITIAL_RESULT_COUNT ? (
+          {filteredExperiences.length > visibleLimit ? (
+            <div className="explorer-pagination">
+            <p>Visar {visibleExperiences.length} av {filteredExperiences.length} upplevelser</p>
             <button
               type="button"
               className="entertainment-load-more"
-              aria-expanded={showAll}
-              onClick={() => setShowAll((current) => !current)}
+              onClick={() => setVisibleLimit((current) => current + INITIAL_RESULT_COUNT)}
             >
               <span>
-                {showAll
-                  ? "Visa det korta urvalet"
-                  : `Visa alla ${filteredExperiences.length} upplevelser`}
+                Visa {Math.min(INITIAL_RESULT_COUNT, filteredExperiences.length - visibleLimit)} till
               </span>
               <ArrowDown aria-hidden="true" size={20} weight="bold" />
             </button>
+            </div>
           ) : null}
 
           <div className="entertainment-source-note">
@@ -520,6 +561,7 @@ export function EntertainmentExplorer() {
           </div>
         </div>
       </section>
+      {saveMessage ? <p className="explorer-save-feedback" role="status">{saveMessage}<button type="button" onClick={() => setSaveMessage("")} aria-label="Stäng sparmeddelande"><X aria-hidden="true" size={17} /></button></p> : null}
     </div>
   );
 }

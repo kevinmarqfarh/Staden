@@ -31,6 +31,8 @@ export type RestaurantCuisine =
 export type Restaurant = {
   id: string;
   name: string;
+  highlightFrom?: string;
+  highlightUntil?: string;
   cuisine: RestaurantCuisine;
   flavours: string[];
   priceTier: RestaurantPriceTier;
@@ -3131,10 +3133,12 @@ const scannedRestaurants: Restaurant[] = [
       "Kommande restaurang med fisk och skaldjur i en korsning av New Orleans-, karibiska och västkustinspirerade smaker.",
     bestFor: ["Skaldjur", "Nyöppnat", "Middag"],
     sourceLabel: "Restaurangens webbplats",
-    sourceUrl: "https://ladylobster.se/",
+    sourceUrl: "https://ladylobster.se/faq/",
     websiteUrl: "https://ladylobster.se/",
-    opened: "september 2026",
-    lastVerified: "2026-08-27",
+    email: "info.gbg@ladylobster.se",
+    hours: "Tis–tors 16:00–23:00 · fre–lör 15:00–23:00 · sön 16:00–22:00",
+    opened: "23 september 2026",
+    lastVerified: "2026-09-03",
     verificationStatus: "editorial",
     isNew: true,
   },
@@ -3146,15 +3150,16 @@ const scannedRestaurants: Restaurant[] = [
     priceTier: 2,
     area: "Örgryte",
     address: "Sankt Sigfrids plan 7",
-    format: "Kommande bar & bistro",
+    format: "Bar & bistro",
     description:
-      "Ny bar och bistro vid Sankt Sigfrids plan med bordsbokning inför öppningen i september 2026.",
+      "Personlig kvarterskrog vid Sankt Sigfrids plan med säsongsmeny, bar och drop-in-platser.",
     bestFor: ["Middag", "Efter jobbet", "Nyöppnat"],
     sourceLabel: "Restaurangens webbplats",
     sourceUrl: "https://sanktas.com/",
     websiteUrl: "https://sanktas.com/",
     opened: "1 september 2026",
-    lastVerified: "2026-08-27",
+    hours: "Tis–tors 16:00–22:00 · fre–lör 16:00–22:30 · mån, sön stängt",
+    lastVerified: "2026-09-03",
     verificationStatus: "editorial",
     isNew: true,
   },
