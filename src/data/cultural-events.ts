@@ -4215,6 +4215,516 @@ const scannedCulturalEvents = [
     sourceUrl:
       "https://goteborgskonstmuseum.se/aktiviteter/program/?2026-10-02_18%3A00=",
   },
+  {
+    id: "dansa-afro-jazz-bergsjon-hosten-2026",
+    title: "Dansa afro/jazz",
+    category: "Scenkonst",
+    dateLabel: "19 sep–13 dec · en helg i månaden",
+    startDate: "2026-09-19",
+    endDate: "2026-12-13",
+    time: "13:00–14:30",
+    venue: "Kulturhuset Bergsjön, Lilla salen, Bergsjöns Kulturhusväg 4A",
+    area: "Bergsjön",
+    description:
+      "Barn 7–13 år får prova en mix av afro- och jazzdans med Naimi Brogiannis, utan krav på tidigare erfarenhet. Åtta tillfällen under hösten.",
+    sourceLabel: "Göteborgs Stad · Kulturhuset Bergsjön",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/kultur/kulturhus/program-pa-kulturhusen?activityId=5d419494-96b6-449b-a519-dfd45ecd4d67",
+    isFree: true,
+  },
+  {
+    id: "lilla-anggardslordag-skordetid-2026",
+    title: "Lilla Änggårdslördag: Skördetid",
+    category: "Museum",
+    dateLabel: "19 sep",
+    startDate: "2026-09-19",
+    time: "11:00–15:00",
+    venue: "Lilla Änggården, Thorild Wulffsgatan 75",
+    area: "Änggården",
+    description:
+      "En familjedag om stadsnära odling med äppelmustning, hus- och trädgårdsvisningar, skördeprovsmakning och skogsäventyr för barn.",
+    sourceLabel: "Göteborgs stadsmuseum",
+    sourceUrl:
+      "https://goteborgsstadsmuseum.se/aktivitet/lilla-anggardslordag-skordetid/?date=202609191100",
+  },
+  {
+    id: "poesiworkshop-se-kann-skriv-frolunda-2026",
+    title: "Poesiworkshop: Se. Känn. Skriv.",
+    category: "Skapande",
+    dateLabel: "18 sep",
+    startDate: "2026-09-18",
+    time: "17:00–18:15",
+    venue: "Frölunda Kulturhus, Valthornsgatan 13",
+    area: "Frölunda",
+    description:
+      "Skriv poesi med författaren Sara Garib utifrån samtida verk i Ut med konsten! Drop-in från 12 år och inga förkunskaper krävs.",
+    sourceLabel: "Göteborgs Stad · Frölunda bibliotek",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/bibliotek/alla-arrangemang-pa-biblioteken?activityId=da2f7996-f5c9-4173-ad6b-0e89e1d2a5da",
+    isFree: true,
+  },
+  {
+    id: "sonja-akesson-100-ar-stadsbiblioteket-2026",
+    title: "Sonja Åkesson 100 år",
+    category: "Litteratur",
+    dateLabel: "23 sep",
+    startDate: "2026-09-23",
+    time: "18:00–19:30",
+    venue: "Stadsbiblioteket, Hörsalen, Götaplatsen 3",
+    area: "Götaplatsen",
+    description:
+      "Litteraturvetaren Amelie Björck uppmärksammar Sonja Åkessons hundraårsdag och ett humoristiskt, skarpt och genreöverskridande författarskap.",
+    sourceLabel: "Göteborgs Stad · Stadsbiblioteket",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/bibliotek/alla-arrangemang-pa-biblioteken?activityId=330d2548-e12a-44b7-be39-278fca79112f",
+    isFree: true,
+  },
+  {
+    id: "todeloo-todelej-lagerhuset-2026",
+    title: "Todeloo och Todelej",
+    category: "Scenkonst",
+    dateLabel: "26 sep",
+    startDate: "2026-09-26",
+    time: "11:00–11:40",
+    venue: "Lagerhusets bibliotek, Heurlins plats 1",
+    area: "Masthugget",
+    description:
+      "Teater Trampolins lekfulla föreställning för barn 2–5 år utforskar rättvisa, motsatser och hur bästa vänner kan mötas och samsas. Föranmälan krävs.",
+    sourceLabel: "Göteborgs Stad · Lagerhusets bibliotek",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/bibliotek/alla-arrangemang-pa-biblioteken?activityId=5f4a5f78-3d60-443b-a1ec-b8c656bb1389",
+    isFree: true,
+  },
+  {
+    id: "cirkus-cirkor-lycka-till-2026",
+    title: "Cirkus Cirkör – Lycka till",
+    category: "Scenkonst",
+    dateLabel: "27 sep",
+    startDate: "2026-09-27",
+    time: "13:00 · cirka 45 min",
+    venue: "Stora Teatern, Stora scenen, Kungsparken 1",
+    area: "Centrum",
+    description:
+      "En ordlös familjeföreställning där tre cirkusartister gör känslor av lycka och stolthet konkreta med jonglering, slajm och akrobatik.",
+    sourceLabel: "Stora Teatern · Cirkus Cirkör",
+    sourceUrl:
+      "https://storateatern.se/sv/program/cirkus-cirkor-lycka-till/",
+    priceMaxSek: 255,
+    durationMinutes: 45,
+  },
+  {
+    id: "vad-styr-sanningen-kulturarvet-2026",
+    title: "Vad styr sanningen i kulturarvet?",
+    category: "Samtal",
+    dateLabel: "29 sep",
+    startDate: "2026-09-29",
+    time: "18:00–19:00",
+    venue: "Stadsbiblioteket, Hörsalen, Götaplatsen 3",
+    area: "Götaplatsen",
+    description:
+      "Mats Malm och Maria Bergius samtalar om hur litterära kulturarv omtolkas, med en kvinnlig apostel och den nya svenska bibelöversättningen som exempel.",
+    sourceLabel: "Göteborgs Stad · Stadsbiblioteket",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/bibliotek/alla-arrangemang-pa-biblioteken?activityId=52562440-9765-4990-bc07-576d58901bed",
+    isFree: true,
+  },
+  {
+    id: "kann-pa-museet-rohsska-hosten-2026",
+    title: "Känn på museet!",
+    category: "Museum",
+    dateLabel: "9 okt–4 dec · fem fredagar",
+    startDate: "2026-10-09",
+    endDate: "2026-12-04",
+    time: "10:15–11:00",
+    venue: "Röhsska museet, Vasagatan 37–39",
+    area: "Vasastaden",
+    description:
+      "En mjuk museistund för barn 1–3 år och vuxna med lek, rörelse och sinnesupptäckter i Inspiration Östasien. Platsbokning krävs.",
+    sourceLabel: "Röhsska museet",
+    sourceUrl: "https://rohsska.se/aktivitet/kann-pa-museet/",
+  },
+  {
+    id: "liv-hav-val-sjofartsmuseet-2026",
+    title: "Liv, Hav, Val",
+    category: "Samtal",
+    dateLabel: "21 okt",
+    startDate: "2026-10-21",
+    time: "18:00–19:00",
+    venue: "Sjöfartsmuseet Akvariet, Ostindiesalen, Karl Johansgatan 1–3",
+    area: "Majorna",
+    description:
+      "Dykaren, fotografen och författaren Martin Almqvist visar bilder av valar, delfiner och andra arter och berättar om livets koppling till havet.",
+    sourceLabel: "Sjöfartsmuseet Akvariet",
+    sourceUrl:
+      "https://www.sjofartsmuseetakvariet.se/aktivitet/liv-hav-val/?date=202610211800",
+  },
+  {
+    id: "svenska-fotobokspriset-stadsbiblioteket-2026",
+    title: "Utställning: Svenska Fotobokspriset 2026",
+    category: "Konst",
+    dateLabel: "23 sep",
+    startDate: "2026-09-23",
+    time: "10:00–18:00",
+    venue: "Stadsbiblioteket, plan 1, Götaplatsen 3",
+    area: "Götaplatsen",
+    description:
+      "Se vinnarboken, de nominerade verken och samtliga 138 bidrag till Svenska Fotobokspriset samt årets Artist Book-pris.",
+    sourceLabel: "Göteborgs Stad · Stadsbiblioteket",
+    sourceUrl:
+      "https://goteborg.se/wps/portal/start/uppleva-och-gora/bibliotek/alla-arrangemang-pa-biblioteken?activityId=02d5c865-bcbe-46d3-982a-ce237a6866f3",
+    isFree: true,
+  },
+  {
+    id: "mindful-qigong-rohsska-2026",
+    title: "Mindful Qigong i Inspiration Östasien",
+    category: "Museum",
+    dateLabel: "22 sep",
+    startDate: "2026-09-22",
+    time: "13:00–13:45",
+    venue: "Röhsska museet, Inspiration Östasien, Vasagatan 37–39",
+    area: "Vasastaden",
+    description:
+      "Prova långsamma qigongrörelser med fokus på andning, kropp och sinne mitt i museets östasiatiska inspirationsmiljö. Förbokning krävs.",
+    sourceLabel: "Röhsska museet",
+    sourceUrl:
+      "https://rohsska.se/aktivitet/mindful-qigong-i-inspiration-ostasien/?date=202609221300",
+    isFree: true,
+  },
+  {
+    id: "forma-en-kropp-konstmuseum-2026",
+    title: "Lördagar i Studion: Forma en kropp!",
+    category: "Skapande",
+    dateLabel: "26 sep",
+    startDate: "2026-09-26",
+    time: "12:00–14:00",
+    venue: "Göteborgs konstmuseum, Studion, Götaplatsen 6",
+    area: "Götaplatsen",
+    description:
+      "Barn 5–12 år och vuxna undersöker hur kroppen skildras i konsten och skapar sedan egna fantasifulla kroppar i Studion.",
+    sourceLabel: "Göteborgs konstmuseum",
+    sourceUrl:
+      "https://goteborgskonstmuseum.se/aktiviteter/lordagar-i-studion/?2026-09-26_12%3A00=",
+  },
+  {
+    id: "vad-hande-med-ingrid-folkteatern-2026",
+    title: "Vad hände med Ingrid?",
+    category: "Scenkonst",
+    dateLabel: "6 okt",
+    startDate: "2026-10-06",
+    time: "18:00–22:00",
+    venue: "Folkteatern, Foajén, Olof Palmes plats 5",
+    area: "Järntorget",
+    description:
+      "Ett bordsrollspel inför publik där Teater före stormen undersöker den bortglömda bruden i Peer Gynt med improviserad livemusik av Brick Notes.",
+    sourceLabel: "Folkteatern",
+    sourceUrl: "https://www.folkteatern.se/events/vad-hande-med-ingrid",
+    isFree: true,
+  },
+  {
+    id: "varifran-jag-faller-bokrelease-2026",
+    title: "Varifrån jag faller – bokrelease",
+    category: "Litteratur",
+    dateLabel: "14 okt",
+    startDate: "2026-10-14",
+    time: "18:30",
+    venue: "Folkteatern, Foajén, Olof Palmes plats 5",
+    area: "Järntorget",
+    description:
+      "Olle Sundström firar sin första diktsamling med poesi av nordiska scenpoeter och urpremiär för nyskriven körmusik.",
+    sourceLabel: "Folkteatern",
+    sourceUrl:
+      "https://www.folkteatern.se/events/varifran-jag-faller-bokrelease-14-okt",
+    isFree: true,
+  },
+  {
+    id: "ett-ovantat-besok-vikingatiden-2026",
+    title: "Ett oväntat besök i vikingatiden",
+    category: "Scenkonst",
+    dateLabel: "17 okt",
+    startDate: "2026-10-17",
+    time: "11:00–12:00 & 13:00–14:00",
+    venue: "Göteborgs stadsmuseum, Vikingr och Studion, Norra Hamngatan 12",
+    area: "Centrum",
+    description:
+      "FiaskoKompaniet bjuder barn 3–9 år på platsspecifik performance med rörelse, dockteater och ljud, följd av en lekfull workshop.",
+    sourceLabel: "Göteborgs stadsmuseum",
+    sourceUrl:
+      "https://goteborgsstadsmuseum.se/aktivitet/ett-ovantat-besok-i-vikingr/",
+  },
+  {
+    id: "performancenatt-7-2026",
+    title: "Performancenatt #7",
+    category: "Scenkonst",
+    dateLabel: "23 okt",
+    startDate: "2026-10-23",
+    time: "19:00–21:00",
+    venue: "3:e Våningen, Sockerbruket 9",
+    area: "Klippan",
+    description:
+      "Fyra koreografers verk fyller Kulturnatta med en dansspäckad kväll av performance, sorg, rörelse och nya perspektiv.",
+    sourceLabel: "3:e Våningen",
+    sourceUrl: "https://3vaningen.se/performancenatt-7-2026/",
+    isFree: true,
+  },
+  {
+    id: "hostlov-skapa-mosaiktavla-stadsmuseet-2026",
+    title: "Höstlov: Skapa din egen mosaiktavla!",
+    category: "Skapande",
+    dateLabel: "29 okt",
+    startDate: "2026-10-29",
+    time: "10:00–15:00",
+    venue: "Göteborgs stadsmuseum, Studion, Norra Hamngatan 12",
+    area: "Centrum",
+    description:
+      "En drop-in-workshop där gamla förpackningar, kartong och spillträ blir mosaik, kompletterad med korta visningar om 1700-talets skräp.",
+    sourceLabel: "Göteborgs stadsmuseum",
+    sourceUrl:
+      "https://goteborgsstadsmuseum.se/aktivitet/hostlov-skapa-din-egen-mosaiktavla/?date=202610291000",
+  },
+  {
+    id: "klimatet-kanslorna-framtiden-naturhistoriska-2026",
+    title: "Klimatet, känslorna och framtiden",
+    category: "Film",
+    dateLabel: "14 nov",
+    startDate: "2026-11-14",
+    time: "13:00–15:30",
+    venue: "Göteborgs naturhistoriska museum, biblioteket plan 4, Museivägen 10",
+    area: "Slottsskogen",
+    description:
+      "Dokumentären Klimatet i terapi följs av samtal med filmaren Nathan Grossman och en interaktiv workshop om klimatkrisens mänskliga sida.",
+    sourceLabel: "Göteborgs naturhistoriska museum",
+    sourceUrl:
+      "https://www.gnm.se/aktiviteter/kalendarium/filmvisning-och-workshop-klimatet-kanslorna-och-framtiden/",
+  },
+  {
+    id: "unrecognized-stadsteatern-2026",
+    title: "Unrecognized",
+    category: "Scenkonst",
+    dateLabel: "18 nov",
+    startDate: "2026-11-18",
+    venue: "Göteborgs Stadsteater, Stora Scen, Götaplatsen 4",
+    area: "Götaplatsen",
+    description:
+      "En internationell samproduktion där antika myter möter vittnesmål om krig, fördrivning, gränser och rätten att bli erkänd.",
+    sourceLabel: "Göteborgs Stadsteater",
+    sourceUrl:
+      "https://www.stadsteatern.goteborg.se/pa-scen/2026-2027/unrecognized/",
+    durationMinutes: 90,
+  },
+  {
+    id: "friskvaderstorgets-bibliotek-permanent-2026",
+    title: "Friskväderstorgets bibliotek",
+    category: "Litteratur",
+    dateLabel: "Permanent",
+    startDate: "2026-10-03",
+    time: "Aktuella öppettider hos Göteborgs Stad",
+    venue: "Friskväderstorgets bibliotek, Friskväderstorget 2",
+    area: "Biskopsgården",
+    description:
+      "Ett nytt områdesbibliotek med särskilt fokus på barn 0–12 år och deras vuxna, med böcker, läxplatser, brädspel, skaparyta och aktiviteter.",
+    sourceLabel: "Göteborgs Stad · Friskväderstorgets bibliotek",
+    sourceUrl:
+      "https://goteborg.se/wps/portal?uri=gbglnk%3A2023427850391",
+    isFree: true,
+    isOngoing: true,
+  },
+  {
+    id: "husets-harmonier-gso-hosten-2026",
+    title: "Guidad tur: Husets harmonier",
+    category: "Konst",
+    dateLabel: "20 sep–14 nov · tre visningar",
+    startDate: "2026-09-20",
+    endDate: "2026-11-14",
+    time: "20 sep 11:00 · 11 okt 13:00 · 14 nov 11:00",
+    venue: "Göteborgs Konserthus, Götaplatsen 8",
+    area: "Götaplatsen",
+    description:
+      "En guidad tur genom konserthusets nordiska funktionalism med fokus på arkitektur, design, konst och husets konstnärliga val.",
+    sourceLabel: "Göteborgs Konserthus",
+    sourceUrl:
+      "https://www.gso.se/program/konserter/guidad-tur-goteborgs-konserthus/",
+    durationMinutes: 60,
+  },
+  {
+    id: "expedition-son-doong-naturhistoriska-2026",
+    title: "Föredrag: Expedition i Sơn Đoòng",
+    category: "Museum",
+    dateLabel: "4 okt",
+    startDate: "2026-10-04",
+    time: "13:00–14:00",
+    venue:
+      "Göteborgs naturhistoriska museum, föreläsningssalen plan 3, Museivägen 10",
+    area: "Slottsskogen",
+    description:
+      "Amatörgeologen Rolf Saxmark berättar om fyra dygn i världens största grotta, Sơn Đoòng i Vietnam, och om expeditionens strapatser och oväntade lyx.",
+    sourceLabel: "Göteborgs naturhistoriska museum",
+    sourceUrl:
+      "https://www.gnm.se/aktiviteter/kalendarium/foredrag-expedition-i-sn-oong/",
+    durationMinutes: 60,
+  },
+  {
+    id: "naltovning-djuren-i-staden-naturhistoriska-2026",
+    title: "Skaparverkstad: Nåltovning – Djuren i staden",
+    category: "Skapande",
+    dateLabel: "24–25 okt",
+    startDate: "2026-10-24",
+    endDate: "2026-10-25",
+    time: "12:00–15:00",
+    venue:
+      "Göteborgs naturhistoriska museum, Utsiktsrummet plan 3, Museivägen 10",
+    area: "Slottsskogen",
+    description:
+      "En drop-in-verkstad där barn och vuxna nåltovar djur ur höststaden tillsammans med slöjdare. Inga förkunskaper krävs.",
+    sourceLabel: "Göteborgs naturhistoriska museum",
+    sourceUrl:
+      "https://www.gnm.se/aktiviteter/kalendarium/skaparverkstad-naltovning-djuren-i-staden-24okt/",
+  },
+  {
+    id: "djuren-i-nattstaden-naturhistoriska-hostlov-2026",
+    title: "Höstlov: Djuren i nattstaden",
+    category: "Museum",
+    dateLabel: "26–30 okt · vardagar",
+    startDate: "2026-10-26",
+    endDate: "2026-10-30",
+    time: "12:00–14:00",
+    venue:
+      "Göteborgs naturhistoriska museum, Evolutionsrummet plan 3, Museivägen 10",
+    area: "Slottsskogen",
+    description:
+      "Museets pedagoger presenterar fladdermöss, igelkottar och andra djur som rör sig genom Göteborg när människorna sover.",
+    sourceLabel: "Göteborgs naturhistoriska museum",
+    sourceUrl:
+      "https://www.gnm.se/aktiviteter/kalendarium/hostlov-djuren-i-nattstaden-26okt/",
+  },
+  {
+    id: "vilda-fakta-naturhistoriska-hostlov-2026",
+    title: "Höstlov: Vilda fakta om …",
+    category: "Museum",
+    dateLabel: "26–30 okt · vardagar",
+    startDate: "2026-10-26",
+    endDate: "2026-10-30",
+    time: "14:00–15:00",
+    venue: "Göteborgs naturhistoriska museum, Museivägen 10",
+    area: "Slottsskogen",
+    description:
+      "En ny intendent möter besökarna varje dag för att visa föremål ur samlingarna, berätta om sitt expertområde och svara på frågor.",
+    sourceLabel: "Göteborgs naturhistoriska museum",
+    sourceUrl:
+      "https://www.gnm.se/aktiviteter/kalendarium/hostlov-vilda-fakta-om-26okt/",
+  },
+  {
+    id: "professor-silfverstrales-upptacktsresa-2026",
+    title: "Höstlov: Professor Silfverstråles upptäcktsresa",
+    category: "Museum",
+    dateLabel: "29 okt",
+    startDate: "2026-10-29",
+    time: "16:00–17:30 & 18:00–19:30",
+    venue: "Göteborgs naturhistoriska museum, foajén, Museivägen 10",
+    area: "Slottsskogen",
+    description:
+      "Barn 9–12 år blir upptäcktsresande, löser uppdrag i utställningarna tillsammans med en ledare och avslutar med fika. Föranmälan krävs.",
+    sourceLabel: "Göteborgs naturhistoriska museum",
+    sourceUrl:
+      "https://www.gnm.se/aktiviteter/kalendarium/hostlov-professor-silfverstrales-upptacktsresa/",
+  },
+  {
+    id: "guidade-turer-stadsteatern-hosten-2026",
+    title: "Guidade turer på Göteborgs Stadsteater",
+    category: "Scenkonst",
+    dateLabel: "1–29 okt · fyra visningar",
+    startDate: "2026-10-01",
+    endDate: "2026-10-29",
+    time: "1 okt 15:00 · 2 okt 15:30 · 27 okt 15:30 · 29 okt 15:00",
+    venue: "Göteborgs Stadsteater, huvudentrén, Götaplatsen 4",
+    area: "Götaplatsen",
+    description:
+      "Följ med bakom kulisserna till scener, kostymateljé och andra avdelningar i teaterhuset under en cirka 90 minuter lång vandring.",
+    sourceLabel: "Göteborgs Stadsteater",
+    sourceUrl:
+      "https://stadsteatern.goteborg.se/pa-scen/2026-2027/stadsteatern/guidade-turer/",
+    durationMinutes: 90,
+  },
+  {
+    id: "babyvisningar-roda-sten-hosten-2026",
+    title: "Babyvisningar på Röda Sten Konsthall",
+    category: "Konst",
+    dateLabel: "30 sep & 11 nov",
+    startDate: "2026-09-30",
+    endDate: "2026-11-11",
+    time: "10:30–11:30",
+    venue: "Röda Sten Konsthall, Röda Sten 1",
+    area: "Klippan",
+    description:
+      "En lugn guidad visning av Doruntina Kastratis utställning för vuxna med barn upp till krypåldern, med utrymme för pauser och matning.",
+    sourceLabel: "Röda Sten Konsthall",
+    sourceUrl:
+      "https://rodastenkonsthall.se/programpunkt/babyvisningar/",
+    durationMinutes: 60,
+  },
+  {
+    id: "goteborg-baroque-katedralen-roda-sten-2026",
+    title: "Göteborg Baroque i Katedralen",
+    category: "Musik",
+    dateLabel: "3 okt",
+    startDate: "2026-10-03",
+    time: "18:00–19:00",
+    venue: "Röda Sten Konsthall, Katedralen, Röda Sten 1",
+    area: "Klippan",
+    description:
+      "Göteborg Baroque låter musik av bland andra Barbara Strozzi, Francesca Caccini, Monteverdi och Purcell möta Doruntina Kastratis utställning.",
+    sourceLabel: "Röda Sten Konsthall",
+    sourceUrl:
+      "https://rodastenkonsthall.se/programpunkt/goteborg-baroque-i-katedralen/",
+    durationMinutes: 60,
+  },
+  {
+    id: "curatorsvisning-roda-sten-hosten-2026",
+    title: "Curatorsvisning: …why do you hold back?",
+    category: "Konst",
+    dateLabel: "23 okt & 21 nov",
+    startDate: "2026-10-23",
+    endDate: "2026-11-21",
+    time: "23 okt 18:00–19:00 · 21 nov 14:00–15:00",
+    venue: "Röda Sten Konsthall, Röda Sten 1",
+    area: "Klippan",
+    description:
+      "Curator Amila Puzić visar Doruntina Kastratis utställning på engelska med tid för samtal och frågor om konstnären och verken.",
+    sourceLabel: "Röda Sten Konsthall",
+    sourceUrl:
+      "https://rodastenkonsthall.se/programpunkt/curators-visning-2/",
+    durationMinutes: 60,
+  },
+  {
+    id: "cine-francais-hagabion-hosten-2026",
+    title: "Ciné français – hösten 2026",
+    category: "Film",
+    dateLabel: "28 okt–25 nov · fem onsdagar",
+    startDate: "2026-10-28",
+    endDate: "2026-11-25",
+    time: "18:15",
+    venue: "Hagabion, Linnégatan 21",
+    area: "Linné",
+    description:
+      "En serie med fem franskspråkiga filmer, från flyktingdrama och animerad familjefilm till Chopinporträtt och Queer Palm-vinnare.",
+    sourceLabel: "Hagabion",
+    sourceUrl: "https://hagabion.se/serie/cine-francais-host-2026/",
+  },
+  {
+    id: "shared-reading-gathenhielmska-21-okt-2026",
+    title: "Shared reading i Gathenhielmska huset",
+    category: "Litteratur",
+    dateLabel: "21 okt",
+    startDate: "2026-10-21",
+    time: "18:00–20:00",
+    venue: "Gathenhielmska huset",
+    area: "Stigberget",
+    description:
+      "Gemensam högläsning av en berättelse och en dikt med samtal och fikapaus, ledd av en utbildad läsledare. Anmälan krävs.",
+    sourceLabel: "Göteborgs Litteraturhus",
+    sourceUrl:
+      "https://www.goteborgslitteraturhus.se/event/shared-reading-i-gathenhielmska-huset-30/",
+    isFree: true,
+  },
 ] satisfies CulturalEvent[];
 
 const museumDirectoryEvents: CulturalEvent[] = OBJEKT.filter(
@@ -4342,6 +4852,7 @@ const trustedSourceHosts = new Set([
   "remfabriken.se",
   "ringlinien.org",
   "rodasten.com",
+  "rodastenkonsthall.se",
   "chalmers.se",
   "fiskochskaldjursfestivalen.se",
   "sahlgrenska.se",
@@ -4378,6 +4889,7 @@ const trustedSourceHosts = new Set([
   "www.remfabriken.se",
   "www.ringlinien.org",
   "www.rodasten.com",
+  "www.rodastenkonsthall.se",
   "www.betlehemskyrkan.se",
   "www.chalmers.se",
   "www.fiskochskaldjursfestivalen.se",
@@ -4464,4 +4976,4 @@ export const culturalEvents = appendOnlyNewCulturalEvents(
   ],
 );
 
-export const culturalCatalogVerifiedAt = "2026-09-03";
+export const culturalCatalogVerifiedAt = "2026-09-18";

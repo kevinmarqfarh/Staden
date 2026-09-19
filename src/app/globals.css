@@ -2134,7 +2134,7 @@ footer p { margin: 0px; }
 .experience-row__number { color: var(--muted); font-family: var(--font-geist-mono), monospace; padding-top: 2px; font-size: 0.54rem; }
 .experience-row__title { min-width: 0px; display: grid; }
 .experience-row__title small { color: var(--signal); font-family: var(--font-geist-mono), monospace; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 7px; font-size: 0.5rem; }
-.experience-row__title strong { overflow-wrap: anywhere; font-family: var(--story-font); letter-spacing: var(--story-spacing); font-size: clamp(1.55rem, 7.4vw, 2.35rem); font-weight: 560; line-height: 0.96; }
+.experience-row__title strong { overflow-wrap: normal; word-break: normal; hyphens: auto; font-family: var(--story-font); letter-spacing: var(--story-spacing); font-size: clamp(1.55rem, 7.4vw, 2.35rem); font-weight: 560; line-height: 0.96; }
 .experience-row__title > span:last-child { color: var(--muted); margin-top: 6px; font-size: 0.65rem; line-height: 1.38; }
 .experience-row__where, .experience-row__time { display: none; }
 .experience-row__caret { align-self: center; transition: transform 150ms ease; }
