@@ -1,0 +1,89 @@
+.day-planner { --day-radius: 16px; width: 100%; min-width: 0; color: var(--ink); }
+.day-planner *, .day-planner *::before, .day-planner *::after { box-sizing: border-box; }
+.day-planner-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+.day-planner-heading h2 { margin: 8px 0 12px; font-size: clamp(2.2rem, 5vw, 4rem); letter-spacing: -.055em; line-height: 1; }
+.day-planner-heading p, .day-empty p { max-width: 52ch; line-height: 1.6; color: var(--muted); }
+.day-eyebrow { font-family: var(--font-geist-mono), monospace; font-size: .69rem; letter-spacing: .08em; text-transform: uppercase; line-height: 1.6; }
+.day-planner button, .day-planner summary, .day-planner a { min-height: 44px; }
+.day-planner button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-raised, var(--paper)); color: var(--ink); font: inherit; font-size: .84rem; cursor: pointer; }
+.day-planner button:disabled { opacity: .35; cursor: default; }
+.day-planner button:focus-visible, .day-planner a:focus-visible, .day-planner input:focus-visible, .day-planner textarea:focus-visible, .day-planner summary:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+.day-planner .day-primary { background: var(--ink); color: var(--paper); border-color: var(--ink); font-weight: 650; padding: 14px 20px; white-space: nowrap; }
+.day-feedback { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: .83rem; }
+.day-feedback:empty { display: none; }
+.day-feedback:not(:empty) { margin-bottom: 16px; }
+.day-error { padding: 12px; border: 1px solid var(--signal); color: var(--ink); background: var(--paper); font-size: .83rem; line-height: 1.6; }
+.day-create, .day-empty { padding: clamp(20px, 4vw, 40px); border: 1px solid var(--line); border-radius: var(--day-radius); background: var(--paper-raised, var(--paper)); }
+.day-create { max-width: 680px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+.day-planner label { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: .8rem; }
+.day-planner input, .day-planner textarea { width: 100%; min-width: 0; max-width: 100%; min-height: 46px; padding: 12px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: 16px; }
+.day-planner textarea { resize: vertical; }
+.day-planner input[type="date"], .day-planner input[type="time"] { color-scheme: light dark; }
+.day-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.day-create > .day-actions { grid-column: 1 / -1; }
+.day-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px; }
+.day-planner .day-cover { min-width: 0; min-height: 190px; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 12px; padding: 24px; text-align: left; border-radius: var(--day-radius); }
+.day-cover strong { font-family: var(--story-font, inherit); font-size: 1.7rem; line-height: 1.15; overflow-wrap: anywhere; }
+.day-cover > span:last-child { margin-top: auto; color: var(--muted); font-size: .8rem; }
+.day-empty { grid-column: 1 / -1; }
+.day-empty h3 { margin: 20px 0 8px; font-family: var(--story-font, inherit); font-size: 1.9rem; font-weight: 500; }
+.day-template { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+.day-template span { padding: 12px 16px; border: 1px dashed var(--line); border-radius: 6px; font-size: .8rem; }
+.day-back { margin-bottom: 24px; }
+.day-plan-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.day-plan-title h3 { font-family: var(--story-font, inherit); font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.15; margin: 0; overflow-wrap: anywhere; }
+.day-plan-title details { flex: 0 1 260px; }
+.day-planner summary { cursor: pointer; padding: 12px 0; font-size: .82rem; }
+.day-planner details form { display: grid; gap: 14px; padding: 12px 0; }
+.day-date { color: var(--muted); font-size: .8rem; margin: 12px 0 28px; }
+.day-timeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; list-style: none; margin: 0; padding: 0; align-items: start; }
+.day-slot { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: var(--day-radius); background: var(--paper-raised, var(--paper)); }
+.day-slot:has(.day-picker) { grid-column: 1 / -1; }
+.day-slot-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.day-step { font-family: var(--font-geist-mono), monospace; font-size: .72rem; color: var(--muted); }
+.day-slot-heading h4 { font-size: 1rem; margin: 0; overflow-wrap: anywhere; }
+.day-order { display: flex; gap: 2px; margin-left: auto; flex-shrink: 0; }
+.day-planner .day-order button { padding: 8px; width: 36px; min-width: 36px; border-color: transparent; background: transparent; }
+.day-stop-content h5 { font-size: 1.4rem; letter-spacing: -.035em; margin: 12px 0; line-height: 1.2; overflow-wrap: anywhere; }
+.day-stop-content > p { font-size: .8rem; line-height: 1.6; color: var(--muted); }
+.day-stop-content a { display: inline-flex; align-items: center; font-size: .8rem; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.day-stop-content .day-actions { margin-top: 12px; }
+.day-planner .day-add { width: 100%; min-height: 110px; border-style: dashed; background: transparent; }
+.day-stop-options { border-top: 1px solid var(--line); margin-top: 20px; }
+.day-planner .day-remove-slot, .day-planner .day-delete { border-color: transparent; background: transparent; color: var(--muted); font-size: .75rem; padding-inline: 0; }
+.day-note { font-size: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
+.day-add-slots { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 24px; }
+.day-add-slots > span { width: 100%; font-size: .8rem; margin-bottom: 4px; }
+.day-footnote { max-width: 65ch; font-size: .76rem; color: var(--muted); line-height: 1.6; margin: 24px 0 10px; }
+.day-delete-confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-top: 1px solid var(--line); padding-top: 12px; }
+.day-delete-confirm p { width: 100%; }
+.day-picker { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 16px; }
+.day-picker-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.day-planner .day-search { display: flex; flex-direction: row; align-items: center; padding: 0 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; }
+.day-search svg { flex-shrink: 0; }
+.day-planner .day-search input { border: none; background: transparent; padding-left: 0; }
+.day-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.day-filter button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.day-search-count { color: var(--muted); font-size: .75rem; line-height: 1.5; }
+.day-search-results { display: grid; gap: 0; }
+.day-planner .day-search-results button { width: 100%; justify-content: space-between; border: none; border-top: 1px solid var(--line); border-radius: 0; text-align: left; background: transparent; padding: 14px 0; }
+.day-search-results button > span { min-width: 0; }
+.day-search-results button > svg { flex-shrink: 0; }
+.day-search-results strong { display: block; line-height: 1.4; overflow-wrap: anywhere; }
+.day-search-results small { display: block; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+.day-planner button, .day-planner summary, .day-planner label, .day-date, .day-note, .day-stop-content a, .day-search-count { font-size: 14px; }
+.day-stop-content > p, .day-planner-heading p, .day-empty p { font-size: 16px; }
+.day-footnote, .day-search-results small { font-size: 14px; }
+@media (max-width: 1100px) { .day-timeline { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) {
+  .day-planner-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .day-planner-heading > .day-primary { width: 100%; }
+  .day-create, .day-timeline { grid-template-columns: minmax(0, 1fr); }
+  .day-plan-title { flex-direction: column; gap: 6px; }
+  .day-plan-title details { flex-basis: auto; width: 100%; }
+  .day-slot { padding: 18px; }
+  .day-timeline { position: relative; gap: 20px; }
+  .day-slot + .day-slot::before { content: ""; position: absolute; top: -21px; left: 29px; height: 20px; border-left: 1px solid var(--line); }
+  .day-slot { position: relative; }
+  .day-planner .day-order button { width: 44px; min-width: 44px; }
+}

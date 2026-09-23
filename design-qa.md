@@ -1,5 +1,23 @@
 # STADEN design QA
 
+## Editorial redesign and day planner — 2026-09-23
+
+Scope: new editorial home, Hem / Utforska / Sparat / Profil navigation, compact saved heading, and local day planner. Direction and rationale: `docs/design/redesign-plan-2026-09-22.md`.
+
+Verified in the local browser:
+
+- All four main views at widths 320, 390, 768 and 1440: document width equals viewport width; no horizontal page overflow.
+- Visual inspection of mobile home, mobile planner and desktop home/planner, using Ateljé and Efter Regnet with the current dark system appearance.
+- Created a named day, edited its date, selected a museum, selected lunch from saved items, reordered stops and reloaded. Both stops, date and order persisted.
+- Retested date-at-creation after switching submission to FormData: 2026-09-26 persisted correctly.
+- Deletion requires confirmation and exposes undo. Only agent-created QA days were removed; pre-existing days/lists were preserved.
+- Agent judge found date-bound bypass for ongoing culture and culture-search navigation ordering. Both corrected. Ambiguous recurring schedules now explicitly require checking the visit day.
+- Home date filtering no longer assumes every date in a non-ongoing series is a confirmed occurrence. Category selection no longer resets the period.
+
+Automated checks: 20 unit tests pass; ESLint passes; production build passes after allowing the existing Google Fonts downloads.
+
+Limits: browser viewport tests are not physical iPhone/Android tests. Light system appearance and a pixel-aligned reference-image comparison were not verified in this pass; no pixel-perfect claim. Plans remain on the current browser/device and do not sync to an account. Date ranges are not booking/availability guarantees. Existing category catalogs and admin are preserved, not comprehensively re-audited in this pass.
+
 ## Comparison target
 
 - Source visual truth:
