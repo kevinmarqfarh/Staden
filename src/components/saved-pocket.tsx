@@ -713,11 +713,11 @@ export function SavedPocket({
         <header className={`saved-pocket-header${embedded ? " saved-pocket-header--page" : ""}`}>
           <div>
             <p className="saved-pocket-kicker">
-              {embedded ? "PROFIL · DIN STADEN" : "DIN STADEN"}
+              {embedded ? "SPARAT · DIN STADEN" : "DIN STADEN"}
             </p>
             <h2 id="saved-pocket-title">
               {embedded ? (
-                <>Din stad,<br /><em>dina listor.</em></>
+                <>Dina fynd.</>
               ) : (
                 "Fickan"
               )}
@@ -726,7 +726,7 @@ export function SavedPocket({
               {savedItems.length} {savedItems.length === 1 ? "sparat objekt" : "sparade objekt"} · {pocketState.lists.length} {pocketState.lists.length === 1 ? "egen lista" : "egna listor"}
             </p>
           </div>
-          {embedded ? (
+          {embedded && onOpenSettings ? (
             <button
               ref={settingsButtonRef}
               className="saved-pocket-settings"
@@ -737,7 +737,7 @@ export function SavedPocket({
             >
               <GearSix aria-hidden="true" size={23} />
             </button>
-          ) : (
+          ) : !embedded ? (
             <button
               className="saved-pocket-close"
               type="button"
@@ -747,7 +747,7 @@ export function SavedPocket({
             >
               <X aria-hidden="true" size={22} />
             </button>
-          )}
+          ) : null}
         </header>
 
         <section className="saved-pocket-lists" aria-labelledby="list-title">

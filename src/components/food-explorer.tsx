@@ -184,7 +184,7 @@ function RestaurantCard({
   onToggleSave: (id: string) => void;
 }) {
   return (
-    <article className="restaurant-card">
+    <article className="restaurant-card" data-object-id={`mat:${restaurant.id}`}>
       <div className="restaurant-card__topline">
         <span>{String(number).padStart(2, "0")}</span>
         <div className="restaurant-card__badges">

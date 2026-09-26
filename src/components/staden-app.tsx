@@ -1,7 +1,11 @@
 "use client";
 
-import Image from "next/image";
+import { EditorialHome } from "./editorial-home";
+import { DayPlanner } from "./day-planner";
 import {
+  House,
+  Compass,
+  GearSix,
   ArrowDownRight,
   ArrowUpRight,
   BookmarkSimple,
@@ -88,7 +92,6 @@ import {
   daysBetweenDateKeys,
   hasEventNotEnded,
   isEventActiveOnDate,
-  isHighlightWindowActive,
   rotateHighlights,
 } from "@/lib/highlights";
 import {
@@ -128,30 +131,9 @@ const categories = [
   "Skapande",
 ] as const;
 
-const monthLabels = [
-  "JAN",
-  "FEB",
-  "MAR",
-  "APR",
-  "MAJ",
-  "JUN",
-  "JUL",
-  "AUG",
-  "SEP",
-  "OKT",
-  "NOV",
-  "DEC",
-] as const;
-
 function eventMapQuery(event: CulturalEvent) {
   return [event.venue, event.area, "Göteborg"].filter(Boolean).join(", ");
 }
-
-const [verifiedYear, verifiedMonth, verifiedDay] =
-  culturalCatalogVerifiedAt.split("-");
-const culturalCatalogVerifiedLabel = `${Number(verifiedDay)} ${
-  monthLabels[Number(verifiedMonth) - 1]
-} ${verifiedYear}`;
 
 const discoveryEvents = [...culturalEvents].sort((left, right) => {
   const leftDate = left.isOngoing
@@ -175,7 +157,7 @@ type ThemeId =
   | "sunday-edition"
   | "blue-line"
   | "after-rain";
-type AppView = "home" | "kultur" | "noje" | "mat" | "profile";
+type AppView = "home" | "kultur" | "noje" | "mat" | "profile" | "explore" | "saved";
 
 const cultureCategories = categories.slice(1) as readonly Exclude<
   CategoryFilter,
@@ -209,16 +191,9 @@ const mappedCultureCount = Array.from(culturePoints.values()).filter(
   Boolean,
 ).length;
 
-const entertainmentEventCount =
-  entertainmentExperiences.length +
-  discoveryEvents.filter(
-    (event) =>
-      event.category === "Musik" ||
-      event.category === "Scenkonst" ||
-      event.category === "Festival",
-  ).length;
-
 function viewFromHash(hash: string): AppView {
+  if (hash === "#utforska") return "explore";
+  if (hash === "#sparat") return "saved";
   if (
     hash === "#kultur" ||
     hash === "#noje" ||
@@ -282,42 +257,6 @@ const themes: Array<{
     description: "Svart kväll, kobolt, bärnsten och redaktionell serif.",
   },
 ];
-
-const themeHeroMedia: Record<
-  ThemeId,
-  { src: string; alt: string; caption: string }
-> = {
-  staden: {
-    src: "/media/jazz-under-traden.png",
-    alt: "En jazztrio spelar utomhus inför publik i Göteborg.",
-    caption: "Redaktionell bild",
-  },
-  atelier: {
-    src: "/media/jazz-under-traden.png",
-    alt: "En jazztrio spelar utomhus inför publik i Göteborg.",
-    caption: "Redaktionell bild",
-  },
-  "blue-hour": {
-    src: "/media/jazz-under-traden.png",
-    alt: "En jazztrio spelar utomhus inför publik i Göteborg.",
-    caption: "Redaktionell bild",
-  },
-  "sunday-edition": {
-    src: "/media/jazz-under-traden.png",
-    alt: "En jazztrio spelar under träden inför publik i Göteborg.",
-    caption: "Söndagsupplagan · 01",
-  },
-  "blue-line": {
-    src: "/media/theme-blue-line-gallery.png",
-    alt: "Besökare på en vernissage i ett samtida galleri i Göteborg.",
-    caption: "Blå Linjen · Utgåva 02",
-  },
-  "after-rain": {
-    src: "/media/theme-after-rain-tram.png",
-    alt: "En blå spårvagn och människor med paraplyer på en regnig gata i Göteborg.",
-    caption: "Efter Regnet · Kvällsutgåva",
-  },
-};
 
 function subscribeToSavedEvents(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange);
@@ -486,7 +425,10 @@ function EventCard({
   onToggleSave: (id: string) => void;
 }) {
   return (
-    <article className={`event-card event-card--${event.category.toLowerCase()}`}>
+    <article
+      className={`event-card event-card--${event.category.toLowerCase()}`}
+      data-object-id={`kultur:${event.id}`}
+    >
       <div className="event-card__topline">
         <span>{String(number).padStart(2, "0")}</span>
         <div className="event-card__badges">
@@ -598,6 +540,10 @@ export function StadenApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [discoveryForYou, setDiscoveryForYou] = useState(false);
+  const [locateTarget, setLocateTarget] = useState<{
+    kind: string;
+    id: string;
+  } | null>(null);
   const [activeView, setActiveView] = useState<AppView>("home");
   const [discoveryIntent, setDiscoveryIntent] =
     useState<CulturalDiscoveryIntent | null>(null);
@@ -689,7 +635,6 @@ export function StadenApp() {
     getThemeSnapshot,
     getServerThemeSnapshot,
   );
-  const heroMedia = themeHeroMedia[selectedTheme];
   const highlightClock = useHighlightClock(culturalCatalogVerifiedAt);
   const today = dateKeyFromHighlightSnapshot(highlightClock);
   const activeDiscoveryEvents = useMemo(
@@ -747,22 +692,6 @@ export function StadenApp() {
   const entertainmentEvents = useMemo(
     () => rotateHighlights(entertainmentPool, highlightClock, 3),
     [entertainmentPool, highlightClock],
-  );
-  const homeRestaurantPool = useMemo(() => {
-    const eligibleRestaurants = restaurants.filter(
-      (restaurant) =>
-        restaurant.verificationStatus !== "directory" &&
-        isHighlightWindowActive(restaurant, today),
-    );
-
-    return [
-      ...eligibleRestaurants.filter((restaurant) => restaurant.isNew),
-      ...eligibleRestaurants.filter((restaurant) => !restaurant.isNew),
-    ].slice(0, 16);
-  }, [today]);
-  const [homeFeaturedRestaurant] = useMemo(
-    () => rotateHighlights(homeRestaurantPool, highlightClock, 1),
-    [highlightClock, homeRestaurantPool],
   );
   const discoveryOrder = useMemo(
     () =>
@@ -883,7 +812,7 @@ export function StadenApp() {
   useEffect(() => {
     function syncViewFromLocation() {
       setActiveView(viewFromHash(window.location.hash));
-      window.requestAnimationFrame(() => window.scrollTo(0, 0));
+      window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
     }
 
     syncViewFromLocation();
@@ -903,6 +832,8 @@ export function StadenApp() {
       noje: "Nöje",
       mat: "Mat",
       profile: "Profil",
+      explore: "Utforska",
+      saved: "Sparat",
     };
     const nextTitle = `STADEN — ${labels[activeView]}`;
 
@@ -1045,7 +976,7 @@ export function StadenApp() {
   }
 
   function navigateToView(view: AppView) {
-    const hash = view === "home" ? "#hem" : view === "profile" ? "#profil" : `#${view}`;
+    const hash = view === "home" ? "#hem" : view === "profile" ? "#profil" : view === "explore" ? "#utforska" : view === "saved" ? "#sparat" : `#${view}`;
 
     if (window.location.hash !== hash) {
       window.history.pushState(null, "", hash);
@@ -1055,7 +986,7 @@ export function StadenApp() {
     setShowAllCultureResults(false);
     viewFocusRequestedRef.current = true;
     setActiveView(view);
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }
 
   function openCultureCategory(category: CategoryFilter) {
@@ -1115,6 +1046,59 @@ export function StadenApp() {
     setSkippedRecommendationIds([]);
   }
 
+  function locateFromSearch(result: SearchResult) {
+    setSearchOpen(false);
+    setLocateTarget({ kind: result.kind, id: result.id });
+    navigateToView(
+      result.kind === "kultur"
+        ? "kultur"
+        : result.kind === "noje"
+          ? "noje"
+          : "mat",
+    );
+    if (result.kind === "kultur") {
+      resetCultureFilters();
+      setCultureCatalogOpen(true);
+      setShowAllCultureResults(true);
+      setCultureQuery(result.title);
+    }
+  }
+
+  useEffect(() => {
+    if (!locateTarget) return;
+    const expectedView =
+      locateTarget.kind === "kultur"
+        ? "kultur"
+        : locateTarget.kind === "noje"
+          ? "noje"
+          : "mat";
+    if (activeView !== expectedView) return;
+
+    let cancelled = false;
+    const selector = `[data-object-id="${locateTarget.kind}:${locateTarget.id}"]`;
+
+    function tryLocate(attempt: number) {
+      if (cancelled) return;
+      const element = document.querySelector<HTMLElement>(selector);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.classList.add("is-located");
+        window.setTimeout(() => element.classList.remove("is-located"), 2400);
+        setLocateTarget(null);
+      } else if (attempt < 10) {
+        window.setTimeout(() => tryLocate(attempt + 1), 220);
+      } else {
+        setLocateTarget(null);
+      }
+    }
+
+    const timer = window.setTimeout(() => tryLocate(0), 280);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [locateTarget, activeView]);
+
   function showAnotherRecommendation() {
     if (!discoveryRecommendation) {
       setSkippedRecommendationIds([]);
@@ -1169,48 +1153,7 @@ export function StadenApp() {
         Hoppa till innehållet
       </a>
       <header className="site-header">
-        <nav className="desktop-main-nav" aria-label="Sektioner">
-          <a
-            href="#kultur"
-            aria-current={activeView === "kultur" ? "location" : undefined}
-            onClick={(event) => {
-              event.preventDefault();
-              navigateToView("kultur");
-            }}
-          >
-            Kultur
-          </a>
-          <a
-            href="#noje"
-            aria-current={activeView === "noje" ? "location" : undefined}
-            onClick={(event) => {
-              event.preventDefault();
-              navigateToView("noje");
-            }}
-          >
-            Nöje
-          </a>
-          <a
-            href="#mat"
-            aria-current={activeView === "mat" ? "location" : undefined}
-            onClick={(event) => {
-              event.preventDefault();
-              navigateToView("mat");
-            }}
-          >
-            Mat
-          </a>
-          <a
-            href="#profil"
-            aria-current={activeView === "profile" ? "location" : undefined}
-            onClick={(event) => {
-              event.preventDefault();
-              navigateToView("profile");
-            }}
-          >
-            Profil
-          </a>
-        </nav>
+        <nav className="desktop-main-nav" aria-label="Sektioner">{([{view:"home",hash:"#hem",label:"Hem"},{view:"explore",hash:"#utforska",label:"Utforska"},{view:"saved",hash:"#sparat",label:"Sparat"},{view:"profile",hash:"#profil",label:"Profil"}] as const).map(item => <a key={item.view} href={item.hash} aria-current={activeView === item.view || (item.view === "explore" && ["kultur","noje","mat"].includes(activeView)) ? "page" : undefined} onClick={event => { event.preventDefault(); navigateToView(item.view); }}>{item.label}</a>)}</nav>
         <a
           className="wordmark"
           href="#hem"
@@ -1234,12 +1177,12 @@ export function StadenApp() {
           </button>
           <a
             className="saved-shortcut"
-            href="#profil"
-            aria-label={`Öppna Profil, ${savedEventIds.length + savedRestaurantIds.length + savedEntertainmentIds.length} sparade objekt`}
-            aria-current={activeView === "profile" ? "location" : undefined}
+            href="#sparat"
+            aria-label={`Öppna Sparat, ${savedEventIds.length + savedRestaurantIds.length + savedEntertainmentIds.length} sparade objekt`}
+            aria-current={activeView === "saved" ? "location" : undefined}
             onClick={(event) => {
               event.preventDefault();
-              navigateToView("profile");
+              navigateToView("saved");
             }}
           >
             <BookmarkSimple aria-hidden="true" size={18} weight="bold" />
@@ -1253,88 +1196,8 @@ export function StadenApp() {
       <main className="view-main" id="huvudinnehall">
       <AmbientCityField />
 
-      {activeView === "home" ? (
-        <div className="content-view content-view--home" data-view="home">
-      <section className="hero" id="hem">
-        <div className="hero-copy">
-          <p className="kicker">STADEN · UPPDATERAD {culturalCatalogVerifiedLabel}</p>
-          <h1>
-            Staden
-            <br />
-            står <em>öppen.</em>
-          </h1>
-          <p className="hero-description">
-            {restaurants.length} restauranger och {culturalEvents.length}{" "}
-            källkontrollerade kulturhändelser — från nya smaker och klassiska
-            krogar till stora scener och lokala kulturhus.
-          </p>
-          <nav className="home-quick-nav" aria-label="Öppna en huvudfunktion">
-            <a
-              href="#kultur"
-              onClick={(event) => {
-                event.preventDefault();
-                navigateToView("kultur");
-              }}
-            >
-              <strong>{culturalEvents.length}</strong>
-              <span>Kultur</span>
-            </a>
-            <a
-              href="#noje"
-              onClick={(event) => {
-                event.preventDefault();
-                navigateToView("noje");
-              }}
-            >
-              <strong>{entertainmentEventCount}</strong>
-              <span>Nöje</span>
-            </a>
-            <a
-              href="#mat"
-              onClick={(event) => {
-                event.preventDefault();
-                navigateToView("mat");
-              }}
-            >
-              <strong>{restaurants.length}</strong>
-              <span>Mat</span>
-            </a>
-          </nav>
-        </div>
-
-        <div className="hero-art">
-          <Image
-            src={heroMedia.src}
-            alt={heroMedia.alt}
-            fill
-            priority
-            sizes="(min-width: 900px) 50vw, 100vw"
-          />
-          <div className="hero-art__shade" />
-          <div className="hero-art__stamp">
-            <Sparkle aria-hidden="true" size={18} weight="fill" />
-            <span>
-              {String(culturalEvents.length).padStart(2, "0")} KULTURVAL
-            </span>
-          </div>
-          <div className="event-caption">
-            <span>GÖTEBORG I SEPTEMBER</span>
-            <span>{heroMedia.caption}</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="home-dashboard" aria-labelledby="home-dashboard-title">
-        <div className="section-heading home-dashboard__heading">
-          <p className="kicker">HEM · ÖVERBLICK</p>
-          <h2 id="home-dashboard-title">Göteborg, just nu.</h2>
-          <p>
-            En redaktionell första vy över det som är aktuellt. Välj en ingång
-            när du vill fördjupa dig i hela Kultur, Nöje eller Mat.
-          </p>
-        </div>
-
-        <section
+      {activeView === "home" ? <EditorialHome snapshot={highlightClock} savedEventIds={savedEventIds} onToggleSaveEvent={toggleSavedEvent} onNavigate={navigateToView} onSearch={() => setSearchOpen(true)} /> : null}
+      {activeView === "explore" ? <section className="explore-hub content-view" data-view="explore"><header className="section-heading"><p className="kicker">HITTA DITT GÖTEBORG</p><h1>Vad lockar?</h1><p>Välj en ingång eller sök efter en plats, aktivitet eller smak.</p><button className="editorial-primary" onClick={() => setSearchOpen(true)}>Sök i hela staden <MagnifyingGlass size={20}/></button></header><div className="explore-entrances">{([{view:"kultur",title:"Kultur",text:"Konst, scener och nya perspektiv",icon:Buildings},{view:"noje",title:"Nöje",text:"Utflykter, lek och stadsliv",icon:Confetti},{view:"mat",title:"Mat",text:"Hitta ett kök eller följ en guide",icon:ForkKnife}] as const).map(item => <button key={item.view} onClick={() => navigateToView(item.view)}><item.icon size={28}/><h2>{item.title}</h2><p>{item.text}</p><ArrowUpRight size={24}/></button>)}</div><details className="discovery-help"><summary>Hjälp mig välja ett förslag <Sparkle size={20}/></summary>        <section
           className="discovery-starter"
           aria-labelledby="discovery-starter-title"
         >
@@ -1563,99 +1426,8 @@ export function StadenApp() {
           )}
         </section>
 
-        <div className="home-overview-grid">
-          <a
-            className="home-overview-card home-overview-card--culture"
-            href="#kultur"
-            onClick={(event) => {
-              event.preventDefault();
-              navigateToView("kultur");
-            }}
-          >
-            <div className="home-overview-card__topline">
-              <span>01 · KULTUR</span>
-              <Buildings aria-hidden="true" size={21} weight="regular" />
-            </div>
-            <div className="home-overview-card__body">
-              <p>{cultureDashboardEvents[0]?.dateLabel}</p>
-              <h3>{cultureDashboardEvents[0]?.title}</h3>
-              <span>{activeDiscoveryEvents.length} aktuella saker att upptäcka</span>
-            </div>
-            <div className="home-overview-card__action">
-              <span>Öppna Kultur</span>
-              <ArrowUpRight aria-hidden="true" size={18} weight="bold" />
-            </div>
-          </a>
-
-          <a
-            className="home-overview-card home-overview-card--entertainment"
-            href="#noje"
-            onClick={(event) => {
-              event.preventDefault();
-              navigateToView("noje");
-            }}
-          >
-            <div className="home-overview-card__topline">
-              <span>02 · NÖJE</span>
-              <Confetti aria-hidden="true" size={21} weight="regular" />
-            </div>
-            <div className="home-overview-card__body">
-              <p>{entertainmentEvents[0]?.time ?? "IKVÄLL"}</p>
-              <h3>{entertainmentEvents[0]?.title}</h3>
-              <span>{entertainmentEvents[0]?.venue}</span>
-            </div>
-            <div className="home-overview-card__action">
-              <span>Öppna Nöje</span>
-              <ArrowUpRight aria-hidden="true" size={18} weight="bold" />
-            </div>
-          </a>
-
-          <a
-            className="home-overview-card home-overview-card--food"
-            href="#mat"
-            onClick={(event) => {
-              event.preventDefault();
-              navigateToView("mat");
-            }}
-          >
-            <div className="home-overview-card__topline">
-              <span>03 · MAT</span>
-              <ForkKnife aria-hidden="true" size={21} weight="regular" />
-            </div>
-            <div className="home-overview-card__body">
-              <p>{homeFeaturedRestaurant?.cuisine}</p>
-              <h3>{homeFeaturedRestaurant?.name}</h3>
-              <span>
-                {restaurants.length} restauranger · {homeFeaturedRestaurant?.area}
-              </span>
-            </div>
-            <div className="home-overview-card__action">
-              <span>Öppna Mat</span>
-              <ArrowUpRight aria-hidden="true" size={18} weight="bold" />
-            </div>
-          </a>
-        </div>
-
-        {festivalHighlights[0] ? (
-          <a
-            className="home-festival-strip"
-            href="#kultur"
-            onClick={(event) => {
-              event.preventDefault();
-              navigateToView("kultur");
-            }}
-          >
-            <span>{festivalPulse(festivalHighlights[0], today)}</span>
-            <strong>{festivalHighlights[0].title}</strong>
-            <span>
-              {festivalHighlights[0].area}
-              <ArrowUpRight aria-hidden="true" size={18} weight="bold" />
-            </span>
-          </a>
-        ) : null}
-      </section>
-        </div>
-      ) : null}
+</details></section> : null}
+      {(["kultur", "noje", "mat"] as AppView[]).includes(activeView) ? <nav className="category-navigation" aria-label="Byt kategori"><button onClick={() => navigateToView("explore")}>Alla områden</button>{([['kultur','Kultur'],['noje','Nöje'],['mat','Mat']] as const).map(([view,label]) => <button key={view} aria-current={activeView === view ? "page" : undefined} onClick={() => navigateToView(view)}>{label}</button>)}</nav> : null}
 
       {activeView === "kultur" ? (
       <section className="culture-section content-view" id="kultur" data-view="kultur">
@@ -2125,32 +1897,8 @@ export function StadenApp() {
         </div>
       ) : null}
 
-      {activeView === "profile" ? (
-        <div className="content-view" data-view="profile">
-          <SavedPocket
-            embedded
-            settingsOpen={settingsOpen}
-            settingsButtonRef={settingsButtonRef}
-            onOpenSettings={openSettings}
-          />
-          <section
-            className="loggbok-section"
-            aria-labelledby="loggbok-section-title"
-          >
-            <div className="loggbok-section__intro">
-              <div>
-                <p className="kicker">LOGGBOK</p>
-                <h3 id="loggbok-section-title">Vad staden väckte</h3>
-                <p>
-                  Dina upplevelser och vad de gav — grunden för smartare
-                  förslag.
-                </p>
-              </div>
-            </div>
-            <JournalLog />
-          </section>
-        </div>
-      ) : null}
+      {activeView === "saved" ? <div className="content-view" data-view="saved"><SavedPocket embedded /></div> : null}
+      {activeView === "profile" ? <section className="profile-home content-view" data-view="profile"><header className="profile-heading"><div><p className="kicker">DIN STADEN</p><h1>Gör dagen till din.</h1><p>Planera nästa utflykt och samla dina upplevelser.</p></div><button ref={settingsButtonRef} type="button" className="profile-settings" aria-label="Öppna inställningar" aria-expanded={settingsOpen} onClick={event => openSettings(event.currentTarget)}><GearSix size={24}/></button></header><DayPlanner /><button className="profile-saved-link" onClick={() => navigateToView("saved")}><BookmarkSimple size={22}/> Öppna mina sparade platser <ArrowUpRight size={20}/></button><details className="profile-journal"><summary>Min loggbok</summary><JournalLog /></details></section> : null}
 
       </main>
 
@@ -2159,68 +1907,7 @@ export function StadenApp() {
         <p>KÄLLOR KONTROLLERADE · {culturalCatalogVerifiedAt}</p>
       </footer>
 
-      <nav className="mobile-bottom-nav" aria-label="Huvudnavigation">
-        <a
-          href="#kultur"
-          aria-current={
-            !overlayOpen && activeView === "kultur"
-              ? "location"
-              : undefined
-          }
-          onClick={(event) => {
-            event.preventDefault();
-            navigateToView("kultur");
-          }}
-        >
-          <Buildings aria-hidden="true" size={23} weight="regular" />
-          <span>Kultur</span>
-        </a>
-        <a
-          href="#noje"
-          aria-current={
-            !overlayOpen && activeView === "noje"
-              ? "location"
-              : undefined
-          }
-          onClick={(event) => {
-            event.preventDefault();
-            navigateToView("noje");
-          }}
-        >
-          <Confetti aria-hidden="true" size={23} weight="regular" />
-          <span>Nöje</span>
-        </a>
-        <a
-          href="#mat"
-          aria-current={
-            !overlayOpen && activeView === "mat"
-              ? "location"
-              : undefined
-          }
-          onClick={(event) => {
-            event.preventDefault();
-            navigateToView("mat");
-          }}
-        >
-          <ForkKnife aria-hidden="true" size={23} weight="regular" />
-          <span>Mat</span>
-        </a>
-        <a
-          href="#profil"
-          aria-current={
-            !overlayOpen && activeView === "profile"
-              ? "location"
-              : undefined
-          }
-          onClick={(event) => {
-            event.preventDefault();
-            navigateToView("profile");
-          }}
-        >
-          <UserCircle aria-hidden="true" size={24} weight="regular" />
-          <span>Profil</span>
-        </a>
-      </nav>
+      <nav className="mobile-bottom-nav" aria-label="Huvudnavigation">{([{view:"home",hash:"#hem",label:"Hem",icon:House},{view:"explore",hash:"#utforska",label:"Utforska",icon:Compass},{view:"saved",hash:"#sparat",label:"Sparat",icon:BookmarkSimple},{view:"profile",hash:"#profil",label:"Profil",icon:UserCircle}] as const).map(item => <a key={item.view} href={item.hash} aria-current={!overlayOpen && (activeView === item.view || (item.view === "explore" && ["kultur","noje","mat"].includes(activeView))) ? "page" : undefined} onClick={event => { event.preventDefault(); navigateToView(item.view); }}><item.icon size={24}/><span>{item.label}</span></a>)}</nav>
       </div>
 
       {settingsOpen ? (
@@ -2300,6 +1987,7 @@ export function StadenApp() {
       <SokOverlay
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
+        onSelect={locateFromSearch}
         discoveries={discoveryFeed}
       />
 

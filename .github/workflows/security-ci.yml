@@ -297,13 +297,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Block newly introduced vulnerable dependencies
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+      - name: Set up Node.js for dependency audit
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          fail-on-severity: moderate
-          fail-on-scopes: runtime, development
-          show-openssf-scorecard: true
-          warn-only: false
+          node-version: 24.13.0
+
+      # Dependency Review API is unavailable for this repository. Audit the
+      # entire lockfile, not just additions, at the same moderate threshold.
+      # Network/service errors fail this job; OSV and Trivy remain independent.
+      - name: Block vulnerable runtime and development dependencies
+        run: npm audit --package-lock-only --include=dev --include=optional --audit-level=moderate
 
   dependency-vulnerabilities:
     name: Vulnerability scanning / OSV

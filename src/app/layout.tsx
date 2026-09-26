@@ -10,6 +10,8 @@ import "../styles/rorelse.css";
 import "../styles/upptackt.css";
 import "../styles/sok.css";
 import "../styles/explorer-refinement.css";
+import "../styles/editorial-home.css";
+import "../styles/day-planner.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
