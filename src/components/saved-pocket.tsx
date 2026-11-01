@@ -1,4 +1,5 @@
 "use client";
+import { PlaceLink } from "./place-link";
 
 import {
   ArrowLeft,
@@ -1049,6 +1050,7 @@ export function SavedPocket({
                         </a>
                       </h4>
                       <span>{metadata}</span>
+                      {savedItem.kind === "culture" ? <PlaceLink name={savedItem.item.venue} /> : null}
                       <MapLink
                         className="saved-pocket-item-map"
                         query={mapQuery}

@@ -1,0 +1,20 @@
+.follow-control { display: inline-flex; flex-direction: column; align-items: flex-start; min-width: 0; max-width: 100%; gap: 6px; }
+.follow-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid currentColor; border-radius: 6px; color: inherit; background: transparent; font: inherit; cursor: pointer; }
+.follow-button[aria-pressed="true"] { background: var(--ink, #171714); color: var(--paper, #f5f3ed); }
+.follow-button:focus-visible, .following-panel summary:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.follow-feedback { font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.follow-feedback:empty { display: none; }
+.following-panel { margin-block: 48px; padding-block: 28px; border-block: 1px solid currentColor; }
+.following-panel h2 { font-size: clamp(28px, 4vw, 48px); margin-block: 12px; }
+.following-panel h2 small { font-size: 16px; }
+.following-panel p { max-width: 65ch; line-height: 1.6; }
+.following-places { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; margin-top: 24px; }
+.following-place { min-width: 0; border: 1px solid currentColor; border-radius: 10px; padding: 20px; }
+.following-place > header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.following-place h3 { flex: 1 1 150px; margin: 8px 0; font-size: 22px; overflow-wrap: anywhere; }
+.following-place summary { padding-block: 14px; cursor: pointer; }
+.following-place ul { padding: 0; list-style: none; }
+.following-place li + li { border-top: 1px solid currentColor; }
+.following-place a { display: grid; gap: 6px; padding-block: 14px; color: inherit; overflow-wrap: anywhere; }
+.following-place a span { font-size: 14px; }
+.event-card__actions, .culture-dashboard-card__actions, .restaurant-card__actions { flex-wrap: wrap; gap: 12px; }

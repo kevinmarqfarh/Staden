@@ -1,4 +1,5 @@
 "use client";
+import { FollowButton } from "./following";
 
 import {
   ArrowDown,
@@ -476,6 +477,7 @@ export function EntertainmentExplorer() {
                   </summary>
 
                   <div className="experience-row__details">
+                    <FollowButton name={item.title} />
                     <p>{item.description}</p>
                     <dl>
                       <div><dt>PRIS</dt><dd>{item.price}</dd></div>

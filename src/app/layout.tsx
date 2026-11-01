@@ -12,6 +12,8 @@ import "../styles/sok.css";
 import "../styles/explorer-refinement.css";
 import "../styles/editorial-home.css";
 import "../styles/day-planner.css";
+import "../styles/following.css";
+import "../styles/place-profile.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

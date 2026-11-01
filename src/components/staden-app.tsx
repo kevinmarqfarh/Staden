@@ -2,6 +2,8 @@
 
 import { EditorialHome } from "./editorial-home";
 import { DayPlanner } from "./day-planner";
+import { FollowButton, FollowingPanel } from "./following";
+import { PlaceLink } from "./place-link";
 import {
   House,
   Compass,
@@ -471,6 +473,8 @@ function EventCard({
       </div>
 
       <div className="event-card__actions">
+        <PlaceLink name={event.venue} />
+        <FollowButton name={event.venue} />
         <SaveButton
           event={event}
           isSaved={isSaved}
@@ -514,6 +518,8 @@ function CultureDashboardCard({
         </MapLink>
       </div>
       <div className="culture-dashboard-card__actions">
+        <PlaceLink name={event.venue} />
+        <FollowButton name={event.venue} />
         <SaveButton
           event={event}
           isSaved={isSaved}
@@ -1898,7 +1904,7 @@ export function StadenApp() {
       ) : null}
 
       {activeView === "saved" ? <div className="content-view" data-view="saved"><SavedPocket embedded /></div> : null}
-      {activeView === "profile" ? <section className="profile-home content-view" data-view="profile"><header className="profile-heading"><div><p className="kicker">DIN STADEN</p><h1>Gör dagen till din.</h1><p>Planera nästa utflykt och samla dina upplevelser.</p></div><button ref={settingsButtonRef} type="button" className="profile-settings" aria-label="Öppna inställningar" aria-expanded={settingsOpen} onClick={event => openSettings(event.currentTarget)}><GearSix size={24}/></button></header><DayPlanner /><button className="profile-saved-link" onClick={() => navigateToView("saved")}><BookmarkSimple size={22}/> Öppna mina sparade platser <ArrowUpRight size={20}/></button><details className="profile-journal"><summary>Min loggbok</summary><JournalLog /></details></section> : null}
+      {activeView === "profile" ? <section className="profile-home content-view" data-view="profile"><header className="profile-heading"><div><p className="kicker">DIN STADEN</p><h1>Gör dagen till din.</h1><p>Planera nästa utflykt och samla dina upplevelser.</p></div><button ref={settingsButtonRef} type="button" className="profile-settings" aria-label="Öppna inställningar" aria-expanded={settingsOpen} onClick={event => openSettings(event.currentTarget)}><GearSix size={24}/></button></header><DayPlanner /><FollowingPanel snapshot={highlightClock} /><button className="profile-saved-link" onClick={() => navigateToView("saved")}><BookmarkSimple size={22}/> Öppna mina sparade platser <ArrowUpRight size={20}/></button><details className="profile-journal"><summary>Min loggbok</summary><JournalLog /></details></section> : null}
 
       </main>
 

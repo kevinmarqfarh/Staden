@@ -1,0 +1,27 @@
+.place-page { color: var(--ink); background: var(--paper); min-height: 100vh; }
+.place-nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:20px clamp(16px, 4vw, 64px); border-bottom:1px solid var(--line); }
+.place-nav a { color:inherit; padding-block:12px; text-decoration:none; }
+.place-nav a:nth-child(2) { font-size:24px; font-weight:900; letter-spacing:-1px; }
+.place-page main { max-width:1280px; margin:auto; padding:0 clamp(20px, 4vw, 56px) 80px; }
+.place-hero { padding:clamp(40px, 8vw, 90px) 0 36px; border-bottom:1px solid var(--line); }
+.place-hero h1 { font-family:var(--font-condensed), sans-serif; font-size:clamp(40px, 8vw, 100px); line-height:1; letter-spacing:-.045em; overflow-wrap:anywhere; max-width:15ch; margin:20px 0; }
+.place-intro { font-size:clamp(18px, 2vw, 24px); max-width:48ch; line-height:1.5; }
+.place-actions { display:flex; flex-wrap:wrap; gap:12px; margin:24px 0 16px; align-items:flex-start; }
+.place-page button, .place-programme summary { min-height:44px; padding:12px 16px; font:inherit; border:1px solid var(--line); color:var(--ink); background:var(--paper-raised); border-radius:6px; cursor:pointer; }
+.place-page button[aria-pressed="true"] { color:var(--paper); background:var(--ink); }
+.place-note { font-size:13px; line-height:1.6; max-width:60ch; color:var(--muted); }
+.place-body { display:grid; grid-template-columns:minmax(0, 2fr) minmax(0, 1fr); gap:48px; }
+.place-programme { padding-top:32px; }
+.place-programme h2, .place-about h2 { font-size:26px; margin:0 0 24px; }
+.place-programme h2 small { font-size:14px; color:var(--muted); }
+.place-events { display:grid; gap:16px; margin-bottom:20px; }
+.place-events article { padding:24px; border:1px solid var(--line); background:var(--paper-raised); border-radius:12px; min-width:0; overflow-wrap:anywhere; }
+.place-events h3 { font-size:24px; line-height:1.2; margin:16px 0; }
+.place-page p { line-height:1.6; }
+.place-events details { margin-block:16px; }
+.place-programme summary { border:0; padding-left:0; background:transparent; }
+.place-about { padding:32px 0; min-width:0; }
+.place-about h3 { margin-top:28px; }
+.place-about a, .place-events a { display:block; color:inherit; padding-block:12px; overflow-wrap:anywhere; }
+.place-profile-link { color:inherit; display:inline-block; padding-block:12px; min-height:44px; overflow-wrap:anywhere; }
+@media(max-width:700px) { .place-body { grid-template-columns:1fr; gap:16px; } .place-about { border-top:1px solid var(--line); } .place-events article { padding:20px; } }
