@@ -1,4 +1,5 @@
 "use client";
+import { FollowButton } from "./following";
 
 import Image from "next/image";
 import {
@@ -303,6 +304,7 @@ function RestaurantCard({
       </div>
 
       <div className="restaurant-card__actions">
+        <FollowButton name={restaurant.name} />
         <button
           className={`save-button${isSaved ? " is-saved" : ""}`}
           type="button"
