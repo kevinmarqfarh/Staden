@@ -63,7 +63,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           # Keep npm's lockfile semantics identical to the checked-in toolchain.
           node-version: 24.13.0
@@ -110,7 +110,7 @@ jobs:
         id: nuclei
         if: always() && steps.zap.outcome != 'cancelled'
         continue-on-error: true
-        uses: projectdiscovery/nuclei-action@a4ae23f2522c29f17a696be94fea5f394ac6843f # v3.0.0
+        uses: projectdiscovery/nuclei-action@cc153d0541e1adf8a42bbe31c0a4fb2376147538 # v3.1.1
         with:
           version: v3.8.0
           args: >-
